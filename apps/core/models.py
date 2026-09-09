@@ -7,6 +7,15 @@ from django.utils.translation import gettext_lazy as _
 from .middleware import get_current_user
 
 
+class PhysicalDeleteNotAllowed(Exception):
+    """Se ha intentado borrar de verdad un maestro que solo admite baja logica.
+
+    No es un caso a capturar y seguir: si salta, es que hay codigo que no
+    deberia existir. En la interfaz la opcion de borrar directamente no se
+    ofrece.
+    """
+
+
 class TimeStampedModel(models.Model):
     """Marca de creacion y de ultima modificacion."""
 
@@ -23,6 +32,12 @@ class ActivableQuerySet(models.QuerySet):
 
     def inactive(self):
         return self.filter(is_active=False)
+
+    def delete(self):
+        raise PhysicalDeleteNotAllowed(
+            f"{self.model.__name__} no se borra en bloque: usa .update(is_active=False). "
+            "Un maestro borrado deja huecos en reservas y facturas historicas."
+        )
 
 
 class ActivableManager(models.Manager.from_queryset(ActivableQuerySet)):
@@ -49,6 +64,17 @@ class ActivableModel(models.Model):
         self.is_active = True
         if save:
             self.save(update_fields=["is_active"])
+
+    def delete(self, *args, **kwargs):
+        """Los maestros no se borran.
+
+        Una reserva de hace dos anos apunta a esta fila: si desaparece, el
+        historico deja de poder leerse. Se da de baja con `deactivate()`.
+        """
+        raise PhysicalDeleteNotAllowed(
+            f"{type(self).__name__} no se borra: usa deactivate(). "
+            f"Sigue haciendo falta en el historico ({self})."
+        )
 
 
 class UserStampedModel(models.Model):

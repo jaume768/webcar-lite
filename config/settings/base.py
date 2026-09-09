@@ -34,6 +34,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "template_partials",
     "django_htmx",
+    "django_filters",
     "axes",
 ]
 

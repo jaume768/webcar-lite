@@ -7,6 +7,14 @@ from django.http import HttpResponse
 TOAST_EVENT = "toast"
 
 
+def trigger_event(response: HttpResponse, event: str, detail=True) -> HttpResponse:
+    """Anade un evento a HX-Trigger sin pisar los que ya vayan."""
+    eventos = json.loads(response.headers.get("HX-Trigger", "{}"))
+    eventos[event] = detail
+    response.headers["HX-Trigger"] = json.dumps(eventos)
+    return response
+
+
 def trigger_toast(response: HttpResponse, message: str, level: str = "info") -> HttpResponse:
     """Adjunta un aviso a la respuesta via HX-Trigger.
 
