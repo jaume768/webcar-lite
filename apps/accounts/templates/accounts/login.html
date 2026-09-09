@@ -1,0 +1,36 @@
+{% extends "accounts/base_auth.html" %}
+{% load i18n ui %}
+
+{% block title %}{% translate "Entrar" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+{% block heading %}{% translate "Entrar" %}{% endblock %}
+
+{% block content %}
+  <form method="post" class="mt-4" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm
+                  text-rose-800" role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    {% include "ui/_field.html" with field=form.username %}
+    {% include "ui/_field.html" with field=form.password %}
+
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn-primary w-full">{% translate "Entrar" %}</button>
+  </form>
+
+  <p class="mt-4 text-center text-sm">
+    <a class="text-brand-700 hover:underline" href="{% url 'accounts:password_reset' %}">
+      {% translate "He olvidado mi contrasena" %}
+    </a>
+  </p>
+{% endblock %}
+
+{% block footer %}
+  <p class="mt-6 text-center text-xs text-slate-500">
+    {% translate "Acceso privado. Las cuentas las crea un responsable." %}
+  </p>
+{% endblock %}

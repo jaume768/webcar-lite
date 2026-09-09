@@ -47,8 +47,8 @@ def test_activable_no_borra_reactiva():
 
 
 def test_userstamped_toma_el_usuario_del_contexto(django_user_model):
-    ana = django_user_model.objects.create_user(username="ana")
-    luis = django_user_model.objects.create_user(username="luis")
+    ana = django_user_model.objects.create_user(email="ana@ejemplo.es")
+    luis = django_user_model.objects.create_user(email="luis@ejemplo.es")
 
     with current_user(ana):
         widget = Widget.objects.create(name="coche")
@@ -75,8 +75,8 @@ def test_userstamped_sin_usuario_en_contexto():
 
 def test_userstamped_respeta_update_fields(django_user_model):
     """Un save parcial tambien tiene que dejar constancia de quien lo hizo."""
-    ana = django_user_model.objects.create_user(username="ana")
-    luis = django_user_model.objects.create_user(username="luis")
+    ana = django_user_model.objects.create_user(email="ana@ejemplo.es")
+    luis = django_user_model.objects.create_user(email="luis@ejemplo.es")
 
     with current_user(ana):
         widget = Widget.objects.create(name="coche")

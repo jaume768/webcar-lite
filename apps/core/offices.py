@@ -1,10 +1,8 @@
 """Oficina activa: de donde sale la lista y como se cambia.
 
-El modelo `Office` todavia no existe (llega con `apps.offices`). Hasta entonces
-las oficinas disponibles se leen de la sesion, de modo que el selector, el
-cambio de oficina y su validacion son codigo real y probado desde ya. Cuando
-exista el modelo basta con apuntar `CORE_OFFICE_PROVIDER` al selector de
-`apps.offices`: ni la vista ni la plantilla cambian.
+El proveedor de la lista se configura con `CORE_OFFICE_PROVIDER`, para que este
+modulo no dependa de `apps.offices`: core no sabe de dominio. La validacion del
+cambio, en cambio, si vive aqui, porque es la misma para cualquier proveedor.
 """
 
 from dataclasses import dataclass
@@ -13,7 +11,6 @@ from functools import lru_cache
 from django.conf import settings
 from django.utils.module_loading import import_string
 
-SESSION_OFFICES_KEY = "ui_offices"
 SESSION_ACTIVE_OFFICE_KEY = "active_office_id"
 
 
@@ -23,11 +20,6 @@ class OfficeChoice:
 
     id: str
     name: str
-
-
-def session_offices(request) -> list[OfficeChoice]:
-    """Proveedor por defecto: las oficinas que haya puesto la sesion."""
-    return [OfficeChoice(**oficina) for oficina in request.session.get(SESSION_OFFICES_KEY, [])]
 
 
 @lru_cache(maxsize=4)

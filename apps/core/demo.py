@@ -50,12 +50,6 @@ ESTADOS = [
 for codigo, _etiqueta, tono in ESTADOS:
     badges.register(codigo, tono)
 
-OFICINAS_DEMO = [
-    {"id": "palma", "name": "Palma Centro"},
-    {"id": "alcudia", "name": "Alcudia Puerto"},
-    {"id": "aeropuerto", "name": "Aeropuerto PMI"},
-]
-
 
 @dataclass(frozen=True, slots=True)
 class VehiculoDemo:

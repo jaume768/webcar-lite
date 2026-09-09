@@ -1,0 +1,12 @@
+{% extends "accounts/base_auth.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Cuenta bloqueada" %}{% endblock %}
+{% block heading %}{% translate "Demasiados intentos" %}{% endblock %}
+
+{% block content %}
+  <p class="mt-3 text-sm text-slate-600">
+    {% translate "Se ha bloqueado el acceso temporalmente tras varios intentos fallidos." %}
+    {% translate "Espera unos minutos y vuelve a probar, o pide a un responsable que te ayude." %}
+  </p>
+{% endblock %}

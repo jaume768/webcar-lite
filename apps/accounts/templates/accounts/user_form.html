@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block content %}
+  <div class="card max-w-2xl p-6">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm
+                    text-rose-800" role="alert">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="grid gap-x-4 sm:grid-cols-2">
+        {% include "ui/_field.html" with field=form.first_name %}
+        {% include "ui/_field.html" with field=form.last_name %}
+        {% include "ui/_field.html" with field=form.email %}
+        {% include "ui/_field.html" with field=form.phone %}
+        {% include "ui/_field.html" with field=form.role %}
+      </div>
+
+      <fieldset class="mb-4">
+        <legend class="field-label">{{ form.offices.label }}</legend>
+        <p class="field-hint mb-2">{{ form.offices.help_text }}</p>
+        <div class="space-y-1">
+          {% for opcion in form.offices %}
+            <label class="flex items-center gap-2 text-sm text-slate-700">
+              {{ opcion.tag }} {{ opcion.choice_label }}
+            </label>
+          {% endfor %}
+        </div>
+        {% for error in form.offices.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </fieldset>
+
+      {% if not object %}
+        <p class="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          {% translate "No se le asigna contrasena: recibira un correo para ponersela el mismo." %}
+        </p>
+      {% endif %}
+
+      <div class="flex gap-2">
+        <button type="submit" class="btn-primary">{% translate "Guardar" %}</button>
+        <a href="{% url 'accounts:user_list' %}" class="btn-secondary">{% translate "Cancelar" %}</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -7,3 +7,10 @@ class AccountsConfig(AppConfig):
     name = "apps.accounts"
     label = "accounts"
     verbose_name = _("Usuarios y permisos")
+
+    def ready(self):
+        from axes.signals import user_locked_out
+
+        from . import signals
+
+        user_locked_out.connect(signals.registrar_bloqueo, dispatch_uid="accounts_lockout")

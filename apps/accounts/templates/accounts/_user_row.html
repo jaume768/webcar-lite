@@ -1,0 +1,38 @@
+{% load i18n %}
+<td class="font-medium text-slate-900">
+  {{ row.get_full_name|default:"—" }}
+</td>
+<td>{{ row.email }}</td>
+<td>{{ row.role.name|default:"—" }}</td>
+<td class="text-slate-600">
+  {% for oficina in row.offices.all %}{{ oficina.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=_("Activo") only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=_("Desactivado") only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  <a class="btn-ghost px-2 py-1" href="{% url 'accounts:user_update' row.pk %}">
+    {% translate "Editar" %}
+  </a>
+  {% if row.is_active %}
+    <form method="post" action="{% url 'accounts:user_deactivate' row.pk %}" class="inline">
+      {% csrf_token %}
+      <button type="submit" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'accounts:user_deactivate' row.pk %}"
+              hx-confirm="{% blocktranslate with email=row.email %}Se desactivara la cuenta de {{ email }}. No se borra: deja de poder entrar.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Desactivar usuario' %}"
+              data-confirm-aceptar="{% translate 'Desactivar' %}">
+        {% translate "Desactivar" %}
+      </button>
+    </form>
+  {% else %}
+    <form method="post" action="{% url 'accounts:user_activate' row.pk %}" class="inline">
+      {% csrf_token %}
+      <button type="submit" class="btn-ghost px-2 py-1">{% translate "Reactivar" %}</button>
+    </form>
+  {% endif %}
+</td>

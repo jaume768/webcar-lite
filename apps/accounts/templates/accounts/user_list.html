@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Usuarios" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block page_actions %}
+  <a href="{% url 'accounts:user_create' %}" class="btn-primary">
+    {% translate "Nuevo usuario" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {% include "ui/_table.html" %}
+{% endblock %}

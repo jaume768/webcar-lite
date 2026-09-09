@@ -3,6 +3,7 @@
 import redis
 import structlog
 from django.conf import settings
+from django.contrib.auth.decorators import login_not_required
 from django.core.exceptions import PermissionDenied
 from django.db import connection
 from django.http import Http404, HttpResponse, JsonResponse
@@ -14,7 +15,6 @@ from django.views.decorators.http import require_GET, require_POST
 
 from . import demo
 from .htmx import trigger_toast
-from .offices import SESSION_OFFICES_KEY
 from .offices import set_active_office as activar_oficina
 from .tables import Column, Filter, FilterOption, Table, paginate
 
@@ -42,6 +42,7 @@ def _check_redis() -> tuple[bool, str]:
     return True, "ok"
 
 
+@login_not_required
 @never_cache
 @require_GET
 def health(request):
@@ -140,11 +141,6 @@ def ui_kit(request):
     # que cambia, que es lo que evita recargar 10.000 filas de contexto.
     if request.htmx:
         return render(request, "ui/_table.html#resultados", {"table": tabla})
-
-    # El selector de oficina necesita oficinas y el modelo Office aun no existe:
-    # la demo las deja en la sesion, que es de donde las lee el proveedor.
-    if request.session.get(SESSION_OFFICES_KEY) != demo.OFICINAS_DEMO:
-        request.session[SESSION_OFFICES_KEY] = demo.OFICINAS_DEMO
 
     return render(
         request,

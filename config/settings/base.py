@@ -1,5 +1,6 @@
 """Ajustes comunes a todos los entornos."""
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -33,6 +34,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "template_partials",
     "django_htmx",
+    "axes",
 ]
 
 LOCAL_APPS = [
@@ -63,10 +65,15 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.core.middleware.CurrentUserMiddleware",
+    # Sistema privado: se entra por defecto, y lo publico se marca
+    # una a una con @login_not_required. Asi no se olvida ninguna.
+    "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "django_structlog.middlewares.RequestMiddleware",
+    # El ultimo: necesita la respuesta ya formada para marcar el intento.
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -109,6 +116,23 @@ DATABASES["default"]["ATOMIC_REQUESTS"] = False
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("DATABASE_CONN_MAX_AGE", default=60)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = "accounts.User"
+
+# Axes primero: no autentica a nadie, solo corta el intento si la cuenta esta
+# bloqueada, y para eso tiene que mirar antes que nadie. ModelBackend es quien
+# comprueba la contrasena. RolePermissionsBackend tampoco autentica: suma los
+# permisos que trae el rol.
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+    "apps.accounts.backends.RolePermissionsBackend",
+]
+
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "core:home"
+LOGOUT_REDIRECT_URL = "accounts:login"
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # un dia
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -156,11 +180,22 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TIME_LIMIT = 300
 CELERY_TASK_SOFT_TIME_LIMIT = 240
 
+# ---------------------------------------------------------------- bloqueo
+# Intentos fallidos antes de bloquear. Se cuenta la combinacion IP + usuario:
+# por usuario solo, cualquiera podria dejar fuera a un companero de mostrador.
+AXES_FAILURE_LIMIT = env.int("AXES_FAILURE_LIMIT", default=5)
+AXES_COOLOFF_TIME = timedelta(minutes=env.int("AXES_COOLOFF_MINUTES", default=15))
+AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
+AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_TEMPLATE = "accounts/lockout.html"
+AXES_VERBOSE = True
+# El nombre de usuario es el correo.
+AXES_USERNAME_FORM_FIELD = "username"
+
 # ---------------------------------------------------------------- interfaz
-# De donde salen las oficinas que puede usar cada usuario. Hoy las lee de la
-# sesion porque el modelo Office todavia no existe; cuando exista, esta linea
-# apunta al selector de apps.offices y no hay que tocar nada mas.
-CORE_OFFICE_PROVIDER = "apps.core.offices.session_offices"
+# De donde salen las oficinas que puede usar cada usuario. Unico punto de
+# verdad para el selector, la validacion del cambio y el scope de datos.
+CORE_OFFICE_PROVIDER = "apps.offices.selectors.office_choices_for_request"
 
 # ---------------------------------------------------------------- dominio
 # Margen de cortesia para el calculo de dias de alquiler (24h + margen).

@@ -15,8 +15,10 @@ make seed
 ```
 
 La aplicación queda en <http://localhost:8000> y el estado del sistema en
-<http://localhost:8000/health/>. `make seed` crea el superusuario `admin` / `admin`
-(solo con `DEBUG=True`) para entrar en <http://localhost:8000/admin/>.
+<http://localhost:8000/health/>. `make seed` crea los roles del sistema, tres oficinas de
+ejemplo y el superusuario `admin@localhost` / `admin` (solo con `DEBUG=True`).
+
+El acceso es privado: sin sesión, cualquier URL lleva a <http://localhost:8000/entrar/>.
 
 Requisitos en la máquina: Docker y Docker Compose v2. Nada más: Python, Postgres y Node
 viven dentro de los contenedores.
@@ -201,6 +203,86 @@ entre las permitidas: un POST manipulado recibe un 403. De dónde sale la lista 
 `core.middleware.CurrentUserMiddleware`, no de la request: así funciona igual en vistas, comandos
 y tareas de Celery (`with current_user(usuario): ...`). El contextvar se resetea al terminar cada
 petición, y hay un test con hilos concurrentes que lo comprueba.
+
+## Acceso y permisos
+
+Sistema privado. `LoginRequiredMiddleware` obliga a tener sesión en **todo**, y lo público se
+marca una a una con `@login_not_required` (login, recuperación de contraseña y `/health/`).
+No hay alta pública: `/registro/`, `/signup/` y compañía responden **410 Gone** a propósito,
+para que quede escrito que no es un olvido.
+
+### Usuario y roles
+
+Se entra con **correo y contraseña**, no con nombre de usuario. Un usuario tiene un `Role`
+(conjunto de permisos con nombre) y un conjunto de **oficinas**.
+
+```
+permisos efectivos = los del rol + los asignados a mano + los del grupo
+```
+
+Los del rol los aporta `accounts.backends.RolePermissionsBackend`. Los roles del sistema se
+declaran en `apps/accounts/roles.py` y se aplican con:
+
+```bash
+make manage ARGS="sync_roles"          # añade lo que falte
+make manage ARGS="sync_roles --prune"  # además quita lo que sobra
+```
+
+El comando avisa de los permisos que aún no existen porque su app no tiene modelos todavía, y
+los reparte solo en cuanto existan. Es idempotente.
+
+### Aislamiento por oficina
+
+Regla del sistema: **toda consulta de datos operativos pasa por el scope.**
+
+```python
+class Reservation(OfficeScopedModel):   # apps/accounts/scoping.py
+    ...
+
+Reservation.objects.for_user(request.user)   # superuser: todo; el resto: sus oficinas
+```
+
+En las vistas, `OfficeScopedMixin` recorta el queryset. Un objeto de otra oficina da **404, no
+403**: un 403 confirmaría que ese registro existe, y eso ya es información que el usuario no
+debería tener.
+
+En los formularios, `OfficeScopedFormMixin` recorta el queryset del campo de oficina, de modo
+que un POST con el id de otra oficina **falla la validación**. El selector de oficina activa de
+la barra superior guarda en sesión, pero siempre contrasta contra las oficinas del usuario: un
+`office_id` manipulado recibe un 403 y la sesión no cambia.
+
+### Permisos personalizados
+
+Además de los de Django (`add_*`, `change_*`, `view_*`, `delete_*`):
+
+| Permiso | Dónde |
+| --- | --- |
+| `accounts.manage_users` | `accounts.User` |
+| `settings_app.access_settings`, `pricing.manage_rates` | ancla de su app |
+| `billing.view_billing`, `billing.add_payment` | ancla de su app |
+| `reservations.change_reservation_price`, `cancel_reservation`, `delete_reservation` | ancla de su app |
+| `availability.override_availability` | ancla de su app |
+
+Las apps de dominio todavía no tienen modelos, así que sus permisos cuelgan de un modelo ancla
+`managed = False` que **no crea tabla**: solo aporta el content type de la app, para que las
+comprobaciones se escriban desde el principio como `reservations.cancel_reservation` y no haya
+que reescribirlas después.
+
+### Bloqueo por intentos fallidos
+
+`django-axes`, por combinación de IP + usuario (bloquear solo por usuario permitiría dejar fuera
+a un compañero de mostrador a base de fallar su correo). Configurable con `AXES_FAILURE_LIMIT`
+y `AXES_COOLOFF_MINUTES`. Al superar el límite la respuesta es **429**. Cada entrada, salida,
+fallo y bloqueo se registra con structlog, y axes guarda además los intentos en su tabla.
+
+### Panel de usuarios
+
+En `/usuarios/`, con permiso `accounts.manage_users`: listar, buscar, crear, editar, desactivar
+y reactivar. Un usuario **nunca se borra** (rompería la auditoría) y al crearlo no se le asigna
+una contraseña que haya que dictarle por teléfono: la estrena él con el enlace de recuperación.
+
+El admin de Django queda en `/admin-interno/` como herramienta de soporte técnico, solo para
+`is_staff`, y con el borrado de usuarios y oficinas desactivado.
 
 ## Producción
 

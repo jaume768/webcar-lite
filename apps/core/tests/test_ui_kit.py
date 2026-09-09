@@ -10,6 +10,12 @@ pytestmark = pytest.mark.django_db
 HTMX = {"hx-request": "true"}
 
 
+@pytest.fixture(autouse=True)
+def _con_sesion(client, usuario):
+    """El ui-kit es una pantalla interna: sin sesion no se llega."""
+    client.force_login(usuario)
+
+
 def test_el_catalogo_de_demo_tiene_diez_mil_filas():
     assert len(demo.catalogo()) == demo.TOTAL_FILAS == 10_000
 

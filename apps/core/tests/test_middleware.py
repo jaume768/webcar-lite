@@ -113,10 +113,10 @@ def test_context_manager_para_tareas_sin_request():
 @pytest.mark.django_db
 def test_el_usuario_de_la_sesion_llega_al_contextvar(client, django_user_model):
     """Comprobacion de extremo a extremo: middleware real, request real."""
-    usuario = django_user_model.objects.create_user(username="ana", password="secreto123")
+    usuario = django_user_model.objects.create_user(email="ana@ejemplo.es", password="secreto123")
     client.force_login(usuario)
 
     respuesta = client.get("/")
 
     assert respuesta.status_code == 200
-    assert respuesta.context["user"].username == "ana"
+    assert respuesta.context["user"].email == "ana@ejemplo.es"
