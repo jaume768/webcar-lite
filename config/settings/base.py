@@ -31,6 +31,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "template_partials",
     "django_htmx",
 ]
 
@@ -61,6 +62,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.core.middleware.CurrentUserMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
@@ -75,14 +77,26 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [BASE_DIR / "apps" / "core" / "templates"],
-        "APP_DIRS": True,
+        # Sin APP_DIRS: el loader de template_partials envuelve a los demas y
+        # es incompatible con APP_DIRS, que ya instala su propio loader.
         "OPTIONS": {
+            "loaders": [
+                (
+                    "template_partials.loader.Loader",
+                    [
+                        "django.template.loaders.filesystem.Loader",
+                        "django.template.loaders.app_directories.Loader",
+                    ],
+                )
+            ],
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
+                "apps.core.context_processors.ui",
             ],
+            "builtins": ["template_partials.templatetags.partials"],
         },
     },
 ]
@@ -141,6 +155,12 @@ CELERY_TASK_REJECT_ON_WORKER_LOST = True
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TIME_LIMIT = 300
 CELERY_TASK_SOFT_TIME_LIMIT = 240
+
+# ---------------------------------------------------------------- interfaz
+# De donde salen las oficinas que puede usar cada usuario. Hoy las lee de la
+# sesion porque el modelo Office todavia no existe; cuando exista, esta linea
+# apunta al selector de apps.offices y no hay que tocar nada mas.
+CORE_OFFICE_PROVIDER = "apps.core.offices.session_offices"
 
 # ---------------------------------------------------------------- dominio
 # Margen de cortesia para el calculo de dias de alquiler (24h + margen).

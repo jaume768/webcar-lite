@@ -35,3 +35,5 @@ node_modules/
 .idea/
 .vscode/
 .DS_Store
+/static/js/alpine-focus.min.js
+/static/fonts/inter-latin.woff2

@@ -1,0 +1,21 @@
+{% load i18n static %}<!DOCTYPE html>
+{% comment %} Sin extends ni context processors: cuando Django sirve un 500 no ejecuta los
+   procesadores de contexto, asi que esta pagina no puede depender de ellos. {% endcomment %}
+<html lang="es" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% translate "Error del servidor" %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="h-full">
+  <div class="mx-auto flex min-h-full max-w-lg flex-col items-center justify-center px-4 text-center">
+    <p class="text-sm font-semibold text-rose-600">500</p>
+    <h1 class="mt-2 text-2xl font-semibold text-slate-900">{% translate "Algo se ha roto" %}</h1>
+    <p class="mt-2 text-slate-600">
+      {% translate "El fallo ha quedado registrado. Vuelve a intentarlo; si se repite, avisa a soporte." %}
+    </p>
+    <a href="/" class="btn-primary mt-6">{% translate "Volver al inicio" %}</a>
+  </div>
+</body>
+</html>

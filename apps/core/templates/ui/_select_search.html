@@ -1,0 +1,38 @@
+{% load i18n %}
+{% comment %} Select con busqueda contra el servidor.
+
+   Uso: {% include "ui/_select_search.html" with name="vehicle" label="Vehiculo"
+        url=url_busqueda value=valor display=texto placeholder="Matricula o modelo" only %}
+
+   Envia al formulario un <input hidden> con el id elegido. Teclado: flechas
+   para moverse, Enter para elegir, Escape para cerrar. {% endcomment %}
+<div class="relative" x-data="selectBuscador()" @click.outside="cerrar()">
+  {% if label %}
+    <label class="field-label" for="{{ name }}-buscador">{{ label }}</label>
+  {% endif %}
+
+  <input type="text" id="{{ name }}-buscador" autocomplete="off"
+         class="input" placeholder="{{ placeholder|default:'' }}" value="{{ display|default:'' }}"
+         role="combobox" aria-autocomplete="list" aria-controls="{{ name }}-opciones"
+         :aria-expanded="abierto"
+         x-ref="buscador"
+         name="q"
+         hx-get="{{ url }}"
+         hx-trigger="focus, keyup changed delay:250ms"
+         hx-target="#{{ name }}-opciones"
+         hx-swap="innerHTML"
+         hx-vals='{"campo": "{{ name }}"}'
+         @htmx:after-swap="abrir()"
+         @keydown.arrow-down.prevent="mover(1)"
+         @keydown.arrow-up.prevent="mover(-1)"
+         @keydown.enter.prevent="elegirActiva()"
+         @keydown.escape.stop="cerrar()">
+
+  <input type="hidden" name="{{ name }}" x-ref="valor" value="{{ value|default:'' }}">
+
+  <ul id="{{ name }}-opciones" x-ref="opciones" x-show="abierto" x-cloak
+      role="listbox" aria-label="{{ label|default:name }}"
+      @click="elegirDesdeClic($event)"
+      class="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-line
+             bg-surface py-1 text-sm shadow-lg"></ul>
+</div>

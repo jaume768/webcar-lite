@@ -1,0 +1,12 @@
+{% load i18n %}
+{% comment %} Fecha suelta, fuera de un formulario (filtros de tabla, por ejemplo).
+   Usa el selector nativo del navegador: accesible con teclado y sin JS.
+   Dentro de un formulario, usa core.forms.DateField y "ui/_field.html". {% endcomment %}
+<div>
+  {% if label %}<label class="field-label" for="{{ name }}">{{ label }}</label>{% endif %}
+  <input type="date" class="input" id="{{ name }}" name="{{ name }}"
+         value="{{ value|date:'Y-m-d'|default:'' }}"
+         {% if min %}min="{{ min|date:'Y-m-d' }}"{% endif %}
+         {% if max %}max="{{ max|date:'Y-m-d' }}"{% endif %}
+         {{ attrs }}>
+</div>

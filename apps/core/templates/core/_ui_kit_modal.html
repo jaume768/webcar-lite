@@ -1,0 +1,34 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{{ vehiculo.plate }}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">{{ vehiculo.model }} · {{ vehiculo.category }}</p>
+{% endblock %}
+
+{% block modal_body %}
+  <dl class="grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <dt class="text-slate-500">{% translate "Oficina" %}</dt>
+      <dd class="font-medium text-slate-900">{{ vehiculo.office }}</dd>
+    </div>
+    <div>
+      <dt class="text-slate-500">{% translate "Estado" %}</dt>
+      <dd>{% include "ui/_badge.html" with status=vehiculo.status label=vehiculo.status_label only %}</dd>
+    </div>
+    <div>
+      <dt class="text-slate-500">{% translate "Tarifa por dia" %}</dt>
+      <dd class="font-medium tabular text-slate-900">{{ vehiculo.daily_rate }} €</dd>
+    </div>
+    <div>
+      <dt class="text-slate-500">{% translate "Matriculado el" %}</dt>
+      <dd class="font-medium text-slate-900">{{ vehiculo.registered_on|date:"d/m/Y" }}</dd>
+    </div>
+  </dl>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cerrar" %}</button>
+  <button type="button" class="btn-primary" @click="cerrar()">{% translate "Guardar" %}</button>
+{% endblock %}

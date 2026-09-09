@@ -1,0 +1,27 @@
+{% load i18n %}
+{% comment %} Oficina activa. Se reemplaza a si mismo al cambiar; el backend valida que la
+   oficina elegida este entre las permitidas. {% endcomment %}
+<div id="selector-oficina" class="flex items-center gap-2">
+  {% if available_offices %}
+    <label for="office-id" class="sr-only">{% translate "Oficina activa" %}</label>
+    <span class="hidden text-xs font-medium text-slate-400 uppercase sm:inline">
+      {% translate "Oficina" %}
+    </span>
+    <select id="office-id" name="office_id"
+            class="input w-auto min-w-40 py-1.5 text-sm font-medium"
+            hx-post="{% url 'core:set_active_office' %}"
+            hx-target="#selector-oficina"
+            hx-swap="outerHTML">
+      {% for office in available_offices %}
+        <option value="{{ office.id }}"
+                {% if active_office and office.id == active_office.id %}selected{% endif %}>
+          {{ office.name }}
+        </option>
+      {% endfor %}
+    </select>
+  {% else %}
+    <span class="rounded-lg bg-slate-100 px-2 py-1 text-xs font-medium text-slate-500">
+      {% translate "Sin oficinas asignadas" %}
+    </span>
+  {% endif %}
+</div>

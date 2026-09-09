@@ -1,0 +1,92 @@
+{% load i18n %}
+{% translate "Buscar..." as buscar_placeholder %}
+{% comment %} Tabla con busqueda, filtros y paginacion por HTMX.
+
+   La vista pasa `table` (core.tables.Table). Los controles apuntan a la misma
+   URL: en peticion normal devuelve la pagina entera y en peticion HTMX solo el
+   fragmento `#resultados`, que reemplaza al contenedor.
+
+   Teclado: Enter en el buscador envia el formulario (el propio form lleva
+   hx-get, asi que tambien funciona sin el disparador por tecleo), y la
+   paginacion son enlaces reales, navegables con tabulador. {% endcomment %}
+<section class="card" aria-labelledby="{{ table.id }}-titulo">
+
+  <form class="card-header" role="search"
+        hx-get="{{ table.url }}"
+        hx-target="#{{ table.id }}"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+        hx-include="closest form"
+        hx-indicator="#{{ table.id }}-cargando">
+
+    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+      <label class="sr-only" for="{{ table.id }}-q">{% translate "Buscar" %}</label>
+      <input type="search" id="{{ table.id }}-q" name="q" value="{{ table.search_value }}"
+             class="input w-auto min-w-56 flex-1 py-1.5"
+             placeholder="{{ table.search_placeholder|default:buscar_placeholder }}"
+             autocomplete="off"
+             hx-get="{{ table.url }}"
+             hx-trigger="keyup changed delay:350ms, search">
+
+      {% for filtro in table.filters %}
+        <label class="sr-only" for="{{ table.id }}-{{ filtro.name }}">{{ filtro.label }}</label>
+        <select id="{{ table.id }}-{{ filtro.name }}" name="{{ filtro.name }}"
+                class="input w-auto py-1.5"
+                hx-get="{{ table.url }}"
+                hx-trigger="change">
+          <option value="">{{ filtro.label }}</option>
+          {% for opcion in filtro.options %}
+            <option value="{{ opcion.value }}"
+                    {% if opcion.value == filtro.value %}selected{% endif %}>{{ opcion.label }}</option>
+          {% endfor %}
+        </select>
+      {% endfor %}
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span id="{{ table.id }}-cargando" class="htmx-indicator text-xs text-slate-500">
+        {% translate "Buscando..." %}
+      </span>
+      {# Sin JS el formulario sigue funcionando como GET de toda la vida. #}
+      <button type="submit" class="btn-secondary py-1.5">{% translate "Filtrar" %}</button>
+    </div>
+  </form>
+
+  {% partialdef resultados inline %}
+  <div id="{{ table.id }}">
+    {% if table.page_obj.paginator.count %}
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <caption id="{{ table.id }}-titulo" class="sr-only">
+            {% blocktranslate with total=table.page_obj.paginator.count %}Resultados: {{ total }}{% endblocktranslate %}
+          </caption>
+          <thead>
+            <tr>
+              {% for columna in table.columns %}
+                <th scope="col" class="text-{{ columna.align }} {{ columna.css }}">{{ columna.label }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in table.page_obj %}
+              <tr>{% include table.row_template %}</tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-slate-600">
+        <p aria-live="polite">
+          {% blocktranslate with desde=table.page_obj.start_index hasta=table.page_obj.end_index total=table.page_obj.paginator.count %}
+            {{ desde }}-{{ hasta }} de {{ total }}
+          {% endblocktranslate %}
+        </p>
+        {% include "ui/_pagination.html" with page_obj=table.page_obj target=table.id %}
+      </div>
+    {% else %}
+      <p id="{{ table.id }}-titulo" class="sr-only">{% translate "Sin resultados" %}</p>
+      {% include "ui/_empty.html" with empty_title=table.empty_title empty_message=table.empty_message only %}
+    {% endif %}
+  </div>
+  {% endpartialdef %}
+</section>

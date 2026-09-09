@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Pagina no encontrada" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-lg py-16 text-center">
+    <p class="text-sm font-semibold text-brand-600">404</p>
+    <h1 class="mt-2 text-2xl font-semibold text-slate-900">{% translate "Aqui no hay nada" %}</h1>
+    <p class="mt-2 text-slate-600">
+      {% translate "La direccion no existe o el registro se ha movido." %}
+    </p>
+    <a href="{% url 'core:home' %}" class="btn-primary mt-6">{% translate "Volver al inicio" %}</a>
+  </div>
+{% endblock %}

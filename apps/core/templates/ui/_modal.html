@@ -1,0 +1,46 @@
+{% load i18n %}
+{% comment %} Modal generico. No se incluye: se extiende.
+
+   Una plantilla de modal hace {% extends "ui/_modal.html" %} y rellena
+   modal_body / modal_footer. La vista la devuelve por HTMX contra #modal-host.
+   El foco queda atrapado dentro mientras esta abierto (x-trap) y vuelve al
+   disparador al cerrar. {% endcomment %}
+<div x-data="modal()" x-show="abierto" x-cloak x-trap.noscroll.inert="abierto"
+     @keydown.escape.window="cerrar()"
+     class="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
+     role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+
+  <div class="absolute inset-0 bg-slate-900/40" @click="cerrar()" aria-hidden="true"
+       x-show="abierto" x-transition.opacity></div>
+
+  <div class="relative w-full max-w-lg overflow-hidden rounded-xl bg-surface shadow-xl"
+       x-show="abierto"
+       x-transition:enter="transition duration-150" x-transition:enter-start="opacity-0 scale-95">
+
+    <div class="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+      <div>
+        <h2 id="modal-titulo" class="text-base font-semibold text-slate-900">
+          {% block modal_title %}{% translate "Detalle" %}{% endblock %}
+        </h2>
+        {% block modal_subtitle %}{% endblock %}
+      </div>
+      <button type="button" class="btn-ghost -mr-2 p-1.5" @click="cerrar()"
+              aria-label="{% translate 'Cerrar' %}">
+        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             stroke-width="1.5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="px-5 py-4">{% block modal_body %}{% endblock %}</div>
+
+    <div class="flex justify-end gap-2 border-t border-line bg-slate-50 px-5 py-3">
+      {% block modal_footer %}
+        <button type="button" class="btn-secondary" @click="cerrar()">
+          {% translate "Cerrar" %}
+        </button>
+      {% endblock %}
+    </div>
+  </div>
+</div>

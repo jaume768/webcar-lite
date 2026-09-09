@@ -1,0 +1,27 @@
+{% load ui %}
+{% comment %} Renderiza un BoundField de Django con los estilos del sistema.
+   Uso: {% include "ui/_field.html" with field=form.pickup_at %} {% endcomment %}
+<div class="mb-4">
+  {% if field.field.widget.input_type != "checkbox" %}
+    <label class="field-label" for="{{ field.id_for_label }}">
+      {{ field.label }}{% if field.field.required %}<span class="text-rose-600" aria-hidden="true"> *</span>{% endif %}
+    </label>
+  {% endif %}
+
+  {% if field.field.widget.input_type == "checkbox" %}
+    <label class="flex items-center gap-2 text-sm text-slate-700" for="{{ field.id_for_label }}">
+      {{ field|add_class:"size-4 rounded border-line text-brand-600 focus:ring-brand-500" }}
+      {{ field.label }}
+    </label>
+  {% else %}
+    {{ field|add_class:"input" }}
+  {% endif %}
+
+  {% if field.help_text %}
+    <p class="field-hint" id="{{ field.auto_id }}-ayuda">{{ field.help_text }}</p>
+  {% endif %}
+
+  {% for error in field.errors %}
+    <p class="field-error">{{ error }}</p>
+  {% endfor %}
+</div>

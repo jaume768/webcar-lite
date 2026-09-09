@@ -1,14 +1,59 @@
 {% load i18n static %}<!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE|default:'es' }}">
+<html lang="{{ LANGUAGE_CODE|default:'es' }}" class="h-full">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% translate "CRM Rent a Car" %}{% endblock %}</title>
+  <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
+  {# Los plugins de Alpine se registran antes que el propio Alpine. #}
+  <script src="{% static 'js/alpine-focus.min.js' %}" defer></script>
   <script src="{% static 'js/alpine.min.js' %}" defer></script>
+  {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-slate-50 text-slate-900">
-  {% block content %}{% endblock %}
+<body class="h-full" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+  <a class="skip-link" href="#contenido">{% translate "Saltar al contenido" %}</a>
+
+  <div class="flex min-h-full" x-data="{ sidebarAbierta: false }">
+
+    {% include "shell/_sidebar.html" %}
+
+    <div class="flex min-w-0 flex-1 flex-col">
+      {% include "shell/_topbar.html" %}
+
+      <main id="contenido" tabindex="-1" class="flex-1 px-4 py-6 focus:outline-none sm:px-6">
+        {% block breadcrumb %}
+          {% include "shell/_breadcrumb.html" %}
+        {% endblock %}
+
+        {% block page_header %}
+          {% if page_title %}
+            <header class="mb-5 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h1 class="text-xl font-semibold text-slate-900">{{ page_title }}</h1>
+                {% if page_subtitle %}
+                  <p class="mt-1 text-sm text-slate-500">{{ page_subtitle }}</p>
+                {% endif %}
+              </div>
+              <div class="flex items-center gap-2">{% block page_actions %}{% endblock %}</div>
+            </header>
+          {% endif %}
+        {% endblock %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  {% include "shell/_toasts.html" %}
+  {% include "ui/_confirm_dialog.html" %}
+
+  {# Destino por defecto de los modales abiertos por HTMX. #}
+  <div id="modal-host"></div>
+
+  {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -65,6 +65,7 @@ WORKDIR /app
 COPY --chown=app:app . .
 COPY --from=assets --chown=app:app /app/static/css/app.css /app/static/css/app.css
 COPY --from=assets --chown=app:app /app/static/js /app/static/js
+COPY --from=assets --chown=app:app /app/static/fonts /app/static/fonts
 
 RUN mkdir -p /app/staticfiles /app/media
 

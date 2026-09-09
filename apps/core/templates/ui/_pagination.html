@@ -1,0 +1,30 @@
+{% load i18n %}
+{% comment %} Enlaces reales (href) con hx-get encima: funcionan con teclado, con el raton
+   y sin JavaScript. {% endcomment %}
+{% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="{% translate 'Paginacion' %}" class="flex items-center gap-1">
+    {% if page_obj.has_previous %}
+      <a class="btn-secondary px-2 py-1" href="{% querystring page=page_obj.previous_page_number %}"
+         hx-get="{% querystring page=page_obj.previous_page_number %}"
+         hx-target="#{{ target }}" hx-swap="outerHTML" hx-push-url="true"
+         rel="prev">{% translate "Anterior" %}</a>
+    {% else %}
+      <span class="btn-secondary px-2 py-1 opacity-40" aria-disabled="true">{% translate "Anterior" %}</span>
+    {% endif %}
+
+    <span class="px-2 text-sm">
+      {% blocktranslate with actual=page_obj.number total=page_obj.paginator.num_pages %}
+        Pagina {{ actual }} de {{ total }}
+      {% endblocktranslate %}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a class="btn-secondary px-2 py-1" href="{% querystring page=page_obj.next_page_number %}"
+         hx-get="{% querystring page=page_obj.next_page_number %}"
+         hx-target="#{{ target }}" hx-swap="outerHTML" hx-push-url="true"
+         rel="next">{% translate "Siguiente" %}</a>
+    {% else %}
+      <span class="btn-secondary px-2 py-1 opacity-40" aria-disabled="true">{% translate "Siguiente" %}</span>
+    {% endif %}
+  </nav>
+{% endif %}

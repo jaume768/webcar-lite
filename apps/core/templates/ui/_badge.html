@@ -1,0 +1,6 @@
+{% load ui %}
+{# Uso: {% include "ui/_badge.html" with status="confirmada" label="Confirmada" only %} #}
+<span class="badge {% badge_classes status %}">
+  <span class="size-1.5 rounded-full bg-current opacity-70" aria-hidden="true"></span>
+  {{ label }}
+</span>

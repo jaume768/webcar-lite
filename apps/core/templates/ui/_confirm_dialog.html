@@ -1,0 +1,43 @@
+{% load i18n %}
+{% comment %} Confirmacion de acciones destructivas. Unica en la pagina: sustituye al
+   window.confirm de HTMX (evento htmx:confirm) para cualquier elemento con
+   hx-confirm, y tambien se puede pedir desde Alpine con $store.confirmar.pedir().
+
+   Al abrir, el foco entra en el dialogo por Cancelar: en una accion destructiva
+   la tecla comoda no puede ser la que borra. Escape cancela. {% endcomment %}
+<div x-data x-show="$store.confirmar.abierto" x-cloak
+     x-trap.noscroll="$store.confirmar.abierto"
+     @keydown.escape.window="$store.confirmar.cancelar()"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     role="alertdialog" aria-modal="true" aria-labelledby="confirmar-titulo">
+
+  <div class="absolute inset-0 bg-slate-900/50" @click="$store.confirmar.cancelar()"
+       aria-hidden="true"></div>
+
+  <div class="relative w-full max-w-md rounded-xl bg-surface p-5 shadow-xl">
+    <div class="flex gap-4">
+      <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-rose-100
+                   text-rose-600" aria-hidden="true">
+        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+        </svg>
+      </span>
+      <div class="min-w-0">
+        <h2 id="confirmar-titulo" class="text-base font-semibold text-slate-900"
+            x-text="$store.confirmar.titulo"></h2>
+        <p class="mt-1 text-sm text-slate-600" x-text="$store.confirmar.mensaje"></p>
+      </div>
+    </div>
+
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" class="btn-secondary" @click="$store.confirmar.cancelar()">
+        {% translate "Cancelar" %}
+      </button>
+      <button type="button" class="btn-danger"
+              @click="$store.confirmar.aceptar()"
+              x-text="$store.confirmar.etiquetaAceptar"></button>
+    </div>
+  </div>
+</div>

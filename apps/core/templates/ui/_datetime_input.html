@@ -1,0 +1,11 @@
+{% load i18n %}
+{% comment %} Fecha y hora. Los alquileres se cuentan por periodos de 24h: la hora importa
+   tanto como el dia, asi que nunca se ofrece solo la fecha en recogida/devolucion. {% endcomment %}
+<div>
+  {% if label %}<label class="field-label" for="{{ name }}">{{ label }}</label>{% endif %}
+  <input type="datetime-local" class="input" id="{{ name }}" name="{{ name }}"
+         value="{{ value|date:'Y-m-d\TH:i'|default:'' }}"
+         step="{{ step|default:'900' }}"
+         {{ attrs }}>
+  {% if hint %}<p class="field-hint">{{ hint }}</p>{% endif %}
+</div>

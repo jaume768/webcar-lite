@@ -1,0 +1,33 @@
+{% load i18n %}
+{% comment %} Avisos. Llegan de tres sitios: django.contrib.messages al cargar la pagina,
+   la cabecera HX-Trigger del servidor y los errores de HTMX en el cliente. {% endcomment %}
+<div class="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4
+            sm:items-end"
+     role="status" aria-live="polite" aria-atomic="false"
+     x-data x-init="$store.toasts.desdeMensajes($el)">
+
+  <template x-for="toast in $store.toasts.lista" :key="toast.id">
+    <div x-show="toast.visible" x-transition.opacity.duration.200ms
+         class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border
+                bg-surface p-3 shadow-lg"
+         :class="$store.toasts.estilos[toast.level] || $store.toasts.estilos.info">
+      <span class="mt-0.5 shrink-0" x-html="$store.toasts.iconos[toast.level] || $store.toasts.iconos.info"></span>
+      <p class="min-w-0 flex-1 text-sm" x-text="toast.message"></p>
+      <button type="button" class="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-700"
+              @click="$store.toasts.cerrar(toast.id)"
+              aria-label="{% translate 'Cerrar aviso' %}">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </template>
+
+  {# Los mensajes del ciclo de request se serializan aqui y Alpine los recoge. #}
+  {% for message in messages %}
+    <script type="application/json" data-toast>
+      {"level": "{{ message.level_tag|escapejs }}", "message": "{{ message|escapejs }}"}
+    </script>
+  {% endfor %}
+</div>

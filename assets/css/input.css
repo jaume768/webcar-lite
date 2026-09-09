@@ -1,6 +1,160 @@
 @import "tailwindcss";
 
 /* Rutas relativas a este fichero: Tailwind escanea plantillas y codigo Python
-   (los nombres de clase tambien aparecen en widgets y helpers). */
+   (los nombres de clase tambien aparecen en registros y helpers). */
 @source "../../apps/**/*.html";
 @source "../../apps/**/*.py";
+
+/* Inter variable, servida desde el propio dominio. Solo el subconjunto latino:
+   el mostrador puede estar sin internet y no dependemos de ningun CDN. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+
+  /* Azul de mostrador: identidad de la aplicacion. Los estados usan la paleta
+     de Tailwind (emerald/amber/rose/sky) a traves de core.badges. */
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe6fe;
+  --color-brand-200: #bfd3fe;
+  --color-brand-300: #93b4fd;
+  --color-brand-400: #6090fa;
+  --color-brand-500: #3b6df6;
+  --color-brand-600: #254deb;
+  --color-brand-700: #1d3bd8;
+  --color-brand-800: #1e33af;
+  --color-brand-900: #1e318a;
+  --color-brand-950: #172054;
+
+  /* Superficies. Un mostrador trabaja horas con la pantalla delante: fondo
+     apagado y tarjetas blancas, sin blanco puro de pared a pared. */
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-line: #e2e8f0;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-slate-900 font-sans antialiased;
+  }
+
+  /* Teclado: el foco tiene que verse siempre, en cualquier elemento. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-600;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  /* Alpine quita x-cloak al inicializarse: evita que se vean modales y menus
+     desplegados durante el primer pintado. */
+  [x-cloak] {
+    display: none !important;
+  }
+
+  /* El menu lateral se pinta fuera de pantalla en movil antes de que Alpine
+     tome el control. Las utilidades ganan a esta regla en cuanto lo hace. */
+  @media (width < 64rem) {
+    [data-sidebar] {
+      transform: translateX(-100%);
+    }
+  }
+
+  /* Importes y matriculas: cifras de ancho fijo para que las columnas cuadren. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* `btn` la reutilizan las variantes con @apply, y en Tailwind 4 solo se puede
+   aplicar lo que sea una utilidad: por eso es @utility y no una clase suelta. */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm
+         font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@layer components {
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  }
+  .btn-secondary {
+    @apply btn border border-line bg-surface text-slate-700 hover:bg-slate-50;
+  }
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+  .btn-danger {
+    @apply btn bg-rose-600 text-white hover:bg-rose-700;
+  }
+
+  .field-label {
+    @apply mb-1 block text-sm font-medium text-slate-700;
+  }
+  .field-hint {
+    @apply mt-1 text-xs text-slate-500;
+  }
+  .field-error {
+    @apply mt-1 text-xs font-medium text-rose-600;
+  }
+
+  .input {
+    @apply block w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm
+           text-slate-900 placeholder:text-slate-400
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none
+           disabled:bg-slate-50 disabled:text-slate-500;
+  }
+  .input-invalid {
+    @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/30;
+  }
+
+  .card {
+    @apply rounded-xl border border-line bg-surface shadow-sm;
+  }
+  .card-header {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3;
+  }
+  .card-title {
+    @apply text-sm font-semibold text-slate-900;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium
+           ring-1 ring-inset whitespace-nowrap;
+  }
+
+  .data-table {
+    @apply w-full border-collapse text-sm;
+  }
+  .data-table thead th {
+    @apply border-b border-line bg-slate-50 px-3 py-2 text-left text-xs font-semibold
+           tracking-wide text-slate-600 uppercase;
+  }
+  .data-table tbody td {
+    @apply border-b border-line px-3 py-2 text-slate-700;
+  }
+  .data-table tbody tr:hover {
+    @apply bg-brand-50/40;
+  }
+
+  /* Enlace de salto: invisible hasta que se tabula. */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50
+           focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white;
+  }
+}

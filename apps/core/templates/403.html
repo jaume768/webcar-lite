@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Sin permiso" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-lg py-16 text-center">
+    <p class="text-sm font-semibold text-rose-600">403</p>
+    <h1 class="mt-2 text-2xl font-semibold text-slate-900">{% translate "No tienes permiso" %}</h1>
+    <p class="mt-2 text-slate-600">
+      {% translate "Tu usuario no puede acceder a esto. Si crees que es un error, habla con un responsable." %}
+    </p>
+    <a href="{% url 'core:home' %}" class="btn-primary mt-6">{% translate "Volver al inicio" %}</a>
+  </div>
+{% endblock %}

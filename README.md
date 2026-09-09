@@ -130,6 +130,78 @@ Sin SPA: plantillas de Django con HTMX y Alpine. El servicio `tailwind` compila
 a `static/js/` — nada se sirve desde un CDN. La imagen de producción hace ese mismo build
 en una etapa de Node y ejecuta `collectstatic` durante el build, de modo que arranca ya servible.
 
+## Sistema de interfaz
+
+Plantillas de Django con HTMX y Alpine; sin SPA. Todo lo transversal vive en `apps/core`.
+
+**Catálogo vivo en [`/ui-kit/`](http://localhost:8000/ui-kit/)**: tabla, badges, modal, select con
+búsqueda, fechas, confirmación destructiva, avisos y páginas de error, funcionando de verdad.
+Es la referencia mientras se construyen las pantallas reales; se borra cuando sobren.
+
+### Estructura del shell
+
+`base.html` monta barra superior, navegación lateral, selector de oficina activa, migas de pan,
+zona de avisos y el hueco de modales. Una pantalla solo rellena bloques:
+
+```django
+{% extends "base.html" %}
+{% block content %}...{% endblock %}
+```
+
+Contexto que reconoce: `page_title`, `page_subtitle`, `breadcrumbs`
+(`[{"label": ..., "url": ...}]`) y los bloques `page_actions` y `extra_js`.
+
+La navegación lateral se declara en `apps/core/navigation.py`: cada app añade su `NavSection`.
+
+### Componentes
+
+| Partial | Para qué |
+| --- | --- |
+| `ui/_table.html` | Tabla con búsqueda, filtros y paginación por HTMX. La vista arma un `core.tables.Table` |
+| `ui/_modal.html` | Modal genérico. Las plantillas de modal lo **extienden**, no lo incluyen |
+| `ui/_confirm_dialog.html` | Confirmación de acciones destructivas. Sustituye al `window.confirm` de `hx-confirm` |
+| `ui/_select_search.html` | Select con autocompletado en servidor, navegable con flechas |
+| `ui/_field.html` | Renderiza un `BoundField` con etiqueta, ayuda y errores |
+| `ui/_date_input.html`, `ui/_datetime_input.html` | Fecha y fecha-hora fuera de un formulario |
+| `ui/_badge.html` | Badge de estado. El color por estado se registra en `core.badges` |
+| `ui/_empty.html`, `ui/_pagination.html` | Estado vacío y paginación |
+
+Las tablas usan [django-template-partials](https://github.com/carltongibson/django-template-partials):
+la misma URL sirve la página entera o solo el fragmento `#resultados` según llegue o no la
+cabecera `HX-Request`, así que teclear en el buscador no vuelve a traerse el shell.
+
+### Avisos y errores
+
+Un aviso llega por tres caminos, todos al mismo sitio:
+
+- `django.contrib.messages` en una carga normal de página
+- `core.htmx.trigger_toast(response, "...", "success")` desde una vista (cabecera `HX-Trigger`)
+- un fallo de HTMX (`403`, `500`, red caída, timeout), que `static/js/app.js` convierte en aviso
+
+`403.html`, `404.html` y `500.html` son propias. La de 500 no extiende `base.html`: cuando Django
+sirve un 500 no ejecuta los procesadores de contexto.
+
+### Oficina activa
+
+El selector de la barra superior escribe en la sesión y **el backend valida** que la oficina esté
+entre las permitidas: un POST manipulado recibe un 403. De dónde sale la lista lo decide
+`CORE_OFFICE_PROVIDER`; hoy apunta a la sesión porque el modelo `Office` aún no existe.
+
+### Modelos base
+
+`apps/core/models.py` aporta los mixins de los que colgará todo el dominio:
+
+| Mixin | Qué añade |
+| --- | --- |
+| `TimeStampedModel` | `created_at`, `updated_at` |
+| `ActivableModel` | `is_active` y `.objects.active()` / `.inactive()`, con `deactivate()` en vez de borrar |
+| `UserStampedModel` | `created_by` y `updated_by`, rellenados solos |
+
+`UserStampedModel` toma el usuario de un `ContextVar` que publica
+`core.middleware.CurrentUserMiddleware`, no de la request: así funciona igual en vistas, comandos
+y tareas de Celery (`with current_user(usuario): ...`). El contextvar se resetea al terminar cada
+petición, y hay un test con hilos concurrentes que lo comprueba.
+
 ## Producción
 
 La imagen `runtime` arranca Gunicorn con `config.settings.prod` y sirve estáticos con Whitenoise

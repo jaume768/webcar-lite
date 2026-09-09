@@ -1,0 +1,7 @@
+{% load i18n %}
+<td class="font-mono tabular">{{ row.plate }}</td>
+<td class="font-medium text-slate-900">{{ row.model }}</td>
+<td>{{ row.category }}</td>
+<td>{{ row.office }}</td>
+<td>{% include "ui/_badge.html" with status=row.status label=row.status_label only %}</td>
+<td class="text-right tabular">{{ row.daily_rate }} €</td>

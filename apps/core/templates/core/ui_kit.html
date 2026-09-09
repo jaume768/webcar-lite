@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Componentes" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block content %}
+  <div class="space-y-8">
+
+    <section aria-labelledby="s-tabla">
+      <h2 id="s-tabla" class="mb-2 text-sm font-semibold text-slate-900">
+        {% translate "Tabla con busqueda, filtros y paginacion" %}
+      </h2>
+      <p class="mb-3 text-sm text-slate-500">
+        {% blocktranslate with total=table.page_obj.paginator.count %}
+          {{ total }} vehiculos ficticios. Buscar, filtrar y paginar no recargan la pagina.
+        {% endblocktranslate %}
+      </p>
+      {% include "ui/_table.html" %}
+    </section>
+
+    <div class="grid gap-8 lg:grid-cols-2">
+
+      <section aria-labelledby="s-botones">
+        <h2 id="s-botones" class="mb-3 text-sm font-semibold text-slate-900">
+          {% translate "Botones" %}
+        </h2>
+        <div class="card p-4">
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn-primary">{% translate "Principal" %}</button>
+            <button type="button" class="btn-secondary">{% translate "Secundario" %}</button>
+            <button type="button" class="btn-ghost">{% translate "Terciario" %}</button>
+            <button type="button" class="btn-danger">{% translate "Destructivo" %}</button>
+            <button type="button" class="btn-primary" disabled>{% translate "Deshabilitado" %}</button>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="s-badges">
+        <h2 id="s-badges" class="mb-3 text-sm font-semibold text-slate-900">
+          {% translate "Badges de estado" %}
+        </h2>
+        <div class="card p-4">
+          <div class="flex flex-wrap gap-2">
+            {% for codigo, etiqueta, tono in estados %}
+              {% include "ui/_badge.html" with status=codigo label=etiqueta only %}
+            {% endfor %}
+            {% include "ui/_badge.html" with status="active" label=_("Activo") only %}
+            {% include "ui/_badge.html" with status="inactive" label=_("Inactivo") only %}
+            {% include "ui/_badge.html" with status="desconocido" label=_("Sin registrar") only %}
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="s-select">
+        <h2 id="s-select" class="mb-3 text-sm font-semibold text-slate-900">
+          {% translate "Select con busqueda en servidor" %}
+        </h2>
+        <div class="card p-4">
+          {% url 'core:ui_kit_vehicle_search' as url_vehiculos %}
+          {% include "ui/_select_search.html" with name="vehicle" label=_("Vehiculo") url=url_vehiculos placeholder=_("Escribe una matricula o un modelo") only %}
+          <p class="field-hint">
+            {% translate "Flechas para moverte, Enter para elegir, Escape para cerrar." %}
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="s-fechas">
+        <h2 id="s-fechas" class="mb-3 text-sm font-semibold text-slate-900">
+          {% translate "Formulario, fechas y horas" %}
+        </h2>
+        <div class="card p-4">
+          <form method="get" action="{% url 'core:ui_kit' %}#s-fechas">
+            {% for field in form %}
+              {% include "ui/_field.html" %}
+            {% endfor %}
+            <button type="submit" class="btn-primary">{% translate "Enviar" %}</button>
+          </form>
+        </div>
+      </section>
+
+      <section aria-labelledby="s-modal">
+        <h2 id="s-modal" class="mb-3 text-sm font-semibold text-slate-900">
+          {% translate "Modal y confirmacion" %}
+        </h2>
+        <div class="card space-y-3 p-4">
+          <button type="button" class="btn-secondary"
+                  hx-get="{% url 'core:ui_kit_modal' %}"
+                  hx-target="#modal-host"
+                  hx-swap="innerHTML">
+            {% translate "Abrir modal" %}
+          </button>
+
+          <button type="button" class="btn-danger"
+                  hx-post="{% url 'core:ui_kit_destructive' %}"
+                  hx-swap="none"
+                  hx-confirm="{% translate 'Se dara de baja el vehiculo. No se borra: deja de estar disponible.' %}"
+                  data-confirm-titulo="{% translate 'Dar de baja el vehiculo' %}"
+                  data-confirm-aceptar="{% translate 'Dar de baja' %}">
+            {% translate "Accion destructiva" %}
+          </button>
+          <p class="field-hint">
+            {% translate "hx-confirm abre el dialogo propio, no el del navegador." %}
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="s-avisos">
+        <h2 id="s-avisos" class="mb-3 text-sm font-semibold text-slate-900">
+          {% translate "Avisos" %}
+        </h2>
+        <div class="card space-y-3 p-4" x-data>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn-secondary"
+                    @click="$store.toasts.añadir('Reserva confirmada.', 'success')">
+              {% translate "Correcto" %}
+            </button>
+            <button type="button" class="btn-secondary"
+                    @click="$store.toasts.añadir('Quedan 2 vehiculos de esta categoria.', 'warning')">
+              {% translate "Aviso" %}
+            </button>
+            <button type="button" class="btn-secondary"
+                    @click="$store.toasts.añadir('No se ha podido guardar.', 'error')">
+              {% translate "Error" %}
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn-secondary"
+                    hx-get="{% url 'core:ui_kit_error' 404 %}" hx-swap="none">
+              {% translate "Error HTMX 404" %}
+            </button>
+            <button type="button" class="btn-secondary"
+                    hx-get="{% url 'core:ui_kit_error' 403 %}" hx-swap="none">
+              {% translate "Error HTMX 403" %}
+            </button>
+          </div>
+          <p class="field-hint">
+            {% translate "Un fallo en una peticion HTMX se muestra como aviso, no en silencio." %}
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="s-errores">
+        <h2 id="s-errores" class="mb-3 text-sm font-semibold text-slate-900">
+          {% translate "Paginas de error" %}
+        </h2>
+        <div class="card p-4">
+          <div class="flex flex-wrap gap-2">
+            <a class="btn-secondary" href="{% url 'core:ui_kit_error' 403 %}">403</a>
+            <a class="btn-secondary" href="{% url 'core:ui_kit_error' 404 %}">404</a>
+            <a class="btn-secondary" href="{% url 'core:ui_kit_error' 500 %}">500</a>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+{% endblock %}

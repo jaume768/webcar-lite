@@ -1,0 +1,13 @@
+{% load i18n %}
+{# Respuesta del endpoint de busqueda: solo los <li>. #}
+{% for option in options %}
+  <li role="option" tabindex="-1" data-value="{{ option.value }}" data-label="{{ option.label }}"
+      class="cursor-pointer px-3 py-2 aria-selected:bg-brand-50 aria-selected:text-brand-800
+             hover:bg-slate-100"
+      aria-selected="false">
+    <span class="font-medium text-slate-800">{{ option.label }}</span>
+    {% if option.hint %}<span class="ml-2 text-xs text-slate-500">{{ option.hint }}</span>{% endif %}
+  </li>
+{% empty %}
+  <li class="px-3 py-2 text-slate-500">{% translate "Sin coincidencias" %}</li>
+{% endfor %}
