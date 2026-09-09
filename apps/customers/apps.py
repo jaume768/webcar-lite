@@ -6,4 +6,10 @@ class CustomersConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.customers"
     label = "customers"
-    verbose_name = _("Clientes y conductores")
+    verbose_name = _("Clientes")
+
+    def ready(self):
+        """Tono del aviso de cliente conflictivo (ver apps/core/badges.py)."""
+        from apps.core import badges
+
+        badges.register("blacklisted", "danger")

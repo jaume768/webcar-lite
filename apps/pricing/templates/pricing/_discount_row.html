@@ -1,0 +1,54 @@
+{% load i18n %}
+{% translate "Activo" as etiqueta_activo %}
+{% translate "Desactivado" as etiqueta_inactivo %}
+<td class="font-medium text-slate-900">{{ row.name }}</td>
+<td class="font-mono tabular text-slate-600">
+  {% if row.code %}{{ row.code }}{% else %}
+    <span class="font-sans text-xs text-slate-400">{% translate "automatico" %}</span>
+  {% endif %}
+</td>
+<td class="tabular text-right">
+  {% if row.amount_type == "percent" %}{{ row.amount|floatformat:2 }} %{% else %}{{ row.amount|floatformat:2 }} €{% endif %}
+</td>
+<td class="text-xs text-slate-600">
+  {% if row.valid_from or row.valid_to %}
+    {{ row.valid_from|date:"d/m/Y"|default:"—" }} → {{ row.valid_to|date:"d/m/Y"|default:"—" }}
+  {% else %}
+    {% translate "Sin limite" %}
+  {% endif %}
+</td>
+<td class="text-xs text-slate-600">
+  {% if row.min_days %}
+    {% blocktranslate with dias=row.min_days %}Desde {{ dias }} dias{% endblocktranslate %}<br>
+  {% endif %}
+  {% for categoria in row.categories.all %}{{ categoria.name }}{% if not forloop.last %}, {% endif %}{% empty %}{% translate "Cualquier categoria" %}{% endfor %}
+</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activo only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactivo only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.pricing.change_discount %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'pricing:discount_update' row.pk %}"
+       hx-get="{% url 'pricing:discount_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+    {% if row.is_active %}
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'pricing:discount_deactivate' row.pk %}" hx-swap="none"
+              hx-confirm="{% blocktranslate with nombre=row.name %}{{ nombre }} dejara de aplicarse en reservas nuevas.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Desactivar descuento' %}"
+              data-confirm-aceptar="{% translate 'Desactivar' %}">
+        {% translate "Desactivar" %}
+      </button>
+    {% else %}
+      <button type="button" class="btn-ghost px-2 py-1"
+              hx-post="{% url 'pricing:discount_activate' row.pk %}" hx-swap="none">
+        {% translate "Activar" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

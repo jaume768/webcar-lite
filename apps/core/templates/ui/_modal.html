@@ -13,11 +13,17 @@
   <div class="absolute inset-0 bg-slate-900/40" @click="cerrar()" aria-hidden="true"
        x-show="abierto" x-transition.opacity></div>
 
-  <div class="relative w-full max-w-lg overflow-hidden rounded-xl bg-surface shadow-xl"
+  {% comment %} El panel nunca pasa del alto de la ventana: cabecera y pie se
+     quedan fijos y lo que crece es el cuerpo, que hace scroll por dentro. Un
+     formulario largo tiene que seguir llegando hasta el boton de guardar, y el
+     fondo esta bloqueado (x-trap.noscroll), asi que aqui no hay otro scroll al
+     que caer. {% endcomment %}
+  <div class="relative flex max-h-full w-full {{ modal_width|default:'max-w-lg' }} flex-col
+              overflow-hidden rounded-xl bg-surface shadow-xl"
        x-show="abierto"
        x-transition:enter="transition duration-150" x-transition:enter-start="opacity-0 scale-95">
 
-    <div class="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+    <div class="flex shrink-0 items-start justify-between gap-4 border-b border-line px-5 py-4">
       <div>
         <h2 id="modal-titulo" class="text-base font-semibold text-slate-900">
           {% block modal_title %}{% translate "Detalle" %}{% endblock %}
@@ -33,9 +39,12 @@
       </button>
     </div>
 
-    <div class="px-5 py-4">{% block modal_body %}{% endblock %}</div>
+    {# tabindex="0": si el cuerpo desborda, se puede desplazar con el teclado. #}
+    <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4" tabindex="0">
+      {% block modal_body %}{% endblock %}
+    </div>
 
-    <div class="flex justify-end gap-2 border-t border-line bg-slate-50 px-5 py-3">
+    <div class="flex shrink-0 justify-end gap-2 border-t border-line bg-slate-50 px-5 py-3">
       {% block modal_footer %}
         <button type="button" class="btn-secondary" @click="cerrar()">
           {% translate "Cerrar" %}

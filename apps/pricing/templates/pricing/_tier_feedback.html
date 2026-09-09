@@ -1,0 +1,24 @@
+{% load i18n %}
+{% comment %} Estado de los tramos mientras se escriben. Lo devuelve
+   pricing:tier_check; en la primera carga se pinta vacio. {% endcomment %}
+{% if problemas %}
+  <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2" role="status">
+    <p class="text-xs font-semibold text-amber-900">
+      {% translate "Los tramos todavia no cuadran:" %}
+    </p>
+    <ul class="mt-1 list-disc space-y-0.5 pl-4">
+      {% for problema in problemas %}
+        <li class="text-xs text-amber-900">{{ problema }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% elif cobertura %}
+  <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2" role="status">
+    <p class="text-xs text-emerald-900">
+      {% blocktranslate %}Cobertura correcta: {{ cobertura }}{% endblocktranslate %}
+      {% if incompletos %}
+        · {% blocktranslate count n=incompletos %}{{ n }} fila sin terminar{% plural %}{{ n }} filas sin terminar{% endblocktranslate %}
+      {% endif %}
+    </p>
+  </div>
+{% endif %}

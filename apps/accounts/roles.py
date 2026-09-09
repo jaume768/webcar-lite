@@ -32,9 +32,41 @@ CREAR_CLIENTES = "customers.add_customer"
 EDITAR_CLIENTES = "customers.change_customer"
 VER_FLOTA = "fleet.view_vehicle"
 EDITAR_FLOTA = "fleet.change_vehicle"
+VER_CATEGORIAS = "fleet.view_vehiclecategory"
+VER_BLOQUEOS = "fleet.view_vehicleblock"
+CREAR_BLOQUEOS = "fleet.add_vehicleblock"
+EDITAR_BLOQUEOS = "fleet.change_vehicleblock"
+BORRAR_BLOQUEOS = "fleet.delete_vehicleblock"
+VER_EXTRAS = "pricing.view_extra"
+VER_TARIFAS = [
+    "pricing.view_rate",
+    "pricing.view_season",
+    "pricing.view_supplement",
+    "pricing.view_discount",
+]
+EDITAR_TARIFAS = [
+    "pricing.add_rate",
+    "pricing.change_rate",
+    "pricing.add_season",
+    "pricing.change_season",
+    "pricing.add_supplement",
+    "pricing.change_supplement",
+    "pricing.add_discount",
+    "pricing.change_discount",
+]
 VER_OFICINAS = "offices.view_office"
+VER_GRUPOS = "offices.view_officepool"
 
-CONSULTA = [VER_RESERVAS, VER_CLIENTES, VER_FLOTA, VER_OFICINAS]
+CONSULTA = [
+    VER_RESERVAS,
+    VER_CLIENTES,
+    VER_FLOTA,
+    VER_CATEGORIAS,
+    VER_BLOQUEOS,
+    VER_EXTRAS,
+    VER_OFICINAS,
+    VER_GRUPOS,
+]
 
 MOSTRADOR = [
     *CONSULTA,
@@ -47,6 +79,11 @@ MOSTRADOR = [
 
 RESPONSABLE = [
     *MOSTRADOR,
+    # Ve las tarifas para poder explicar un precio, pero no las cambia.
+    *VER_TARIFAS,
+    CREAR_BLOQUEOS,
+    EDITAR_BLOQUEOS,
+    BORRAR_BLOQUEOS,
     CANCELAR_RESERVA,
     CAMBIAR_PRECIO,
     FORZAR_DISPONIBILIDAD,
@@ -66,6 +103,14 @@ ADMINISTRACION = [
     "accounts.view_role",
     "offices.add_office",
     "offices.change_office",
+    "offices.add_officepool",
+    "offices.change_officepool",
+    "fleet.add_vehiclecategory",
+    "fleet.change_vehiclecategory",
+    "fleet.add_vehicle",
+    "pricing.add_extra",
+    "pricing.change_extra",
+    *EDITAR_TARIFAS,
 ]
 
 

@@ -1,0 +1,53 @@
+{% load i18n %}
+{% translate "Activo" as etiqueta_activo %}
+{% translate "Desactivado" as etiqueta_inactivo %}
+<td class="font-mono tabular text-slate-600">{{ row.code }}</td>
+<td class="font-medium text-slate-900">{{ row.name }}</td>
+<td class="text-xs text-slate-600">
+  {{ row.get_supplement_type_display }}
+  {% if row.supplement_type == "young_driver" %}
+    <span class="block text-slate-400">
+      {% blocktranslate with desde=row.min_age|default:"18" hasta=row.max_age %}De {{ desde }} a {{ hasta }} anos{% endblocktranslate %}
+    </span>
+  {% elif row.supplement_type == "after_hours" %}
+    <span class="block text-slate-400">
+      {% blocktranslate with desde=row.hours_from|time:"H:i" hasta=row.hours_to|time:"H:i" %}Fuera de {{ desde }}-{{ hasta }}{% endblocktranslate %}
+    </span>
+  {% elif row.supplement_type == "airport" %}
+    <span class="block text-slate-400">
+      {% for oficina in row.offices.all %}{{ oficina.name }}{% if not forloop.last %}, {% endif %}{% empty %}{% translate "sin oficinas: no se aplica" %}{% endfor %}
+    </span>
+  {% endif %}
+</td>
+<td class="tabular text-right">
+  {% if row.amount_type == "percent" %}{{ row.amount|floatformat:2 }} %{% else %}{{ row.amount|floatformat:2 }} €{% endif %}
+</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activo only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactivo only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.pricing.change_supplement %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'pricing:supplement_update' row.pk %}"
+       hx-get="{% url 'pricing:supplement_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+    {% if row.is_active %}
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'pricing:supplement_deactivate' row.pk %}" hx-swap="none"
+              hx-confirm="{% blocktranslate with nombre=row.name %}{{ nombre }} dejara de cobrarse en reservas nuevas.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Desactivar suplemento' %}"
+              data-confirm-aceptar="{% translate 'Desactivar' %}">
+        {% translate "Desactivar" %}
+      </button>
+    {% else %}
+      <button type="button" class="btn-ghost px-2 py-1"
+              hx-post="{% url 'pricing:supplement_activate' row.pk %}" hx-swap="none">
+        {% translate "Activar" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

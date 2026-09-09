@@ -1,0 +1,23 @@
+{% load i18n %}
+{% translate "Activa" as etiqueta_activa %}
+{% translate "Desactivada" as etiqueta_inactiva %}
+<td class="font-mono tabular text-slate-600">{{ row.code }}</td>
+<td class="font-medium text-slate-900">{{ row.name }}</td>
+<td>{{ row.city|default:"—" }}{% if row.province %} <span class="text-slate-400">· {{ row.province }}</span>{% endif %}</td>
+<td>{{ row.pool.name|default:"—" }}</td>
+<td class="text-slate-600">{{ row.phone|default:row.email|default:"—" }}</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activa only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactiva only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% url 'offices:office_update' row.pk as edit_url %}
+  {% url 'offices:office_activate' row.pk as activate_url %}
+  {% url 'offices:office_deactivate' row.pk as deactivate_url %}
+  {% blocktranslate asvar aviso with nombre=row.name %}{{ nombre }} dejara de aparecer en reservas nuevas y sus usuarios perderan el acceso. No se borra: el historico la sigue viendo.{% endblocktranslate %}
+  {% translate "Desactivar oficina" as titulo_aviso %}
+  {% include "offices/_actions.html" with puede_editar=perms.offices.change_office edit_url=edit_url activate_url=activate_url deactivate_url=deactivate_url confirm_message=aviso confirm_title=titulo_aviso %}
+</td>

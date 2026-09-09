@@ -1,11 +1,28 @@
 """Etiquetas de plantilla del sistema de interfaz."""
 
-from django import template
+from django import forms, template
 from django.urls import resolve
 
 from ..badges import classes_for
 
 register = template.Library()
+
+
+@register.simple_tag(name="widget_kind")
+def widget_kind(field) -> str:
+    """Como hay que pintar un campo: "checkbox", "choices" o "input".
+
+    No vale mirar `widget.input_type`: `CheckboxSelectMultiple` tambien dice
+    "checkbox", y tratarlo como un checkbox suelto mete la lista entera de
+    opciones dentro de la etiqueta, con el texto pisandose. Aqui se distingue
+    por el widget, que es lo que de verdad cambia el marcado.
+    """
+    widget = field.field.widget
+    if isinstance(widget, forms.CheckboxSelectMultiple | forms.RadioSelect):
+        return "choices"
+    if isinstance(widget, forms.CheckboxInput):
+        return "checkbox"
+    return "input"
 
 
 @register.simple_tag(name="badge_classes")

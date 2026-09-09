@@ -1,0 +1,125 @@
+{% load i18n %}
+{% comment %} Resultado del simulador: el desglose que devuelve el motor.
+
+   Ensena la tarifa y el tramo aplicados, no solo el total: cuando el precio no
+   es el esperado, eso es lo que hay que mirar. {% endcomment %}
+
+{% if pricing_error %}
+  <section class="card border-rose-200">
+    <div class="card-header border-rose-200 bg-rose-50">
+      <h2 class="card-title text-rose-900">{% translate "No se puede poner precio" %}</h2>
+      <span class="font-mono text-xs text-rose-700">{{ pricing_error_type }}</span>
+    </div>
+    <div class="px-5 py-4">
+      <p class="text-sm text-rose-800">{{ pricing_error }}</p>
+      <p class="mt-3 text-xs text-slate-500">
+        {% translate "Es el mismo error que veria el mostrador. Revisa las tarifas de esa categoria, oficina y canal." %}
+      </p>
+    </div>
+  </section>
+
+{% elif breakdown %}
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Desglose" %}</h2>
+      <span class="text-lg font-semibold tabular text-slate-900">
+        {{ breakdown.total|floatformat:2 }} €
+      </span>
+    </div>
+
+    <dl class="grid grid-cols-2 gap-x-4 gap-y-3 border-b border-line px-5 py-4 text-sm sm:grid-cols-4">
+      <div>
+        <dt class="text-slate-500">{% translate "Dias facturados" %}</dt>
+        <dd class="font-medium tabular">{{ breakdown.rental_days }}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500">{% translate "Tarifa aplicada" %}</dt>
+        <dd class="font-medium">
+          {% if breakdown.applied_rate %}
+            {{ breakdown.applied_rate.name }}
+            <span class="block font-mono text-xs font-normal text-slate-500">
+              {{ breakdown.applied_rate.code }} · {{ breakdown.applied_rate.get_tier_mode_display }}
+            </span>
+          {% else %}—{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-slate-500">{% translate "Tramo aplicado" %}</dt>
+        <dd class="font-medium tabular">{{ breakdown.applied_tier|default:"—" }}</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500">{% translate "Temporada" %}</dt>
+        <dd class="font-medium">{{ breakdown.applied_season.name|default:"—" }}</dd>
+      </div>
+    </dl>
+
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Concepto" %}</th>
+            <th scope="col" class="w-20 text-right">{% translate "Cant." %}</th>
+            <th scope="col" class="w-28 text-right">{% translate "Precio" %}</th>
+            <th scope="col" class="w-28 text-right">{% translate "Base" %}</th>
+            <th scope="col" class="w-20 text-right">{% translate "IVA" %}</th>
+            <th scope="col" class="w-28 text-right">{% translate "Total" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for linea in breakdown.lines %}
+            <tr>
+              <td>
+                {{ linea.concept }}
+                {% if linea.source_code %}
+                  <span class="ml-1 font-mono text-xs text-slate-400">{{ linea.source_code }}</span>
+                {% endif %}
+              </td>
+              <td class="tabular text-right">{{ linea.quantity|floatformat:0 }}</td>
+              <td class="tabular text-right">{{ linea.unit_price|floatformat:2 }}</td>
+              <td class="tabular text-right">{{ linea.base|floatformat:2 }}</td>
+              <td class="tabular text-right text-slate-500">{{ linea.tax_rate|floatformat:0 }}%</td>
+              <td class="tabular text-right font-medium">{{ linea.total|floatformat:2 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <dl class="flex flex-wrap justify-end gap-x-8 gap-y-2 border-t border-line px-5 py-3 text-sm">
+      <div class="text-right">
+        <dt class="text-slate-500">{% translate "Base imponible" %}</dt>
+        <dd class="tabular font-medium">{{ breakdown.taxable_base|floatformat:2 }} €</dd>
+      </div>
+      <div class="text-right">
+        <dt class="text-slate-500">{% translate "Impuestos" %}</dt>
+        <dd class="tabular font-medium">{{ breakdown.tax_total|floatformat:2 }} €</dd>
+      </div>
+      <div class="text-right">
+        <dt class="text-slate-500">{% translate "Total" %}</dt>
+        <dd class="tabular text-base font-semibold">{{ breakdown.total|floatformat:2 }} €</dd>
+      </div>
+    </dl>
+
+    {% if breakdown.warnings %}
+      <div class="border-t border-line bg-amber-50 px-5 py-3">
+        {% for aviso in breakdown.warnings %}
+          <p class="text-xs text-amber-900">· {{ aviso }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <details class="border-t border-line px-5 py-3">
+      <summary class="cursor-pointer text-xs text-slate-500">
+        {% translate "Ver el desglose en JSON (es lo que se guardara en la reserva)" %}
+      </summary>
+      <pre class="mt-2 max-h-64 overflow-auto rounded-lg bg-slate-50 p-3 text-xs">{{ breakdown_json }}</pre>
+    </details>
+  </section>
+
+{% else %}
+  {% translate "Sin calcular todavia" as titulo_vacio %}
+  {% translate "Rellena la consulta y pulsa Calcular precio: veras el total y, sobre todo, que tarifa y que tramo se han aplicado." as mensaje_vacio %}
+  <section class="card">
+    {% include "ui/_empty.html" with empty_title=titulo_vacio empty_message=mensaje_vacio only %}
+  </section>
+{% endif %}

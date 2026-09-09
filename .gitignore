@@ -9,6 +9,7 @@ venv/
 *.log
 /staticfiles/
 /media/
+/private-media/
 /static/css/app.css
 /static/js/htmx.min.js
 /static/js/alpine.min.js

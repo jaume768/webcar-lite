@@ -1,0 +1,38 @@
+{% load i18n %}
+{% translate "En curso" as etiqueta_curso %}
+{% translate "Programado" as etiqueta_futuro %}
+{% translate "Terminado" as etiqueta_pasado %}
+<td class="font-mono tabular font-medium text-slate-900">{{ row.vehicle.plate }}</td>
+<td>{{ row.vehicle.brand }} {{ row.vehicle.model }}</td>
+<td class="tabular">{{ row.start_at|date:"d/m/Y H:i" }}</td>
+<td class="tabular">{{ row.end_at|date:"d/m/Y H:i" }}</td>
+<td>
+  {{ row.get_reason_display }}
+  {% if row.notes %}<span class="block text-xs text-slate-500">{{ row.notes|truncatechars:60 }}</span>{% endif %}
+</td>
+<td>
+  {% if row.is_current %}
+    {% include "ui/_badge.html" with status="blocked" label=etiqueta_curso only %}
+  {% elif row.is_past %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_pasado only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="reserved" label=etiqueta_futuro only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.fleet.change_vehicleblock %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'fleet:block_update' row.pk %}"
+       hx-get="{% url 'fleet:block_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+  {% endif %}
+  {% if perms.fleet.delete_vehicleblock %}
+    <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+            hx-post="{% url 'fleet:block_delete' row.pk %}" hx-swap="none"
+            hx-confirm="{% blocktranslate with matricula=row.vehicle.plate %}Se anulara el bloqueo de {{ matricula }} y el coche volvera a poder alquilarse en esas fechas.{% endblocktranslate %}"
+            data-confirm-titulo="{% translate 'Anular bloqueo' %}"
+            data-confirm-aceptar="{% translate 'Anular' %}">
+      {% translate "Anular" %}
+    </button>
+  {% endif %}
+</td>

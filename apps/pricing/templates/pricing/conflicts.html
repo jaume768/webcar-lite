@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Conflictos entre tarifas" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block page_actions %}
+  <a class="btn-secondary" href="{% url 'pricing:simulator' %}">{% translate "Simulador" %}</a>
+  <a class="btn-secondary" href="{% url 'pricing:rate_list' %}">{% translate "Tarifas" %}</a>
+{% endblock %}
+
+{% block content %}
+  {% if conflicts %}
+    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+      <p class="text-sm text-amber-900">
+        {% blocktranslate count n=conflicts|length %}
+          Hay {{ n }} combinacion en la que dos tarifas empatan. Sube la prioridad de una de ellas
+          o acota su alcance.
+        {% plural %}
+          Hay {{ n }} combinaciones en las que dos tarifas empatan. Sube la prioridad de una de
+          ellas o acota su alcance.
+        {% endblocktranslate %}
+      </p>
+    </div>
+
+    <section class="card">
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Categoria" %}</th>
+              <th scope="col">{% translate "Canal" %}</th>
+              <th scope="col">{% translate "Tarifas que empatan" %}</th>
+              <th scope="col">{% translate "Motivo" %}</th>
+              <th scope="col" class="text-right">{% translate "Acciones" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for conflicto in conflicts %}
+              <tr>
+                <td class="font-medium text-slate-900">{{ conflicto.category.name }}</td>
+                <td>{{ conflicto.rate_a.get_channel_display }}</td>
+                <td>
+                  <span class="font-mono text-xs">{{ conflicto.rate_a.code }}</span>
+                  <span class="text-slate-400">↔</span>
+                  <span class="font-mono text-xs">{{ conflicto.rate_b.code }}</span>
+                  <span class="block text-xs text-slate-500">
+                    {{ conflicto.rate_a.name }} / {{ conflicto.rate_b.name }}
+                  </span>
+                </td>
+                <td class="text-xs text-slate-600">
+                  {{ conflicto.reason }}
+                  <span class="block text-slate-400">
+                    {% blocktranslate with dias=conflicto.sample_days %}Por ejemplo, con {{ dias }} dias de alquiler.{% endblocktranslate %}
+                  </span>
+                </td>
+                <td class="text-right whitespace-nowrap">
+                  {% if perms.pricing.change_rate %}
+                    <a class="btn-ghost px-2 py-1" href="{% url 'pricing:rate_update' conflicto.rate_a.pk %}"
+                       hx-get="{% url 'pricing:rate_update' conflicto.rate_a.pk %}"
+                       hx-target="#modal-host" hx-swap="innerHTML">
+                      {{ conflicto.rate_a.code }}
+                    </a>
+                    <a class="btn-ghost px-2 py-1" href="{% url 'pricing:rate_update' conflicto.rate_b.pk %}"
+                       hx-get="{% url 'pricing:rate_update' conflicto.rate_b.pk %}"
+                       hx-target="#modal-host" hx-swap="innerHTML">
+                      {{ conflicto.rate_b.code }}
+                    </a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="mt-4 text-xs text-slate-500">
+      {% translate "Un empate aqui es un error NoRateAvailable/AmbiguousRate en el mostrador, con un cliente delante esperando el precio." %}
+    </p>
+
+  {% else %}
+    {% translate "Ninguna tarifa se pisa" as titulo_vacio %}
+    {% translate "Para cada combinacion de categoria, oficina, canal y fechas hay una sola tarifa ganadora." as mensaje_vacio %}
+    <section class="card">
+      {% include "ui/_empty.html" with empty_title=titulo_vacio empty_message=mensaje_vacio only %}
+    </section>
+  {% endif %}
+{% endblock %}

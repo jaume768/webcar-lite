@@ -1,0 +1,47 @@
+{% load i18n %}
+{% translate "En catalogo" as etiqueta_activo %}
+{% translate "Retirado" as etiqueta_inactivo %}
+<td class="tabular text-slate-500">{{ row.sort_order }}</td>
+<td class="font-mono tabular text-slate-600">{{ row.code }}</td>
+<td class="font-medium text-slate-900">
+  {{ row.name }}
+  {% if row.requires_driver_data %}
+    <span class="block text-xs font-normal text-slate-500">
+      {% translate "Pide datos de conductor" %}
+    </span>
+  {% endif %}
+</td>
+<td>{{ row.get_calculation_type_display }}</td>
+<td class="tabular text-right">{{ row.price|floatformat:2 }} €</td>
+<td class="tabular text-right">
+  {% if row.max_amount %}{{ row.max_amount|floatformat:2 }} €{% else %}—{% endif %}
+</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activo only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactivo only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.pricing.change_extra %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'pricing:extra_update' row.pk %}"
+       hx-get="{% url 'pricing:extra_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+    {% if row.is_active %}
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'pricing:extra_deactivate' row.pk %}" hx-swap="none"
+              hx-confirm="{% blocktranslate with nombre=row.name %}{{ nombre }} dejara de ofrecerse en reservas nuevas. Las que ya lo llevan no cambian.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Retirar extra' %}"
+              data-confirm-aceptar="{% translate 'Retirar' %}">
+        {% translate "Retirar" %}
+      </button>
+    {% else %}
+      <button type="button" class="btn-ghost px-2 py-1"
+              hx-post="{% url 'pricing:extra_activate' row.pk %}" hx-swap="none">
+        {% translate "Reponer" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

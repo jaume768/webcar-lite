@@ -1,0 +1,18 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+{% comment %} Formulario del patron CRUD servido dentro del modal generico.
+
+   La vista (core.crud.ModalFormMixin) lo devuelve contra #modal-host. Al
+   guardar, la respuesta llega vacia: el modal se queda sin contenido y
+   desaparece, y el listado se refresca por el evento de la cabecera. {% endcomment %}
+
+{% block modal_title %}{{ modal_title }}{% endblock %}
+
+{% block modal_body %}
+  {% include "ui/_form_body.html" %}
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="{{ form_id }}" class="btn-primary">{{ submit_label }}</button>
+{% endblock %}

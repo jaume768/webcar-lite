@@ -68,10 +68,10 @@ static/            estáticos servidos (CSS compilado, HTMX y Alpine vendorizado
 apps/
   core/            base, mixins, utils, healthcheck, plantillas base
   accounts/        User, Role, permisos, scope de oficina
-  offices/         Office
-  customers/       Customer, Driver, documentos
+  offices/         Office, OfficePool (agrupación de oficinas para el one-way)
+  customers/       Customer, documentos privados, validacion DNI/NIE
   fleet/           VehicleCategory, Vehicle, VehicleBlock
-  pricing/         Rate, RateTier, Season, Extra, motor de cálculo
+  pricing/         Season, Rate, RateTier, Extra, Supplement, Discount + motor de cálculo
   availability/    motor de disponibilidad
   reservations/    Reservation y máquina de estados
   operations/      CheckIn, CheckOut, Damage
@@ -82,7 +82,9 @@ apps/
   settings_app/    CompanySettings
 ```
 
-Las apps están creadas y registradas en `INSTALLED_APPS`, todavía sin modelos.
+Con modelos y pantallas: `accounts`, `offices`, `fleet` (categorías, vehículos y bloqueos),
+`customers` y `pricing` (tarifas, tramos, temporadas, extras, suplementos y descuentos).
+El resto están creadas y registradas en `INSTALLED_APPS`, todavía sin modelos.
 
 ## Base de datos
 
@@ -203,6 +205,64 @@ entre las permitidas: un POST manipulado recibe un 403. De dónde sale la lista 
 `core.middleware.CurrentUserMiddleware`, no de la request: así funciona igual en vistas, comandos
 y tareas de Celery (`with current_user(usuario): ...`). El contextvar se resetea al terminar cada
 petición, y hay un test con hilos concurrentes que lo comprueba.
+
+## Maestros y patrón CRUD
+
+Oficinas, grupos de oficinas y categorías de vehículo son las primeras pantallas de
+mantenimiento, y fijan el patrón que sigue el resto: listado con `django-filter`, formulario en
+modal por HTMX, validación en servidor (**422** con los errores) y baja lógica. Está documentado
+en [`docs/patrones/crud.md`](docs/patrones/crud.md) y las piezas comunes viven en
+`apps/core/crud.py`.
+
+Maestros disponibles: **oficinas**, **grupos de oficinas**, **categorías**, **vehículos**,
+**bloqueos de vehículo**, **clientes**, **extras**, **tarifas** (con sus tramos),
+**temporadas**, **suplementos** y **descuentos**.
+
+Ningún maestro se borra: se desactiva. No hay botón de borrar, no hay ruta de borrado y
+`ActivableModel.delete()` lanza `PhysicalDeleteNotAllowed` si alguien lo intenta desde código.
+Una categoría retirada deja de ofrecerse en reservas nuevas
+(`fleet.selectors.selectable_categories()`) pero sigue leyéndose en el histórico y en el listado.
+
+### Detalles que no se ven en la pantalla
+
+- **Bloqueos de vehículo**: una `ExclusionConstraint` sobre `tstzrange` impide en la propia base
+  de datos que dos bloqueos del mismo coche se solapen. El formulario avisa antes con un mensaje
+  legible, pero contra dos usuarios guardando a la vez el único que llega a tiempo es Postgres.
+  Es el único borrado físico del sistema: un bloqueo anulado tiene que dejar de ocupar hueco.
+- **Estado del vehículo**: es derivado de la operativa. `ALQUILADO` lo pone el check-in
+  (`fleet.services.start_rental`) y lo quita el check-out (`finish_rental`); desde la ficha solo
+  se ponen los estados de `MANUAL_STATUSES`, y nunca sobre un coche que está fuera.
+- **Documento del cliente**: DNI y NIE se validan con su letra de control; el pasaporte no se
+  valida por patrón, porque cada país tiene el suyo y rechazarlo sería rechazar clientes reales.
+- **Búsqueda de clientes**: columna `search_text` (minúsculas y sin acentos) con índice GIN
+  trigram. "gonzal" encuentra "González" en menos de 100 ms con 50.000 clientes; hay un test de
+  volumen que lo comprueba (`make test ARGS="-m slow"`).
+- **Documentos escaneados**: fuera de `MEDIA_ROOT`, en un almacén sin URL. Se descargan por una
+  vista que comprueba permisos.
+
+## Motor de tarifas
+
+Un único sitio donde se calcula un precio: `pricing.services.calculate_reservation_price()`.
+Recibe un `PriceQuoteInput` y devuelve un `PriceBreakdown` con el desglose línea a línea, listo
+para pintar en la ficha de reserva o para volcar a factura. No conoce `Reservation`, así que se
+puede pedir un presupuesto antes de que la reserva exista.
+
+El administrador lo configura entero desde la aplicación: tarifas con editor de tramos,
+temporadas, suplementos, descuentos, un **simulador** que calcula con la configuración real y una
+pantalla de **conflictos** que avisa de dos tarifas que se pisan.
+
+Documentado en [`docs/motor-tarifas.md`](docs/motor-tarifas.md), incluido lo que más sorprende:
+
+- `rental_days()` es la **única** función que convierte fechas en días facturables (24 h + margen
+  de cortesía configurable).
+- Una reserva que cruza temporada se cobra entera a la de la **fecha de recogida**, y lo avisa.
+- Tramos en modo **PLANO** (por defecto): 7 días = 280 € y 8 días = 280 €. Alargar puede abaratar,
+  es intencionado y hay un test que lo fija para que nadie lo "arregle". El modo **PROGRESIVO**
+  está implementado para quien lo quiera.
+- Sin tarifa aplicable → `NoRateAvailable`. Con dos tarifas igual de aplicables → `AmbiguousRate`.
+  Nunca un precio 0 ni una elección silenciosa.
+- `Decimal` y `ROUND_HALF_UP`, redondeando al cerrar cada línea. Un test de propiedad con 1.000
+  combinaciones aleatorias comprueba que base + IVA cuadra con el total al céntimo.
 
 ## Acceso y permisos
 

@@ -1,0 +1,63 @@
+{% load i18n %}
+{% translate "Activa" as etiqueta_activa %}
+{% translate "Desactivada" as etiqueta_inactiva %}
+<td class="font-mono tabular text-slate-600">{{ row.code }}</td>
+<td class="font-medium text-slate-900">
+  {{ row.name }}
+  <span class="block text-xs font-normal text-slate-500">
+    {% for categoria in row.categories.all %}{{ categoria.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    ·
+    {% if row.offices.all %}
+      {% for oficina in row.offices.all %}{{ oficina.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    {% else %}{% translate "todas las oficinas" %}{% endif %}
+  </span>
+</td>
+<td>{{ row.get_channel_display }}</td>
+<td>{{ row.season.name|default:"—" }}</td>
+<td class="text-xs">
+  {% for tramo in row.tiers.all %}
+    <span class="font-mono tabular">{{ tramo }}</span>{% if not forloop.last %}<br>{% endif %}
+  {% empty %}
+    <span class="text-rose-700">{% translate "Sin tramos: no tiene precio" %}</span>
+  {% endfor %}
+  <span class="mt-0.5 block text-slate-400">{{ row.get_tier_mode_display }}</span>
+</td>
+<td class="tabular text-right">{{ row.priority }}</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activa only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactiva only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.pricing.change_rate %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'pricing:rate_update' row.pk %}"
+       hx-get="{% url 'pricing:rate_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+  {% endif %}
+  {% if perms.pricing.add_rate %}
+    {# Duplicar y ajustar: es como se monta la temporada alta desde la baja. #}
+    <button type="button" class="btn-ghost px-2 py-1"
+            hx-post="{% url 'pricing:rate_duplicate' row.pk %}" hx-swap="none">
+      {% translate "Duplicar" %}
+    </button>
+  {% endif %}
+  {% if perms.pricing.change_rate %}
+    {% if row.is_active %}
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'pricing:rate_deactivate' row.pk %}" hx-swap="none"
+              hx-confirm="{% blocktranslate with nombre=row.name %}{{ nombre }} dejara de usarse para poner precio a reservas nuevas.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Desactivar tarifa' %}"
+              data-confirm-aceptar="{% translate 'Desactivar' %}">
+        {% translate "Desactivar" %}
+      </button>
+    {% else %}
+      <button type="button" class="btn-ghost px-2 py-1"
+              hx-post="{% url 'pricing:rate_activate' row.pk %}" hx-swap="none">
+        {% translate "Activar" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

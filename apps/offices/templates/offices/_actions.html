@@ -1,0 +1,25 @@
+{% load i18n %}
+{% comment %} Acciones de una fila de maestro: editar y activar/desactivar.
+
+   Se reutiliza en oficinas y en grupos pasando las tres rutas. El borrado no
+   esta, y no falta: los maestros solo se dan de baja. {% endcomment %}
+{% if puede_editar %}
+  <a class="btn-ghost px-2 py-1" href="{{ edit_url }}"
+     hx-get="{{ edit_url }}" hx-target="#modal-host" hx-swap="innerHTML">
+    {% translate "Editar" %}
+  </a>
+  {% if row.is_active %}
+    <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+            hx-post="{{ deactivate_url }}" hx-swap="none"
+            hx-confirm="{{ confirm_message }}"
+            data-confirm-titulo="{{ confirm_title }}"
+            data-confirm-aceptar="{% translate 'Desactivar' %}">
+      {% translate "Desactivar" %}
+    </button>
+  {% else %}
+    <button type="button" class="btn-ghost px-2 py-1"
+            hx-post="{{ activate_url }}" hx-swap="none">
+      {% translate "Reactivar" %}
+    </button>
+  {% endif %}
+{% endif %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %} El mismo formulario del modal, como pagina completa.
+
+   Es lo que se sirve cuando la peticion no viene de HTMX: entrar por la URL
+   directa, o navegar sin JavaScript, tiene que llevar a un formulario que
+   funcione igual. {% endcomment %}
+
+{% block title %}{{ modal_title }} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block content %}
+  <div class="card max-w-2xl">
+    <div class="card-header"><h2 class="card-title">{{ modal_title }}</h2></div>
+    <div class="px-5 py-4">{% include "ui/_form_body.html" %}</div>
+    <div class="flex justify-end gap-2 border-t border-line bg-slate-50 px-5 py-3">
+      <a class="btn-secondary" href="{{ cancel_url }}">{% translate "Cancelar" %}</a>
+      <button type="submit" form="{{ form_id }}" class="btn-primary">{{ submit_label }}</button>
+    </div>
+  </div>
+{% endblock %}

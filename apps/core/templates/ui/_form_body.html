@@ -1,0 +1,46 @@
+{% load i18n %}
+{% comment %} Cuerpo de un formulario del patron CRUD.
+
+   Lo comparten el modal (ui/_modal_form.html) y la pagina completa
+   (ui/_form_page.html): el mismo formulario se envia por HTMX o como POST de
+   toda la vida, sin duplicar el marcado.
+
+   El boton de guardar vive fuera del <form> en el modal, asi que se enlaza por
+   `form="{{ form_id }}"`; por eso el id tiene que ser unico en la pagina. {% endcomment %}
+<form id="{{ form_id }}" method="post" action="{{ form_action }}"
+      enctype="multipart/form-data"
+      hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML"
+      hx-encoding="multipart/form-data"
+      novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2" role="alert">
+      {% for error in form.non_field_errors %}
+        <p class="text-sm font-medium text-rose-700">{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+
+  {% for field in form.visible_fields %}
+    {% include "ui/_field.html" %}
+  {% endfor %}
+
+  {% comment %} Formulario con hijos (los tramos de una tarifa): la vista pasa
+     `formset` y `formset_template`, y el bloque se pinta dentro del mismo form.
+     Van juntos a proposito: unos tramos sin su tarifa no significan nada, y
+     guardarlos por separado dejaria la tarifa a medias. {% endcomment %}
+  {% if formset %}
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2" role="alert">
+        {% for error in formset.non_form_errors %}
+          <p class="text-sm font-medium text-rose-700">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% include formset_template %}
+  {% endif %}
+</form>

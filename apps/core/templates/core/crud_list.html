@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %} Listado generico del patron CRUD: cabecera, boton de alta y tabla.
+
+   Una pantalla de maestro no necesita plantilla propia: la vista aporta las
+   columnas, la plantilla de fila y la URL de alta. {% endcomment %}
+
+{% block title %}{{ page_title }} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block page_actions %}
+  {% if create_url %}
+    {# href real para quien navegue sin JS; con HTMX se abre en modal. #}
+    <a class="btn-primary" href="{{ create_url }}"
+       hx-get="{{ create_url }}" hx-target="#modal-host" hx-swap="innerHTML">
+      {{ create_label }}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% include "ui/_table.html" %}
+{% endblock %}

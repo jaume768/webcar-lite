@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
@@ -10,6 +12,10 @@ urlpatterns = [
     # gestion del cliente: ruta poco evidente y solo para staff.
     path("admin-interno/", admin.site.urls),
     path("", include("apps.accounts.urls")),
+    path("", include("apps.offices.urls")),
+    path("", include("apps.fleet.urls")),
+    path("", include("apps.customers.urls")),
+    path("", include("apps.pricing.urls")),
     path("", include("apps.core.urls")),
 ]
 
@@ -21,3 +27,7 @@ urlpatterns += [
         ["registro/", "signup/", "register/", "alta/", "accounts/signup/"]
     )
 ]
+
+# Imagenes subidas (fotos de categoria). En produccion las sirve el proxy.
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

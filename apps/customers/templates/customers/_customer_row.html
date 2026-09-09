@@ -1,0 +1,53 @@
+{% load i18n %}
+{% translate "Activo" as etiqueta_activo %}
+{% translate "De baja" as etiqueta_inactivo %}
+{% translate "Conflictivo" as etiqueta_marcado %}
+<td class="font-medium text-slate-900">
+  <a class="hover:underline" href="{% url 'customers:customer_detail' row.pk %}">
+    {{ row.last_name }}, {{ row.first_name }}
+  </a>
+  {% if row.office %}<span class="block text-xs text-slate-400">{{ row.office.name }}</span>{% endif %}
+</td>
+<td class="font-mono tabular text-slate-600">
+  {{ row.document_number }}
+  <span class="block text-xs text-slate-400">{{ row.get_document_type_display }}</span>
+</td>
+<td class="text-slate-600">
+  {{ row.phone|default:"—" }}
+  {% if row.email %}<span class="block text-xs text-slate-400">{{ row.email }}</span>{% endif %}
+</td>
+<td class="tabular text-right">{{ row.age|default:"—" }}</td>
+<td class="whitespace-nowrap">
+  {% if row.is_blacklisted %}
+    {% include "ui/_badge.html" with status="blacklisted" label=etiqueta_marcado only %}
+  {% elif row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activo only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactivo only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  <a class="btn-ghost px-2 py-1" href="{% url 'customers:customer_detail' row.pk %}">
+    {% translate "Ficha" %}
+  </a>
+  {% if perms.customers.change_customer %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'customers:customer_update' row.pk %}"
+       hx-get="{% url 'customers:customer_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+    {% if row.is_active %}
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'customers:customer_deactivate' row.pk %}" hx-swap="none"
+              hx-confirm="{% blocktranslate with nombre=row.full_name %}{{ nombre }} dejara de ofrecerse al crear reservas. No se borra: sus reservas y facturas siguen igual.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Dar de baja al cliente' %}"
+              data-confirm-aceptar="{% translate 'Dar de baja' %}">
+        {% translate "Baja" %}
+      </button>
+    {% else %}
+      <button type="button" class="btn-ghost px-2 py-1"
+              hx-post="{% url 'customers:customer_activate' row.pk %}" hx-swap="none">
+        {% translate "Reactivar" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

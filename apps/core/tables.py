@@ -45,7 +45,17 @@ class Table:
     row_template: str
     search_value: str = ""
     search_placeholder: str = ""
+    #: Filtros armados a mano por la vista (sin django-filter).
     filters: list[Filter] = field(default_factory=list)
+    #: Formulario de un FilterSet de django-filter. El campo de busqueda `q` no
+    #: se pinta aqui: ya lo sirve el buscador de la cabecera.
+    filter_form: object = None
+    #: Evento de servidor que obliga a la tabla a recargarse sola (ver
+    #: core.crud.EVENTO_GUARDADO). Vacio: la tabla no escucha nada.
+    refresh_event: str = ""
+    #: URL con la que se recarga al recibir ese evento. Vacio: `url`. Se usa
+    #: para conservar busqueda y filtros al refrescar.
+    refresh_url: str = ""
     empty_title: str = ""
     empty_message: str = ""
 

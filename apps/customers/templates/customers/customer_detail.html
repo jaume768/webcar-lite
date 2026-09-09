@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ customer.full_name }} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block page_actions %}
+  {% if perms.customers.change_customer %}
+    <a class="btn-secondary" href="{% url 'customers:customer_blacklist' customer.pk %}"
+       hx-get="{% url 'customers:customer_blacklist' customer.pk %}"
+       hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Marca de cliente" %}
+    </a>
+    <a class="btn-primary" href="{% url 'customers:customer_update' customer.pk %}"
+       hx-get="{% url 'customers:customer_update' customer.pk %}"
+       hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if customer.is_blacklisted %}
+    <div class="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3" role="alert">
+      <p class="text-sm font-semibold text-rose-800">{% translate "Cliente conflictivo" %}</p>
+      <p class="mt-1 text-sm text-rose-700">{{ customer.blacklist_reason }}</p>
+    </div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-2">
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Datos personales" %}</h2></div>
+      <dl class="grid grid-cols-2 gap-x-4 gap-y-3 px-5 py-4 text-sm">
+        <div><dt class="text-slate-500">{% translate "Documento" %}</dt>
+          <dd class="font-mono tabular">{{ customer.get_document_type_display }} {{ customer.document_number }}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Caducidad" %}</dt>
+          <dd>{{ customer.document_expiry|date:"d/m/Y"|default:"—" }}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Nacimiento" %}</dt>
+          <dd>{{ customer.birth_date|date:"d/m/Y"|default:"—" }}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Edad" %}</dt>
+          <dd>{% if customer.age %}{% blocktranslate with edad=customer.age %}{{ edad }} anos{% endblocktranslate %}{% else %}—{% endif %}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Nacionalidad" %}</dt>
+          <dd>{{ customer.nationality }}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Oficina de alta" %}</dt>
+          <dd>{{ customer.office.name|default:"—" }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Contacto" %}</h2></div>
+      <dl class="grid grid-cols-2 gap-x-4 gap-y-3 px-5 py-4 text-sm">
+        <div><dt class="text-slate-500">{% translate "Telefono" %}</dt>
+          <dd>{{ customer.phone|default:"—" }}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Alternativo" %}</dt>
+          <dd>{{ customer.phone_alt|default:"—" }}</dd></div>
+        <div class="col-span-2"><dt class="text-slate-500">{% translate "Correo" %}</dt>
+          <dd>{{ customer.email|default:"—" }}</dd></div>
+        <div class="col-span-2"><dt class="text-slate-500">{% translate "Direccion" %}</dt>
+          <dd>{{ customer.address|default:"—" }}<br>
+            {{ customer.postal_code }} {{ customer.city }}{% if customer.province %} ({{ customer.province }}){% endif %}</dd></div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Datos de conduccion" %}</h2></div>
+      <dl class="grid grid-cols-2 gap-x-4 gap-y-3 px-5 py-4 text-sm">
+        <div><dt class="text-slate-500">{% translate "Numero de carnet" %}</dt>
+          <dd class="font-mono tabular">{{ customer.licence_number|default:"—" }}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Pais" %}</dt>
+          <dd>{{ customer.licence_country }}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Expedicion" %}</dt>
+          <dd>{{ customer.licence_issued_on|date:"d/m/Y"|default:"—" }}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Antiguedad" %}</dt>
+          <dd>{% if customer.licence_years is not None %}{% blocktranslate with anos=customer.licence_years %}{{ anos }} anos{% endblocktranslate %}{% else %}—{% endif %}</dd></div>
+        <div><dt class="text-slate-500">{% translate "Caducidad" %}</dt>
+          <dd>{{ customer.licence_expiry|date:"d/m/Y"|default:"—" }}</dd></div>
+      </dl>
+    </section>
+
+    {% partialdef documentos inline %}
+    {% comment %} Se recarga sola cuando el servidor avisa de que se ha subido o
+       borrado un documento (evento crud:guardado). {% endcomment %}
+    <section class="card" id="documentos"
+             hx-get="{% url 'customers:customer_detail' customer.pk %}"
+             hx-trigger="crud:guardado from:body"
+             hx-target="this" hx-swap="outerHTML">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Documentos" %}</h2>
+        {% if perms.customers.change_customer %}
+          <a class="btn-secondary py-1.5" href="{% url 'customers:document_create' customer.pk %}"
+             hx-get="{% url 'customers:document_create' customer.pk %}"
+             hx-target="#modal-host" hx-swap="innerHTML">
+            {% translate "Adjuntar" %}
+          </a>
+        {% endif %}
+      </div>
+
+      {% if documents %}
+        <ul class="divide-y divide-line">
+          {% for documento in documents %}
+            <li class="flex items-center justify-between gap-3 px-5 py-3 text-sm">
+              <div class="min-w-0">
+                <p class="font-medium text-slate-800">{{ documento.get_kind_display }}</p>
+                <p class="truncate text-xs text-slate-500">
+                  {{ documento.original_name|default:documento.file.name }}
+                  · {{ documento.created_at|date:"d/m/Y H:i" }}
+                </p>
+              </div>
+              <div class="flex shrink-0 items-center gap-1">
+                {# Sin URL publica: lo entrega la vista, que comprueba permisos. #}
+                <a class="btn-ghost px-2 py-1"
+                   href="{% url 'customers:document_download' documento.pk %}">
+                  {% translate "Descargar" %}
+                </a>
+                {% if perms.customers.change_customer %}
+                  <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+                          hx-post="{% url 'customers:document_delete' documento.pk %}"
+                          hx-swap="none"
+                          hx-confirm="{% translate 'El fichero se borra del disco y no se puede recuperar.' %}"
+                          data-confirm-titulo="{% translate 'Borrar documento' %}"
+                          data-confirm-aceptar="{% translate 'Borrar' %}">
+                    {% translate "Borrar" %}
+                  </button>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="px-5 py-6 text-sm text-slate-500">
+          {% translate "Sin documentos. Adjunta el DNI o el carnet escaneados." %}
+        </p>
+      {% endif %}
+    </section>
+    {% endpartialdef %}
+
+    {% if customer.notes %}
+      <section class="card lg:col-span-2">
+        <div class="card-header"><h2 class="card-title">{% translate "Notas internas" %}</h2></div>
+        <p class="px-5 py-4 text-sm whitespace-pre-line text-slate-700">{{ customer.notes }}</p>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,6 +1,7 @@
 """Ajustes comunes a todos los entornos."""
 
 from datetime import timedelta
+from decimal import Decimal
 from pathlib import Path
 
 import environ
@@ -12,6 +13,7 @@ env = environ.Env(
     DJANGO_DEBUG=(bool, False),
     DJANGO_ALLOWED_HOSTS=(list, []),
     RENTAL_COURTESY_MINUTES=(int, 59),
+    DEFAULT_TAX_RATE=(Decimal, Decimal("21.00")),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -157,10 +159,24 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Documentos de clientes (carnet, DNI). Fuera de MEDIA_ROOT a proposito: no
+# tienen URL publica ni los sirve el servidor de estaticos. Se descargan por una
+# vista que comprueba permisos, nunca adivinando la ruta.
+_private_media = env.str("DJANGO_PRIVATE_MEDIA_ROOT", default="")
+PRIVATE_MEDIA_ROOT = Path(_private_media) if _private_media else BASE_DIR / "private-media"
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "private": {
+        "BACKEND": "apps.core.storage.PrivateFileSystemStorage",
+        "OPTIONS": {"location": str(PRIVATE_MEDIA_ROOT)},
+    },
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
+
+# Tamano maximo de un documento subido. Un carnet escaneado no pasa de aqui, y
+# el limite evita llenar el disco desde el formulario.
+MAX_UPLOAD_SIZE_MB = env.int("MAX_UPLOAD_SIZE_MB", default=10)
 
 # ---------------------------------------------------------------- cache / redis
 REDIS_URL = env("REDIS_URL")
@@ -203,6 +219,10 @@ CORE_OFFICE_PROVIDER = "apps.offices.selectors.office_choices_for_request"
 # Lo consume pricing.services.rental_days(); aqui solo vive el valor por defecto.
 RENTAL_COURTESY_MINUTES = env("RENTAL_COURTESY_MINUTES")
 DEFAULT_CURRENCY = "EUR"
+
+# IVA por defecto de las lineas de alquiler. Los extras y los suplementos
+# llevan el suyo propio, porque no todos tributan igual.
+DEFAULT_TAX_RATE = env("DEFAULT_TAX_RATE")
 
 # ---------------------------------------------------------------- logging
 # Se aplica a los registros que no vienen de structlog (Django, gunicorn, celery)

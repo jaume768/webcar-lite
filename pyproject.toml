@@ -73,8 +73,13 @@ DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 # --ds tiene prioridad sobre la variable de entorno del contenedor, que
 # apunta a los ajustes de desarrollo.
-addopts = "--ds=config.settings.test --strict-markers --reuse-db -q"
+# -m "not slow": los tests de volumen (50.000 clientes) no entran en el ciclo
+# normal. Se piden a proposito con `make test ARGS="-m slow"`.
+addopts = "--ds=config.settings.test --strict-markers --reuse-db -q -m 'not slow'"
 testpaths = ["apps", "tests"]
+markers = [
+    "slow: test de volumen o de rendimiento. Se ejecuta con -m slow.",
+]
 
 # ---------------------------------------------------------------- coverage
 [tool.coverage.run]

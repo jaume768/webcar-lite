@@ -1,0 +1,73 @@
+{% load i18n ui %}
+{% comment %} Editor de tramos de una tarifa.
+
+   El aviso de cobertura se recalcula en el servidor mientras se teclea (hx-post
+   a pricing:tier_check): el hueco del dia 4 se ve al momento, no al guardar.
+   Eso **no** sustituye a la validacion del guardado, que es la que manda; es
+   para no descubrir el problema tres campos despues. {% endcomment %}
+
+<div class="mt-6" x-data="editorTramos()">
+  <div class="mb-2 flex items-end justify-between gap-3">
+    <div>
+      <h3 class="text-sm font-semibold text-slate-900">{% translate "Tramos de dias" %}</h3>
+      <p class="text-xs text-slate-500">
+        {% translate "Tienen que cubrir desde el dia 1 y sin huecos. Deja vacio el fin del ultimo." %}
+      </p>
+    </div>
+    <button type="button" class="btn-secondary py-1.5" @click="anadirFila()">
+      {% translate "Anadir tramo" %}
+    </button>
+  </div>
+
+  <div class="overflow-x-auto rounded-lg border border-line"
+       hx-post="{% url 'pricing:tier_check' %}"
+       hx-trigger="change delay:200ms, keyup changed delay:400ms"
+       hx-include="closest form"
+       hx-target="#aviso-tramos"
+       hx-swap="innerHTML">
+    <table class="data-table" x-ref="tabla">
+      <thead>
+        <tr>
+          <th scope="col" class="w-28">{% translate "Desde (dia)" %}</th>
+          <th scope="col" class="w-28">{% translate "Hasta (dia)" %}</th>
+          <th scope="col" class="w-32">{% translate "Precio/dia" %}</th>
+          <th scope="col" class="w-20 text-right">{% translate "Quitar" %}</th>
+        </tr>
+      </thead>
+      <tbody x-ref="filas">
+        {% for tramo in formset %}
+          <tr>
+            {{ tramo.id }}
+            <td>{{ tramo.min_days|add_class:"input py-1.5" }}</td>
+            <td>{{ tramo.max_days|add_class:"input py-1.5" }}</td>
+            <td>{{ tramo.price_per_day|add_class:"input py-1.5" }}</td>
+            <td class="text-right">
+              {% if tramo.instance.pk %}{{ tramo.DELETE }}{% endif %}
+            </td>
+          </tr>
+          {% if tramo.errors %}
+            <tr><td colspan="4" class="bg-rose-50">
+              {% for campo, errores in tramo.errors.items %}
+                {% for error in errores %}<p class="field-error">{{ error }}</p>{% endfor %}
+              {% endfor %}
+            </td></tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Plantilla de fila nueva. `__prefix__` lo sustituye Alpine por el indice. #}
+  <template x-ref="plantilla">
+    <tr>
+      <td>{{ formset.empty_form.min_days|add_class:"input py-1.5" }}</td>
+      <td>{{ formset.empty_form.max_days|add_class:"input py-1.5" }}</td>
+      <td>{{ formset.empty_form.price_per_day|add_class:"input py-1.5" }}</td>
+      <td class="text-right"></td>
+    </tr>
+  </template>
+
+  <div id="aviso-tramos" class="mt-2">
+    {% include "pricing/_tier_feedback.html" %}
+  </div>
+</div>

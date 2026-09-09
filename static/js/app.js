@@ -119,6 +119,22 @@
       },
     }));
 
+    /* Editor de tramos de una tarifa: ver pricing/_tier_editor.html.
+       Anade filas al formset clonando su empty_form y subiendo TOTAL_FORMS.
+       Sin esto habria que guardar y volver a entrar para meter otro tramo. */
+    Alpine.data("editorTramos", () => ({
+      anadirFila() {
+        const total = document.querySelector('input[name$="-TOTAL_FORMS"]');
+        if (!total) return;
+        const indice = parseInt(total.value, 10);
+        const html = this.$refs.plantilla.innerHTML.replace(/__prefix__/g, indice);
+        this.$refs.filas.insertAdjacentHTML("beforeend", html);
+        total.value = indice + 1;
+        const nueva = this.$refs.filas.lastElementChild.querySelector("input");
+        if (nueva) nueva.focus();
+      },
+    }));
+
     /* Select con busqueda: ver ui/_select_search.html. */
     Alpine.data("selectBuscador", () => ({
       abierto: false,
@@ -199,6 +215,25 @@
       .then((aceptado) => {
         if (aceptado) evento.detail.issueRequest(true);
       });
+  });
+
+  /* El servidor puede pedir que se abra un modal: HX-Trigger con
+     {"crud:abrir-modal": {"url": "/tarifas/12/editar/"}}. Lo usa, por ejemplo,
+     duplicar una tarifa: se crea la copia y el usuario aterriza dentro de ella
+     sin tener que buscarla en el listado. */
+  document.body.addEventListener("crud:abrir-modal", (evento) => {
+    const url = (evento.detail || {}).url;
+    if (url && window.htmx) htmx.ajax("GET", url, { target: "#modal-host", swap: "innerHTML" });
+  });
+
+  /* Un formulario invalido responde 422 con el propio formulario y sus errores.
+     HTMX no pinta respuestas de error por defecto: aqui se le dice que esta si,
+     porque es justo lo que el usuario tiene que leer. */
+  document.body.addEventListener("htmx:beforeSwap", (evento) => {
+    if (evento.detail.xhr.status === 422) {
+      evento.detail.shouldSwap = true;
+      evento.detail.isError = false;
+    }
   });
 
   /* Errores de HTMX como aviso: el usuario no puede quedarse mirando una

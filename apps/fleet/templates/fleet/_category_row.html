@@ -1,0 +1,52 @@
+{% load i18n %}
+{% translate "En catalogo" as etiqueta_activa %}
+{% translate "Retirada" as etiqueta_inactiva %}
+<td class="tabular text-slate-500">{{ row.sort_order }}</td>
+<td class="font-mono tabular text-slate-600">{{ row.code }}</td>
+<td class="font-medium text-slate-900">
+  <div class="flex items-center gap-3">
+    {% if row.image %}
+      <img src="{{ row.image.url }}" alt="" class="size-10 rounded-lg object-cover" loading="lazy">
+    {% endif %}
+    <div class="min-w-0">
+      {{ row.name }}
+      {% if row.air_conditioning %}
+        <span class="ml-1 text-xs font-normal text-slate-500">{% translate "· A/A" %}</span>
+      {% endif %}
+    </div>
+  </div>
+</td>
+<td class="tabular text-slate-600">
+  {% blocktranslate with plazas=row.seats puertas=row.doors maletas=row.luggage %}{{ plazas }} plazas · {{ puertas }}p · {{ maletas }} maletas{% endblocktranslate %}
+</td>
+<td>{{ row.get_transmission_display }}</td>
+<td>{{ row.get_fuel_display }}</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activa only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactiva only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.fleet.change_vehiclecategory %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'fleet:category_update' row.pk %}"
+       hx-get="{% url 'fleet:category_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+    {% if row.is_active %}
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'fleet:category_deactivate' row.pk %}" hx-swap="none"
+              hx-confirm="{% blocktranslate with nombre=row.name %}{{ nombre }} dejara de ofrecerse en reservas nuevas. Las reservas ya hechas con esta categoria no cambian.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Retirar categoria del catalogo' %}"
+              data-confirm-aceptar="{% translate 'Retirar' %}">
+        {% translate "Retirar" %}
+      </button>
+    {% else %}
+      <button type="button" class="btn-ghost px-2 py-1"
+              hx-post="{% url 'fleet:category_activate' row.pk %}" hx-swap="none">
+        {% translate "Reponer" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

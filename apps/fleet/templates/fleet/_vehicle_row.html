@@ -1,0 +1,52 @@
+{% load i18n %}
+{% translate "En flota" as etiqueta_activo %}
+{% translate "De baja" as etiqueta_inactivo %}
+<td class="font-mono tabular font-medium text-slate-900">{{ row.plate }}</td>
+<td>
+  {{ row.brand }} {{ row.model }}
+  {% if row.version %}<span class="text-slate-400">{{ row.version }}</span>{% endif %}
+</td>
+<td>{{ row.category.name }}</td>
+<td>{{ row.current_office.name }}</td>
+<td class="tabular text-right">{{ row.mileage|floatformat:0 }}</td>
+<td>
+  {% if row.documentation_expired %}
+    <span class="text-xs font-medium text-rose-700">
+      {% translate "ITV o seguro caducados" %}
+    </span>
+  {% else %}
+    <span class="text-xs text-slate-500">{% translate "Al dia" %}</span>
+  {% endif %}
+</td>
+<td class="whitespace-nowrap">
+  {% include "ui/_badge.html" with status=row.status label=row.get_status_display only %}
+  {% if not row.is_active %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactivo only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.fleet.change_vehicle %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'fleet:vehicle_update' row.pk %}"
+       hx-get="{% url 'fleet:vehicle_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+    <a class="btn-ghost px-2 py-1" href="{% url 'fleet:vehicle_status' row.pk %}"
+       hx-get="{% url 'fleet:vehicle_status' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Situacion" %}
+    </a>
+    {% if row.is_active %}
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'fleet:vehicle_deactivate' row.pk %}" hx-swap="none"
+              hx-confirm="{% blocktranslate with matricula=row.plate %}{{ matricula }} saldra de la flota y pasara a estado Baja. No se borra: las reservas historicas lo siguen viendo.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Dar de baja el vehiculo' %}"
+              data-confirm-aceptar="{% translate 'Dar de baja' %}">
+        {% translate "Baja" %}
+      </button>
+    {% else %}
+      <button type="button" class="btn-ghost px-2 py-1"
+              hx-post="{% url 'fleet:vehicle_activate' row.pk %}" hx-swap="none">
+        {% translate "Reactivar" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

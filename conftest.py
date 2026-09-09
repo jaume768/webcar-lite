@@ -82,6 +82,71 @@ def agente_alcudia(db, alcudia, rol_mostrador):
     return UserFactory(email="agente@alcudia.es", role=rol_mostrador, offices=[alcudia])
 
 
+#: Permisos de quien mantiene los maestros: oficinas, grupos y categorias.
+PERMISOS_MAESTROS = [
+    "offices.view_office",
+    "offices.add_office",
+    "offices.change_office",
+    "offices.view_officepool",
+    "offices.add_officepool",
+    "offices.change_officepool",
+    "fleet.view_vehiclecategory",
+    "fleet.add_vehiclecategory",
+    "fleet.change_vehiclecategory",
+    "fleet.view_vehicle",
+    "fleet.add_vehicle",
+    "fleet.change_vehicle",
+    "fleet.view_vehicleblock",
+    "fleet.add_vehicleblock",
+    "fleet.change_vehicleblock",
+    "fleet.delete_vehicleblock",
+    "customers.view_customer",
+    "customers.add_customer",
+    "customers.change_customer",
+    "pricing.view_extra",
+    "pricing.add_extra",
+    "pricing.change_extra",
+]
+
+
+@pytest.fixture
+def rol_maestros(db):
+    return RoleFactory(code="maestros", name="Maestros", permissions=PERMISOS_MAESTROS)
+
+
+@pytest.fixture
+def gestor_maestros(db, palma, rol_maestros):
+    """Usuario que puede mantener oficinas y categorias."""
+    return UserFactory(email="maestros@ejemplo.es", role=rol_maestros, offices=[palma])
+
+
+#: Quien mantiene el catalogo de precios.
+PERMISOS_TARIFAS = [
+    "pricing.view_rate",
+    "pricing.add_rate",
+    "pricing.change_rate",
+    "pricing.view_season",
+    "pricing.add_season",
+    "pricing.change_season",
+    "pricing.view_supplement",
+    "pricing.add_supplement",
+    "pricing.change_supplement",
+    "pricing.view_discount",
+    "pricing.add_discount",
+    "pricing.change_discount",
+    "pricing.view_extra",
+    "pricing.add_extra",
+    "pricing.change_extra",
+]
+
+
+@pytest.fixture
+def gestor_tarifas(db, palma):
+    """Usuario que puede configurar tarifas, temporadas y suplementos."""
+    rol = RoleFactory(code="tarifas", name="Tarifas", permissions=PERMISOS_TARIFAS)
+    return UserFactory(email="tarifas@ejemplo.es", role=rol, offices=[palma])
+
+
 @pytest.fixture
 def superusuario(db):
     return UserFactory(email="jefe@ejemplo.es", is_staff=True, is_superuser=True)

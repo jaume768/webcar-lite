@@ -11,6 +11,7 @@ __pycache__
 htmlcov
 staticfiles
 media
+private-media
 .env
 .env.*
 !.env.example

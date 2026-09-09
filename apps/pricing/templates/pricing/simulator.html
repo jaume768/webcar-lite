@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Simulador de precios" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block page_actions %}
+  <a class="btn-secondary" href="{% url 'pricing:rate_list' %}">{% translate "Tarifas" %}</a>
+  <a class="btn-secondary" href="{% url 'pricing:rate_conflicts' %}">{% translate "Conflictos" %}</a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-5 lg:grid-cols-5">
+
+    <section class="card lg:col-span-2">
+      <div class="card-header"><h2 class="card-title">{% translate "Consulta" %}</h2></div>
+      <div class="px-5 py-4">
+        {% comment %} El resultado se pide por HTMX y solo cambia el panel de la
+           derecha: probar diez combinaciones seguidas no recarga la pagina. {% endcomment %}
+        <form method="post" action="{% url 'pricing:simulator' %}"
+              hx-post="{% url 'pricing:simulator' %}"
+              hx-target="#resultado-simulador" hx-swap="innerHTML"
+              hx-indicator="#calculando">
+          {% csrf_token %}
+          {% for field in form %}
+            {% include "ui/_field.html" %}
+          {% endfor %}
+          <div class="flex items-center gap-3">
+            <button type="submit" class="btn-primary">{% translate "Calcular precio" %}</button>
+            <span id="calculando" class="htmx-indicator text-xs text-slate-500">
+              {% translate "Calculando..." %}
+            </span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <div id="resultado-simulador" class="lg:col-span-3">
+      {% include "pricing/_simulator_result.html" %}
+    </div>
+  </div>
+{% endblock %}

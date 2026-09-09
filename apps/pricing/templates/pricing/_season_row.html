@@ -1,0 +1,38 @@
+{% load i18n %}
+{% translate "Activa" as etiqueta_activa %}
+{% translate "Desactivada" as etiqueta_inactiva %}
+<td class="font-mono tabular text-slate-600">{{ row.code }}</td>
+<td class="font-medium text-slate-900">{{ row.name }}</td>
+<td class="tabular">{{ row.start_date|date:"d/m/Y" }}</td>
+<td class="tabular">{{ row.end_date|date:"d/m/Y" }}</td>
+<td class="tabular text-right">{{ row.priority }}</td>
+<td class="tabular text-right">{{ row.num_rates }}</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activa only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactiva only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.pricing.change_season %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'pricing:season_update' row.pk %}"
+       hx-get="{% url 'pricing:season_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+    {% if row.is_active %}
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'pricing:season_deactivate' row.pk %}" hx-swap="none"
+              hx-confirm="{% blocktranslate with nombre=row.name %}{{ nombre }} dejara de mandar en sus fechas. Las tarifas que la usan dejaran de aplicarse.{% endblocktranslate %}"
+              data-confirm-titulo="{% translate 'Desactivar temporada' %}"
+              data-confirm-aceptar="{% translate 'Desactivar' %}">
+        {% translate "Desactivar" %}
+      </button>
+    {% else %}
+      <button type="button" class="btn-ghost px-2 py-1"
+              hx-post="{% url 'pricing:season_activate' row.pk %}" hx-swap="none">
+        {% translate "Activar" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

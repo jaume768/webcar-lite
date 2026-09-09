@@ -14,7 +14,9 @@
   <div class="absolute inset-0 bg-slate-900/50" @click="$store.confirmar.cancelar()"
        aria-hidden="true"></div>
 
-  <div class="relative w-full max-w-md rounded-xl bg-surface p-5 shadow-xl">
+  {# Igual que el modal: un mensaje largo hace scroll dentro, no se sale. #}
+  <div class="relative max-h-full w-full max-w-md overflow-y-auto rounded-xl bg-surface p-5
+              shadow-xl">
     <div class="flex gap-4">
       <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-rose-100
                    text-rose-600" aria-hidden="true">

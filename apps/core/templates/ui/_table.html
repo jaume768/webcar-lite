@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n ui %}
 {% translate "Buscar..." as buscar_placeholder %}
 {% comment %} Tabla con busqueda, filtros y paginacion por HTMX.
 
@@ -19,7 +19,11 @@
         hx-include="closest form"
         hx-indicator="#{{ table.id }}-cargando">
 
-    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+  {% comment %} Un solo disparador para todos los desplegables: el evento change
+     burbujea hasta aqui, asi que no hace falta repetir los atributos en cada
+     select. {% endcomment %}
+  <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2"
+       hx-get="{{ table.url }}" hx-trigger="change">
       <label class="sr-only" for="{{ table.id }}-q">{% translate "Buscar" %}</label>
       <input type="search" id="{{ table.id }}-q" name="q" value="{{ table.search_value }}"
              class="input w-auto min-w-56 flex-1 py-1.5"
@@ -31,15 +35,21 @@
       {% for filtro in table.filters %}
         <label class="sr-only" for="{{ table.id }}-{{ filtro.name }}">{{ filtro.label }}</label>
         <select id="{{ table.id }}-{{ filtro.name }}" name="{{ filtro.name }}"
-                class="input w-auto py-1.5"
-                hx-get="{{ table.url }}"
-                hx-trigger="change">
+                class="input w-auto py-1.5">
           <option value="">{{ filtro.label }}</option>
           {% for opcion in filtro.options %}
             <option value="{{ opcion.value }}"
                     {% if opcion.value == filtro.value %}selected{% endif %}>{{ opcion.label }}</option>
           {% endfor %}
         </select>
+      {% endfor %}
+
+      {# Filtros de django-filter. El campo `q` ya lo pinta el buscador. #}
+      {% for campo in table.filter_form %}
+        {% if campo.name != "q" %}
+          <label class="sr-only" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {{ campo|add_class:"input w-auto py-1.5" }}
+        {% endif %}
       {% endfor %}
     </div>
 
@@ -53,7 +63,13 @@
   </form>
 
   {% partialdef resultados inline %}
-  <div id="{{ table.id }}">
+  {% comment %} Con refresh_event la tabla se recarga sola cuando el servidor avisa
+     de que algo ha cambiado (un alta o una edicion en el modal), conservando
+     busqueda y filtros porque refresh_url lleva la query actual. {% endcomment %}
+  <div id="{{ table.id }}"
+       {% if table.refresh_event %}hx-get="{{ table.refresh_url|default:table.url }}"
+       hx-trigger="{{ table.refresh_event }} from:body"
+       hx-target="this" hx-swap="outerHTML"{% endif %}>
     {% if table.page_obj.paginator.count %}
       <div class="overflow-x-auto">
         <table class="data-table">

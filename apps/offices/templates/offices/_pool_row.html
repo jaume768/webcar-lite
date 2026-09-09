@@ -1,0 +1,23 @@
+{% load i18n %}
+{% translate "Activo" as etiqueta_activo %}
+{% translate "Desactivado" as etiqueta_inactivo %}
+<td class="font-mono tabular text-slate-600">{{ row.code }}</td>
+<td class="font-medium text-slate-900">{{ row.name }}</td>
+<td class="text-slate-600">
+  {% for oficina in row.offices.all %}{{ oficina.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activo only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactivo only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% url 'offices:pool_update' row.pk as edit_url %}
+  {% url 'offices:pool_activate' row.pk as activate_url %}
+  {% url 'offices:pool_deactivate' row.pk as deactivate_url %}
+  {% blocktranslate asvar aviso with nombre=row.name %}{{ nombre }} dejara de ofrecerse al asignar oficinas. La disponibilidad de las que ya lo tengan deja de compartirse.{% endblocktranslate %}
+  {% translate "Desactivar grupo" as titulo_aviso %}
+  {% include "offices/_actions.html" with puede_editar=perms.offices.change_officepool edit_url=edit_url activate_url=activate_url deactivate_url=deactivate_url confirm_message=aviso confirm_title=titulo_aviso %}
+</td>
