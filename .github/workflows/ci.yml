@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Instalar ruff
+        run: pip install "$(python -c "import tomllib,pathlib;d=tomllib.loads(pathlib.Path('pyproject.toml').read_text());print([r for r in d['project']['optional-dependencies']['dev'] if r.startswith('ruff')][0])")"
+      - run: ruff check --output-format=github .
+      - run: ruff format --check .
+
+  test:
+    name: Tests (pytest + Postgres 16)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: crm
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: crm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crm -d crm"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SECRET_KEY: ci-secret-no-usar-en-produccion
+      DJANGO_DEBUG: "True"
+      DATABASE_URL: postgres://crm:crm@localhost:5432/crm
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      CELERY_RESULT_BACKEND: redis://localhost:6379/2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # WeasyPrint necesita pango/cairo del sistema para poder importarse.
+      - name: Dependencias de sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 shared-mime-info
+
+      - name: Instalar dependencias de Python
+        run: |
+          python -c "import tomllib,pathlib;d=tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project'];pathlib.Path('req.txt').write_text('\n'.join(d['dependencies']+d['optional-dependencies']['dev']))"
+          pip install -r req.txt
+
+      - name: Comprobaciones de despliegue
+        run: python manage.py check
+
+      - name: Migraciones sin generar (los modelos y las migraciones estan sincronizados)
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Tests
+        run: pytest --cov --cov-report=term-missing

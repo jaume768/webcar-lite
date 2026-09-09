@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+  <main class="mx-auto max-w-2xl p-8">
+    <h1 class="text-2xl font-semibold">{% translate "CRM Rent a Car" %}</h1>
+    <p class="mt-2 text-slate-600">
+      {% translate "Esqueleto operativo. Estado del sistema en" %}
+      <a class="underline" href="{% url 'health' %}">/health/</a>.
+    </p>
+  </main>
+{% endblock %}

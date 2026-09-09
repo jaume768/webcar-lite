@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Django
+*.log
+/staticfiles/
+/media/
+/static/css/app.css
+/static/js/htmx.min.js
+/static/js/alpine.min.js
+db.sqlite3
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Herramientas
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+req.txt
+
+# Node
+node_modules/
+
+# Editores / SO
+.idea/
+.vscode/
+.DS_Store

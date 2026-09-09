@@ -1,0 +1,82 @@
+[project]
+name = "crm-rentacar"
+version = "0.1.0"
+description = "CRM de alquiler de vehiculos sin conductor (Espana)"
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+    "Django>=5.2,<5.3",
+    "psycopg[binary]>=3.2,<3.3",
+    "django-environ>=0.12,<0.13",
+    "structlog>=25.1,<26.0",
+    "django-structlog>=9.0,<10.0",
+    "celery>=5.5,<5.6",
+    "redis>=5.2,<7.0",
+    "django-htmx>=1.23,<2.0",
+    "weasyprint>=65.0,<67.0",
+    "whitenoise[brotli]>=6.9,<7.0",
+    "gunicorn>=23.0,<24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.12,<0.14",
+    "pytest>=8.3,<9.0",
+    "pytest-django>=4.11,<5.0",
+    "pytest-cov>=6.0,<8.0",
+    "coverage>=7.6,<8.0",
+    "factory-boy>=3.3,<4.0",
+    "django-debug-toolbar>=5.0,<6.0",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["config"]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",      # pycodestyle + pyflakes
+    "I",                 # isort
+    "UP",                # pyupgrade
+    "B",                 # bugbear
+    "DJ",                # flake8-django
+    "C4",                # comprehensions
+    "SIM",               # simplify
+    "RUF",
+]
+ignore = [
+    "RUF012",  # Django usa atributos de clase mutables por convencion
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.dev"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "--strict-markers --reuse-db -q"
+testpaths = ["apps", "tests"]
+
+# ---------------------------------------------------------------- coverage
+[tool.coverage.run]
+source = ["apps", "config"]
+branch = true
+omit = ["*/migrations/*", "*/tests/*", "*/test_*.py", "config/wsgi.py", "config/asgi.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]

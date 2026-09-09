@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Rutas relativas a este fichero: Tailwind escanea plantillas y codigo Python
+   (los nombres de clase tambien aparecen en widgets y helpers). */
+@source "../../apps/**/*.html";
+@source "../../apps/**/*.py";
