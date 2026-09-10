@@ -6,15 +6,17 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import DetailView, FormView, View
+from django.views.generic import FormView, TemplateView, View
 
 from apps.availability.services import (
     AvailabilityError,
+    VehicleNotAvailableError,
     check_category_availability,
     get_available_vehicles,
+    vehicle_options,
 )
 from apps.core.crud import CrudListView, CrudPermissionMixin
-from apps.core.htmx import trigger_toast
+from apps.core.htmx import trigger_event, trigger_toast
 from apps.core.services import ServiceError
 from apps.core.tables import Column
 from apps.customers.models import Customer
@@ -22,9 +24,25 @@ from apps.pricing.dto import ExtraRequest
 from apps.pricing.services import PricingError
 
 from .filters import ReservationFilter
-from .forms import QuickCustomerForm, QuickReservationForm, TransitionForm
+from .forms import (
+    ChangeCategoryForm,
+    ChangeDatesForm,
+    DriverForm,
+    QuickCustomerForm,
+    QuickReservationForm,
+    TransitionForm,
+)
 from .models import Reservation
-from .services import create_quick_reservation, quote
+from .selectors import header_data, timeline
+from .services import (
+    add_driver,
+    apply_change,
+    create_quick_reservation,
+    preview_change,
+    quote,
+    release_vehicle,
+    remove_driver,
+)
 from .state_machine import (
     InvalidTransition,
     TransitionRefused,
@@ -65,31 +83,133 @@ class ReservationListView(CrudListView):
         )
 
 
-class ReservationDetailView(CrudPermissionMixin, DetailView):
-    permission_required = "reservations.view_reservation"
-    model = Reservation
-    template_name = "reservations/reservation_detail.html"
-    context_object_name = "reservation"
+#: Pestanas de la ficha, en orden. `ready` a False las deja visibles pero
+#: apagadas: asi se ve el mapa completo de la ficha sin fingir que funcionan.
+TABS = [
+    ("resumen", _("Resumen"), True),
+    ("cliente", _("Cliente"), True),
+    ("vehiculo", _("Vehiculo"), True),
+    ("extras", _("Extras"), False),
+    ("precio", _("Precio"), False),
+    ("cobros", _("Cobros"), False),
+    ("checkin", _("Check-in"), False),
+    ("checkout", _("Check-out"), False),
+    ("documentos", _("Documentos"), False),
+    ("historial", _("Historial"), True),
+]
+TABS_LISTAS = {codigo for codigo, _etiqueta, lista in TABS if lista}
+TAB_POR_DEFECTO = "resumen"
 
-    def get_queryset(self):
-        return Reservation.objects.for_user(self.request.user).select_related(
-            "customer", "category", "vehicle", "rate", "pickup_office", "return_office"
+
+class ReservationBaseView(CrudPermissionMixin):
+    """Todo lo que cuelga de una reserva concreta, ya con scope de oficina."""
+
+    permission_required = "reservations.view_reservation"
+
+    def get_reservation(self) -> Reservation:
+        if not hasattr(self, "_reserva"):
+            self._reserva = get_object_or_404(
+                Reservation.objects.for_user(self.request.user).select_related(
+                    "customer", "category", "vehicle", "rate", "pickup_office", "return_office"
+                ),
+                pk=self.kwargs["pk"],
+            )
+        return self._reserva
+
+    def contexto_de_ficha(self, **extra) -> dict:
+        reserva = self.get_reservation()
+        datos = {
+            "reservation": reserva,
+            "header": header_data(reserva),
+            "transiciones": available_transitions(reserva, self.request.user),
+        }
+        datos.update(extra)
+        return datos
+
+
+class ReservationDetailView(ReservationBaseView, TemplateView):
+    """Ficha completa: cabecera fija mas la pestana que toque."""
+
+    template_name = "reservations/reservation_detail.html"
+
+    def get_context_data(self, **kwargs):
+        reserva = self.get_reservation()
+        pestana = self.kwargs.get("tab") or TAB_POR_DEFECTO
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(
+            self.contexto_de_ficha(
+                page_title=_("Reserva %(numero)s") % {"numero": reserva.number},
+                breadcrumbs=[
+                    {"label": _("Inicio"), "url": reverse("core:home")},
+                    {"label": _("Reservas"), "url": reverse("reservations:list")},
+                    {"label": reserva.number},
+                ],
+                tabs=TABS,
+                tab_activa=pestana,
+                **contexto_de_pestana(self.request, reserva, pestana),
+            )
         )
+        return contexto
+
+
+class ReservationTabView(ReservationBaseView, TemplateView):
+    """Una pestana suelta, para que HTMX cambie solo el panel."""
+
+    def get_template_names(self):
+        pestana = self.kwargs["tab"]
+        if pestana not in TABS_LISTAS:
+            return ["reservations/tabs/_pendiente.html"]
+        return [f"reservations/tabs/_{pestana}.html"]
+
+    def get_context_data(self, **kwargs):
+        reserva = self.get_reservation()
+        pestana = self.kwargs["tab"]
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(
+            self.contexto_de_ficha(
+                tabs=TABS,
+                tab_activa=pestana,
+                **contexto_de_pestana(self.request, reserva, pestana),
+            )
+        )
+        return contexto
+
+
+class ReservationHeaderView(ReservationBaseView, TemplateView):
+    """Solo la cabecera. La pide HTMX despues de cualquier cambio."""
+
+    template_name = "reservations/_header.html"
 
     def get_context_data(self, **kwargs):
         contexto = super().get_context_data(**kwargs)
-        reserva = self.object
-        contexto["page_title"] = _("Reserva %(numero)s") % {"numero": reserva.number}
-        contexto["breadcrumbs"] = [
-            {"label": _("Inicio"), "url": reverse("core:home")},
-            {"label": _("Reservas"), "url": reverse("reservations:list")},
-            {"label": reserva.number},
-        ]
-        contexto["transiciones"] = available_transitions(reserva, self.request.user)
-        contexto["lineas"] = reserva.price_breakdown.get("lines", [])
-        contexto["historico"] = reserva.status_changes.select_related("changed_by")
-        contexto["extras"] = reserva.extras.all()
+        contexto.update(self.contexto_de_ficha())
         return contexto
+
+
+def contexto_de_pestana(request, reserva: Reservation, pestana: str) -> dict:
+    """Lo que necesita cada pestana. Fuera de aqui nadie consulta de mas."""
+    if pestana == "resumen":
+        return {
+            "lineas": reserva.price_breakdown.get("lines", []),
+            "extras": reserva.extras.all(),
+            "ultimos_cambios": timeline(reserva)[:5],
+        }
+    if pestana == "cliente":
+        return {"conductores": reserva.drivers.all()}
+    if pestana == "vehiculo":
+        return {
+            "opciones": vehicle_options(
+                reserva.category,
+                reserva.pickup_office,
+                reserva.pickup_at,
+                reserva.return_at,
+                exclude_reservation=reserva,
+                rotation_minutes=reserva.rotation_minutes,
+            )
+        }
+    if pestana == "historial":
+        return {"historial": timeline(reserva)}
+    return {}
 
 
 class ReservationTransitionView(CrudPermissionMixin, FormView):
@@ -322,27 +442,214 @@ class QuickCustomerCreateView(CrudPermissionMixin, FormView):
         return self.render_to_response(self.get_context_data(form=form), status=422)
 
 
-class AssignVehicleView(CrudPermissionMixin, View):
-    """Asigna un coche concreto a una reserva ya creada."""
+# ---------------------------------------------------------------------------
+# Cambios desde la ficha
+# ---------------------------------------------------------------------------
+
+#: Lo escucha la cabecera y el panel de pestanas para repintarse sin recargar.
+EVENTO_RESERVA = "reserva:actualizada"
+
+
+def _respuesta_de_cambio(mensaje: str, nivel: str = "success") -> HttpResponse:
+    """Cierra el modal y avisa a la ficha de que hay algo nuevo que leer."""
+    respuesta = HttpResponse(status=200)
+    trigger_event(respuesta, EVENTO_RESERVA)
+    return trigger_toast(respuesta, mensaje, nivel)
+
+
+class ReservationChangeView(ReservationBaseView, FormView):
+    """Base de los cambios que revalidan disponibilidad y precio.
+
+    Ensena siempre la diferencia antes de confirmar: en mostrador nadie acepta
+    un cambio de fechas sin saber si sube o baja.
+    """
 
     permission_required = "reservations.change_reservation"
+    template_name = "reservations/_change_modal.html"
+    titulo = ""
 
-    def post(self, request, pk, *args, **kwargs):
+    def datos_de_cambio(self, form) -> dict:
+        raise NotImplementedError
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method == "GET" and self.request.GET:
+            kwargs["data"] = self.request.GET
+        return kwargs
+
+    def get_initial(self):
+        reserva = self.get_reservation()
+        return {
+            "pickup_at": reserva.pickup_at,
+            "return_at": reserva.return_at,
+            "category": reserva.category,
+        }
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(self.contexto_de_ficha())
+        contexto["titulo"] = self.titulo
+        contexto["form_action"] = self.request.path
+
+        form = contexto["form"]
+        if form.is_bound and form.is_valid():
+            contexto["preview"] = preview_change(
+                reservation=self.get_reservation(),
+                actor=self.request.user,
+                **self.datos_de_cambio(form),
+            )
+        return contexto
+
+    def get(self, request, *args, **kwargs):
+        contexto = self.get_context_data()
+        # Con `preview` solo viaja el panel de la diferencia, no el modal entero:
+        # asi el formulario no se repinta mientras se teclea.
+        if request.GET.get("preview"):
+            return render(request, "reservations/_change_preview.html", contexto)
+        return self.render_to_response(contexto)
+
+    def form_valid(self, form):
+        try:
+            apply_change(
+                reservation=self.get_reservation(),
+                release_vehicle=bool(self.request.POST.get("release_vehicle")),
+                actor=self.request.user,
+                **self.datos_de_cambio(form),
+            )
+        except VehicleNotAvailableError as exc:
+            # El coche asignado estorba: se nombra el conflicto y se ofrece
+            # soltarlo, que es lo que resuelve la situacion en mostrador.
+            contexto = self.get_context_data(form=form)
+            contexto["conflicto_de_vehiculo"] = str(exc)
+            return self.render_to_response(contexto, status=422)
+        except (AvailabilityError, PricingError, ServiceError) as exc:
+            form.add_error(None, str(exc))
+            return self.form_invalid(form)
+
+        return _respuesta_de_cambio(_("Reserva actualizada."))
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form), status=422)
+
+
+class ChangeDatesView(ReservationChangeView):
+    form_class = ChangeDatesForm
+    titulo = _("Cambiar fechas")
+
+    def datos_de_cambio(self, form) -> dict:
+        return {
+            "pickup_at": form.cleaned_data["pickup_at"],
+            "return_at": form.cleaned_data["return_at"],
+        }
+
+
+class ChangeCategoryView(ReservationChangeView):
+    form_class = ChangeCategoryForm
+    titulo = _("Cambiar categoria")
+
+    def datos_de_cambio(self, form) -> dict:
+        return {"category": form.cleaned_data["category"]}
+
+
+class AssignVehicleView(ReservationBaseView, TemplateView):
+    """Elegir coche, con el motivo de cada descarte a la vista."""
+
+    permission_required = "reservations.change_reservation"
+    template_name = "reservations/_assign_vehicle_modal.html"
+
+    def get_context_data(self, **kwargs):
+        reserva = self.get_reservation()
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(self.contexto_de_ficha())
+        contexto["form_action"] = self.request.path
+        contexto["opciones"] = vehicle_options(
+            reserva.category,
+            reserva.pickup_office,
+            reserva.pickup_at,
+            reserva.return_at,
+            exclude_reservation=reserva,
+            rotation_minutes=reserva.rotation_minutes,
+        )
+        return contexto
+
+    def post(self, request, *args, **kwargs):
         from apps.availability.services import assign_vehicle
         from apps.fleet.models import Vehicle
 
-        reserva = get_object_or_404(Reservation.objects.for_user(request.user), pk=pk)
+        reserva = self.get_reservation()
         vehiculo = get_object_or_404(
             Vehicle.objects.for_user(request.user), pk=request.POST.get("vehicle")
         )
-
         try:
             assign_vehicle(reservation=reserva, vehicle=vehiculo, actor=request.user)
         except ServiceError as exc:
-            messages.error(request, str(exc))
-        else:
-            messages.success(
-                request,
-                _("Vehiculo %(matricula)s asignado.") % {"matricula": vehiculo.plate},
+            contexto = self.get_context_data()
+            contexto["error"] = str(exc)
+            return self.render_to_response(contexto, status=422)
+
+        return _respuesta_de_cambio(
+            _("Vehiculo %(matricula)s asignado.") % {"matricula": vehiculo.plate}
+        )
+
+
+class ReleaseVehicleView(ReservationBaseView, View):
+    """Suelta el coche asignado sin tocar nada mas."""
+
+    permission_required = "reservations.change_reservation"
+
+    def post(self, request, *args, **kwargs):
+        reserva = self.get_reservation()
+        if not reserva.vehicle_id:
+            return _respuesta_de_cambio(_("La reserva ya no tenia coche."), "info")
+
+        matricula = reserva.vehicle.plate
+        release_vehicle(reservation=reserva, actor=request.user)
+        return _respuesta_de_cambio(
+            _("%(matricula)s liberado. La reserva sigue viva contra su categoria.")
+            % {"matricula": matricula}
+        )
+
+
+class DriverCreateView(ReservationBaseView, FormView):
+    """Alta de conductor adicional, con el carnet validado."""
+
+    permission_required = "reservations.change_reservation"
+    template_name = "reservations/_driver_modal.html"
+    form_class = DriverForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["reservation"] = self.get_reservation()
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(self.contexto_de_ficha())
+        contexto["form_action"] = self.request.path
+        return contexto
+
+    def form_valid(self, form):
+        try:
+            add_driver(
+                reservation=self.get_reservation(),
+                driver=form.save(commit=False),
+                actor=self.request.user,
             )
-        return HttpResponseRedirect(reverse("reservations:detail", args=[reserva.pk]))
+        except ServiceError as exc:
+            form.add_error(None, str(exc))
+            return self.form_invalid(form)
+
+        return _respuesta_de_cambio(_("Conductor autorizado."))
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form), status=422)
+
+
+class DriverDeleteView(ReservationBaseView, View):
+    permission_required = "reservations.change_reservation"
+
+    def post(self, request, *args, **kwargs):
+        reserva = self.get_reservation()
+        conductor = get_object_or_404(reserva.drivers, pk=kwargs["driver_pk"])
+        remove_driver(driver=conductor, actor=request.user)
+        return _respuesta_de_cambio(_("Conductor retirado."))

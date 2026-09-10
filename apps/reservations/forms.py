@@ -5,7 +5,7 @@ from datetime import timedelta
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.forms import DateTimeField
+from apps.core.forms import DateInput, DateTimeField
 from apps.customers.models import Customer, DocumentType
 from apps.fleet.models import VehicleCategory
 from apps.offices.models import Office
@@ -134,3 +134,70 @@ class TransitionForm(forms.Form):
         self.fields["reason"].required = requires_reason
         if requires_reason:
             self.fields["reason"].help_text = _("Obligatorio para esta operacion.")
+
+
+class ChangeDatesForm(forms.Form):
+    """Cambio de fechas de una reserva ya creada."""
+
+    pickup_at = DateTimeField(label=_("Nueva recogida"))
+    return_at = DateTimeField(label=_("Nueva devolucion"))
+
+    def clean(self):
+        datos = super().clean()
+        recogida, devolucion = datos.get("pickup_at"), datos.get("return_at")
+        if recogida and devolucion and devolucion <= recogida:
+            self.add_error("return_at", _("La devolucion tiene que ser posterior a la recogida."))
+        return datos
+
+
+class ChangeCategoryForm(forms.Form):
+    category = forms.ModelChoiceField(
+        label=_("Nueva categoria"),
+        queryset=VehicleCategory.objects.active().order_by("sort_order", "name"),
+        empty_label=None,
+    )
+
+
+class DriverForm(forms.ModelForm):
+    """Conductor adicional. El carnet se valida contra las fechas del alquiler."""
+
+    class Meta:
+        from .models import ReservationDriver
+
+        model = ReservationDriver
+        fields = [
+            "first_name",
+            "last_name",
+            "birth_date",
+            "document_number",
+            "licence_number",
+            "licence_country",
+            "licence_issued_on",
+            "licence_expiry",
+        ]
+        widgets = {
+            "birth_date": DateInput,
+            "licence_issued_on": DateInput,
+            "licence_expiry": DateInput,
+        }
+
+    def __init__(self, *args, reservation=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.reservation = reservation
+        self.fields["licence_expiry"].required = True
+
+    def clean(self):
+        datos = super().clean()
+        if self.reservation is None:
+            return datos
+
+        from .services import ReservationServiceError, validate_licence
+
+        borrador = self.instance
+        for campo, valor in datos.items():
+            setattr(borrador, campo, valor)
+        try:
+            validate_licence(driver=borrador, reservation=self.reservation)
+        except ReservationServiceError as exc:
+            self.add_error("licence_expiry", str(exc))
+        return datos

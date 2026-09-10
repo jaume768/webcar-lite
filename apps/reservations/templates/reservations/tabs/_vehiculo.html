@@ -1,0 +1,78 @@
+{% load i18n %}
+<div class="grid gap-6 lg:grid-cols-3">
+
+  <section class="card lg:col-span-1">
+    <div class="card-header"><h2 class="card-title">{% translate "Vehiculo asignado" %}</h2></div>
+    {% if reservation.vehicle %}
+      <dl class="grid grid-cols-2 gap-4 p-4 text-sm">
+        <div class="col-span-2">
+          <dt class="text-slate-500">{% translate "Matricula" %}</dt>
+          <dd class="font-mono text-base font-semibold text-slate-900">
+            {{ reservation.vehicle.plate }}
+          </dd>
+        </div>
+        <div class="col-span-2">
+          <dt class="text-slate-500">{% translate "Modelo" %}</dt>
+          <dd class="font-medium text-slate-900">
+            {{ reservation.vehicle.brand }} {{ reservation.vehicle.model }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Estado" %}</dt>
+          <dd class="font-medium text-slate-900">{{ reservation.vehicle.get_status_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Kilometros" %}</dt>
+          <dd class="font-medium tabular text-slate-900">{{ reservation.vehicle.mileage }}</dd>
+        </div>
+      </dl>
+      {% if reservation.vehicle.documentation_expired %}
+        <p class="border-t border-line bg-rose-50 px-4 py-2 text-sm text-rose-800">
+          {% translate "ITV o seguro caducados: el coche no puede salir." %}
+        </p>
+      {% endif %}
+      {% if perms.reservations.change_reservation %}
+        <div class="flex gap-2 border-t border-line px-4 py-3">
+          <button type="button" class="btn-secondary py-1.5 text-xs"
+                  hx-get="{% url 'reservations:assign_vehicle' reservation.pk %}"
+                  hx-target="#modal-host" hx-swap="innerHTML">
+            {% translate "Cambiar" %}
+          </button>
+          <button type="button" class="btn-ghost py-1.5 text-xs text-rose-700"
+                  hx-post="{% url 'reservations:release_vehicle' reservation.pk %}"
+                  hx-swap="none"
+                  hx-confirm="{% translate 'La reserva se queda sin coche, pero sigue viva contra su categoria.' %}"
+                  data-confirm-titulo="{% translate 'Liberar vehiculo' %}"
+                  data-confirm-aceptar="{% translate 'Liberar' %}">
+            {% translate "Liberar" %}
+          </button>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="p-4">
+        <p class="text-sm text-slate-500">
+          {% if reservation.needs_reassignment %}
+            {% translate "El coche que tenia salio de flota. Hay que darle otro." %}
+          {% else %}
+            {% translate "La reserva va contra la categoria, sin coche concreto." %}
+          {% endif %}
+        </p>
+        {% if perms.reservations.change_reservation %}
+          <button type="button" class="btn-primary mt-3 py-1.5 text-xs"
+                  hx-get="{% url 'reservations:assign_vehicle' reservation.pk %}"
+                  hx-target="#modal-host" hx-swap="innerHTML">
+            {% translate "Asignar vehiculo" %}
+          </button>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="card lg:col-span-2">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Flota de la categoria en este periodo" %}</h2>
+      <span class="text-xs text-slate-500">{{ reservation.category.name }}</span>
+    </div>
+    {% include "reservations/_vehicle_options.html" %}
+  </section>
+</div>

@@ -380,6 +380,10 @@ class Reservation(TimeStampedModel, UserStampedModel):
         permissions = [
             ("change_reservation_price", _("Puede modificar el precio de una reserva a mano")),
             ("cancel_reservation", _("Puede cancelar una reserva")),
+            (
+                "change_invoiced_reservation",
+                _("Puede modificar una reserva que ya tiene factura emitida"),
+            ),
         ]
         constraints = [
             CheckConstraint(

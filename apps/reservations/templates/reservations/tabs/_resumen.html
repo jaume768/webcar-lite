@@ -1,0 +1,127 @@
+{% load i18n %}
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="space-y-6 lg:col-span-2">
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Condiciones" %}</h2>
+        {% if perms.reservations.change_reservation %}
+          <div class="flex gap-2">
+            <button type="button" class="btn-secondary py-1.5 text-xs"
+                    hx-get="{% url 'reservations:change_dates' reservation.pk %}"
+                    hx-target="#modal-host" hx-swap="innerHTML">
+              {% translate "Cambiar fechas" %}
+            </button>
+            <button type="button" class="btn-secondary py-1.5 text-xs"
+                    hx-get="{% url 'reservations:change_category' reservation.pk %}"
+                    hx-target="#modal-host" hx-swap="innerHTML">
+              {% translate "Cambiar categoria" %}
+            </button>
+          </div>
+        {% endif %}
+      </div>
+      <dl class="grid grid-cols-2 gap-4 p-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-slate-500">{% translate "Combustible" %}</dt>
+          <dd class="font-medium text-slate-900">{{ reservation.get_fuel_policy_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Kilometros" %}</dt>
+          <dd class="font-medium text-slate-900">
+            {% if reservation.has_unlimited_km %}{% translate "Ilimitados" %}
+            {% else %}{{ reservation.included_km }} km{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Cancelacion" %}</dt>
+          <dd class="font-medium text-slate-900">{{ reservation.get_cancellation_policy_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Fianza" %}</dt>
+          <dd class="font-medium tabular text-slate-900">{{ reservation.deposit_amount }} €</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Franquicia" %}</dt>
+          <dd class="font-medium tabular text-slate-900">{{ reservation.franchise_amount }} €</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Tarifa" %}</dt>
+          <dd class="font-medium text-slate-900">{{ reservation.rate.name|default:"—" }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Precio" %}</h2></div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <caption class="sr-only">{% translate "Desglose tal como se calculo" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Concepto" %}</th>
+              <th scope="col" class="text-right">{% translate "Base" %}</th>
+              <th scope="col" class="text-right">{% translate "IVA" %}</th>
+              <th scope="col" class="text-right">{% translate "Total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for linea in lineas %}
+              <tr>
+                <td>{{ linea.concept }}</td>
+                <td class="text-right tabular">{{ linea.base }} €</td>
+                <td class="text-right tabular">{{ linea.tax_amount }} €</td>
+                <td class="text-right tabular font-medium">{{ linea.total }} €</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-slate-500">{% translate "Sin desglose guardado." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if reservation.cancellation_fee %}
+        <p class="border-t border-line px-4 py-2 text-sm text-rose-700">
+          {% translate "Cargo por cancelacion" %}: {{ reservation.cancellation_fee }} €
+        </p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="space-y-6">
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Ultimos movimientos" %}</h2></div>
+      <ol class="divide-y divide-line">
+        {% for linea in ultimos_cambios %}
+          <li class="px-4 py-2.5 text-sm">
+            <p class="font-medium text-slate-900">{{ linea.title }}</p>
+            <p class="text-xs text-slate-500">
+              {{ linea.happened_at|date:"d/m/Y H:i" }}
+              {% if linea.actor %}· {{ linea.actor.get_short_name }}{% endif %}
+            </p>
+          </li>
+        {% empty %}
+          <li class="px-4 py-3 text-sm text-slate-500">{% translate "Sin movimientos." %}</li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    {% if reservation.notes or reservation.internal_notes %}
+      <section class="card p-4 text-sm">
+        {% if reservation.notes %}
+          <h3 class="font-medium text-slate-900">{% translate "Notas" %}</h3>
+          <p class="mt-1 text-slate-600">{{ reservation.notes|linebreaksbr }}</p>
+        {% endif %}
+        {% if reservation.internal_notes %}
+          <h3 class="mt-3 font-medium text-slate-900">{% translate "Notas internas" %}</h3>
+          <p class="mt-1 text-slate-600">{{ reservation.internal_notes|linebreaksbr }}</p>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if reservation.overbooked %}
+      <section class="card border-amber-200 bg-amber-50 p-4 text-sm">
+        <h3 class="font-medium text-amber-900">{% translate "Forzada sin disponibilidad" %}</h3>
+        <p class="mt-1 text-amber-800">{{ reservation.override_reason }}</p>
+      </section>
+    {% endif %}
+  </div>
+</div>

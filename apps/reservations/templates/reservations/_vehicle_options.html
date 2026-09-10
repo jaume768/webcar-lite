@@ -1,0 +1,26 @@
+{% load i18n %}
+{% comment %} Los libres arriba y los descartados debajo con su motivo: en
+   mostrador, saber por que no hay coche resuelve la llamada. {% endcomment %}
+<ul class="divide-y divide-line">
+  {% for opcion in opciones %}
+    <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+      <div class="min-w-0">
+        <p class="font-mono font-medium {% if opcion.available %}text-slate-900{% else %}text-slate-400{% endif %}">
+          {{ opcion.plate }}
+        </p>
+        <p class="truncate text-xs text-slate-500">
+          {{ opcion.vehicle.brand }} {{ opcion.vehicle.model }}
+        </p>
+      </div>
+      {% if opcion.available %}
+        {% include "ui/_badge.html" with status="active" label=_("Libre") only %}
+      {% else %}
+        <span class="text-right text-xs text-slate-500">{{ opcion.reason }}</span>
+      {% endif %}
+    </li>
+  {% empty %}
+    <li class="px-4 py-6 text-center text-sm text-slate-500">
+      {% translate "No hay vehiculos de esta categoria en este grupo de oficinas." %}
+    </li>
+  {% endfor %}
+</ul>

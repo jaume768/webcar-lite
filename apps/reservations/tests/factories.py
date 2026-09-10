@@ -9,9 +9,24 @@ from django.utils import timezone
 from apps.pricing.models import Extra
 from apps.reservations.models import Reservation, ReservationStatus
 
+#: Instante de referencia del test en curso. Lo fija una fixture autouse.
+#:
+#: Sin esto, dos llamadas a `en(4)` dentro del mismo test devuelven instantes
+#: distintos por unos microsegundos y comparar fechas guardadas falla por ruido.
+_referencia = None
+
+
+def fijar_referencia(momento) -> None:
+    global _referencia
+    _referencia = momento
+
+
+def ahora():
+    return _referencia if _referencia is not None else timezone.now()
+
 
 def en(dias: float, hora: int | None = None):
-    momento = timezone.now() + timedelta(days=dias)
+    momento = ahora() + timedelta(days=dias)
     if hora is not None:
         momento = momento.replace(hour=hora, minute=0, second=0, microsecond=0)
     return momento

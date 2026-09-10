@@ -1,0 +1,58 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Asignar vehiculo" %}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {{ reservation.number }} · {{ reservation.category.name }}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  {% if error %}
+    <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+         role="alert">{{ error }}</div>
+  {% endif %}
+
+  <form id="form-vehiculo" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML">
+    {% csrf_token %}
+    <fieldset>
+      <legend class="sr-only">{% translate "Vehiculos de la categoria" %}</legend>
+      <ul class="divide-y divide-line rounded-lg border border-line">
+        {% for opcion in opciones %}
+          <li>
+            <label class="flex items-center gap-3 px-3 py-2.5 text-sm
+                          {% if opcion.available %}cursor-pointer hover:bg-brand-50/50{% else %}opacity-60{% endif %}">
+              <input type="radio" name="vehicle" value="{{ opcion.vehicle.pk }}"
+                     class="size-4 text-brand-600 focus:ring-brand-500"
+                     {% if not opcion.available %}disabled{% endif %}
+                     {% if opcion.vehicle.pk == reservation.vehicle_id %}checked{% endif %}>
+              <span class="min-w-0 flex-1">
+                <span class="block font-mono font-medium text-slate-900">{{ opcion.plate }}</span>
+                <span class="block truncate text-xs text-slate-500">
+                  {{ opcion.vehicle.brand }} {{ opcion.vehicle.model }}
+                </span>
+              </span>
+              {% if opcion.available %}
+                {% include "ui/_badge.html" with status="active" label=_("Libre") only %}
+              {% else %}
+                <span class="text-right text-xs text-slate-500">{{ opcion.reason }}</span>
+              {% endif %}
+            </label>
+          </li>
+        {% empty %}
+          <li class="px-3 py-6 text-center text-sm text-slate-500">
+            {% translate "No hay vehiculos de esta categoria en este grupo de oficinas." %}
+          </li>
+        {% endfor %}
+      </ul>
+    </fieldset>
+  </form>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-vehiculo" class="btn-primary">{% translate "Asignar" %}</button>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Conductor adicional" %}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {% translate "El carnet tiene que estar vigente hasta la devolucion." %}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  <form id="form-conductor" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    <div class="grid gap-x-4 sm:grid-cols-2">
+      {% include "ui/_field.html" with field=form.first_name %}
+      {% include "ui/_field.html" with field=form.last_name %}
+      {% include "ui/_field.html" with field=form.birth_date %}
+      {% include "ui/_field.html" with field=form.document_number %}
+      {% include "ui/_field.html" with field=form.licence_number %}
+      {% include "ui/_field.html" with field=form.licence_country %}
+      {% include "ui/_field.html" with field=form.licence_issued_on %}
+      {% include "ui/_field.html" with field=form.licence_expiry %}
+    </div>
+  </form>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-conductor" class="btn-primary">{% translate "Autorizar" %}</button>
+{% endblock %}

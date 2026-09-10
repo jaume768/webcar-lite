@@ -1,0 +1,102 @@
+{% load i18n %}
+<div class="grid gap-6 lg:grid-cols-2">
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Titular" %}</h2>
+      {% if reservation.customer %}
+        <a class="btn-ghost py-1.5 text-xs"
+           href="{% url 'customers:customer_detail' reservation.customer.pk %}">
+          {% translate "Abrir ficha" %}
+        </a>
+      {% endif %}
+    </div>
+    {% if reservation.customer %}
+      <dl class="grid grid-cols-2 gap-4 p-4 text-sm">
+        <div class="col-span-2">
+          <dt class="text-slate-500">{% translate "Nombre" %}</dt>
+          <dd class="font-medium text-slate-900">{{ reservation.customer.full_name }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Documento" %}</dt>
+          <dd class="font-mono font-medium text-slate-900">
+            {{ reservation.customer.get_document_type_display }} {{ reservation.customer.document_number }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Telefono" %}</dt>
+          <dd class="font-medium text-slate-900">{{ reservation.customer.phone|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Correo" %}</dt>
+          <dd class="truncate font-medium text-slate-900">{{ reservation.customer.email|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Carnet" %}</dt>
+          <dd class="font-medium text-slate-900">
+            {{ reservation.customer.licence_number|default:"—" }}
+            {% if reservation.customer.licence_expiry %}
+              <span class="block text-xs text-slate-500">
+                {% translate "Caduca" %} {{ reservation.customer.licence_expiry|date:"d/m/Y" }}
+              </span>
+            {% endif %}
+          </dd>
+        </div>
+      </dl>
+      {% if reservation.customer.is_blacklisted %}
+        <p class="border-t border-line bg-rose-50 px-4 py-2 text-sm text-rose-800">
+          {% translate "Cliente marcado" %}: {{ reservation.customer.blacklist_reason }}
+        </p>
+      {% endif %}
+    {% else %}
+      <p class="p-4 text-sm text-slate-500">{% translate "La reserva no tiene titular." %}</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Conductores adicionales" %}</h2>
+      {% if perms.reservations.change_reservation %}
+        <button type="button" class="btn-secondary py-1.5 text-xs"
+                hx-get="{% url 'reservations:driver_create' reservation.pk %}"
+                hx-target="#modal-host" hx-swap="innerHTML">
+          {% translate "Autorizar conductor" %}
+        </button>
+      {% endif %}
+    </div>
+    <ul class="divide-y divide-line">
+      {% for conductor in conductores %}
+        <li class="flex items-start justify-between gap-3 px-4 py-3 text-sm">
+          <div class="min-w-0">
+            <p class="font-medium text-slate-900">{{ conductor.first_name }} {{ conductor.last_name }}</p>
+            <p class="text-xs text-slate-500">
+              {% translate "Carnet" %} {{ conductor.licence_number }} ({{ conductor.licence_country }})
+              {% if conductor.licence_expiry %}
+                · {% translate "caduca" %} {{ conductor.licence_expiry|date:"d/m/Y" }}
+              {% endif %}
+            </p>
+            {% if conductor.licence_expired %}
+              <p class="mt-1 text-xs font-medium text-rose-700">
+                {% translate "Carnet caducado: no puede conducir." %}
+              </p>
+            {% endif %}
+          </div>
+          {% if perms.reservations.change_reservation %}
+            <button type="button" class="btn-ghost px-2 py-1 text-xs text-rose-700"
+                    hx-post="{% url 'reservations:driver_delete' reservation.pk conductor.pk %}"
+                    hx-swap="none"
+                    hx-confirm="{% blocktranslate with nombre=conductor.first_name %}Se retira la autorizacion a {{ nombre }}.{% endblocktranslate %}"
+                    data-confirm-titulo="{% translate 'Retirar conductor' %}"
+                    data-confirm-aceptar="{% translate 'Retirar' %}">
+              {% translate "Retirar" %}
+            </button>
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-center text-sm text-slate-500">
+          {% translate "Solo conduce el titular." %}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>

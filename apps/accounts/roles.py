@@ -17,6 +17,7 @@ VER_RESERVAS = "reservations.view_reservation"
 CREAR_RESERVAS = "reservations.add_reservation"
 EDITAR_RESERVAS = "reservations.change_reservation"
 CANCELAR_RESERVA = "reservations.cancel_reservation"
+MODIFICAR_FACTURADA = "reservations.change_invoiced_reservation"
 BORRAR_RESERVA = "reservations.delete_reservation"
 CAMBIAR_PRECIO = "reservations.change_reservation_price"
 FORZAR_DISPONIBILIDAD = "availability.override_availability"
@@ -94,6 +95,9 @@ RESPONSABLE = [
 ADMINISTRACION = [
     *RESPONSABLE,
     BORRAR_RESERVA,
+    # Tocar una reserva ya facturada obliga a emitir rectificativa: solo
+    # administracion, nunca el mostrador.
+    MODIFICAR_FACTURADA,
     GESTIONAR_TARIFAS,
     GESTION_USUARIOS,
     CONFIGURACION,

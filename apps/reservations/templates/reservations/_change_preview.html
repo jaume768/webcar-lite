@@ -1,0 +1,62 @@
+{% load i18n %}
+{% comment %} Lo que costaria el cambio, antes de confirmarlo. {% endcomment %}
+<div id="panel-cambio">
+  {% if preview %}
+    {% if preview.blocked_reason %}
+      <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {{ preview.blocked_reason }}
+      </div>
+    {% else %}
+      <div class="rounded-lg border border-line bg-slate-50 p-3">
+        <div class="flex items-center justify-between gap-3 text-sm">
+          <span class="text-slate-600">{% translate "Disponibilidad" %}</span>
+          {% if preview.availability.available %}
+            <span class="font-medium text-emerald-700">
+              {% blocktranslate with libres=preview.availability.free total=preview.availability.total_fleet %}
+                {{ libres }} libres de {{ total }}
+              {% endblocktranslate %}
+            </span>
+          {% else %}
+            <span class="font-medium text-rose-700">{% translate "Sin disponibilidad" %}</span>
+          {% endif %}
+        </div>
+
+        <dl class="mt-3 space-y-1 border-t border-line pt-3 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-slate-600">{% translate "Total actual" %}</dt>
+            <dd class="tabular text-slate-700">{{ preview.current_total }} €</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-600">{% translate "Total nuevo" %}</dt>
+            <dd class="tabular font-medium text-slate-900">{{ preview.new_total }} €</dd>
+          </div>
+          <div class="flex justify-between border-t border-line pt-1">
+            <dt class="font-medium text-slate-900">{% translate "Diferencia" %}</dt>
+            <dd class="tabular font-semibold {% if preview.is_cheaper %}text-emerald-700{% else %}text-slate-900{% endif %}">
+              {% if not preview.is_cheaper %}+{% endif %}{{ preview.difference }} €
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      {% if preview.vehicle_conflict %}
+        <p class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {{ preview.vehicle_conflict }}
+        </p>
+      {% endif %}
+      {% for aviso in preview.warnings %}
+        <p class="mt-2 text-xs text-amber-700">{{ aviso }}</p>
+      {% endfor %}
+      {% if preview.releases_vehicle %}
+        <p class="mt-2 text-xs text-slate-500">
+          {% translate "Al confirmar, la reserva se queda sin coche asignado." %}
+        </p>
+      {% endif %}
+    {% endif %}
+  {% else %}
+    <p class="text-sm text-slate-500">
+      {% translate "Rellena los campos para ver disponibilidad y diferencia de precio." %}
+    </p>
+  {% endif %}
+</div>

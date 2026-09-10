@@ -1,0 +1,47 @@
+{% load i18n %}
+{% comment %} Junta los cambios de estado con la auditoria general. Mientras
+   auditlog no tenga modelo, solo hay cambios de estado. {% endcomment %}
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">{% translate "Historial" %}</h2>
+    <span class="text-xs text-slate-500">
+      {% blocktranslate count total=historial|length %}
+        {{ total }} movimiento
+      {% plural %}
+        {{ total }} movimientos
+      {% endblocktranslate %}
+    </span>
+  </div>
+
+  <ol class="divide-y divide-line">
+    {% for linea in historial %}
+      <li class="flex gap-3 px-4 py-3 text-sm">
+        <span class="mt-1.5 size-2 shrink-0 rounded-full
+                     {% if linea.source == 'status' %}bg-brand-500{% else %}bg-slate-300{% endif %}"
+              aria-hidden="true"></span>
+        <div class="min-w-0 flex-1">
+          <p class="font-medium text-slate-900">{{ linea.title }}</p>
+          {% if linea.detail %}
+            <p class="mt-0.5 text-slate-600">{{ linea.detail }}</p>
+          {% endif %}
+          <p class="mt-0.5 text-xs text-slate-500">
+            {{ linea.happened_at|date:"d/m/Y H:i" }}
+            {% if linea.actor %}
+              · {{ linea.actor.get_short_name }}
+            {% else %}
+              · {% translate "el sistema" %}
+            {% endif %}
+          </p>
+        </div>
+      </li>
+    {% empty %}
+      <li class="px-4 py-8 text-center text-sm text-slate-500">
+        {% translate "Sin movimientos todavia." %}
+      </li>
+    {% endfor %}
+  </ol>
+
+  <p class="border-t border-line px-4 py-2 text-xs text-slate-400">
+    {% translate "La auditoria completa (cambios de precio, cobros, accesos) se sumara aqui cuando exista su modelo." %}
+  </p>
+</section>

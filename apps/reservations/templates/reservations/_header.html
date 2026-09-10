@@ -1,0 +1,82 @@
+{% load i18n %}
+{% comment %} Cabecera fija de la ficha. Se repinta sola cada vez que algo
+   cambia: escucha el evento reserva:actualizada que mandan los servicios en la
+   cabecera HX-Trigger. {% endcomment %}
+<header id="cabecera-reserva"
+        hx-get="{% url 'reservations:header' reservation.pk %}"
+        hx-trigger="reserva:actualizada from:body"
+        hx-swap="outerHTML"
+        class="card sticky top-14 z-10 mb-5">
+
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3">
+    <h1 class="font-mono text-lg font-semibold tracking-tight text-slate-900">
+      {{ reservation.number }}
+    </h1>
+    {% include "ui/_badge.html" with status=reservation.status label=reservation.get_status_display only %}
+
+    {% if reservation.needs_reassignment %}
+      {% include "ui/_badge.html" with status="warning" label=_("Sin coche") only %}
+    {% endif %}
+    {% if header.invoiced %}
+      {% include "ui/_badge.html" with status="info" label=_("Facturada") only %}
+    {% endif %}
+    {% if reservation.overbooked %}
+      {% include "ui/_badge.html" with status="danger" label=_("Forzada") only %}
+    {% endif %}
+
+    <div class="ml-auto flex flex-wrap items-center gap-2">
+      {% for salto in transiciones %}
+        <button type="button"
+                class="{% if salto.requires_reason %}btn-secondary{% else %}btn-primary{% endif %} py-1.5"
+                hx-get="{% url 'reservations:transition' reservation.pk salto.to %}"
+                hx-target="#modal-host" hx-swap="innerHTML">
+          {{ salto.label }}
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3 text-sm sm:grid-cols-4 lg:grid-cols-7">
+    <div class="min-w-0">
+      <dt class="text-xs text-slate-500">{% translate "Cliente" %}</dt>
+      <dd class="truncate font-medium text-slate-900">
+        {{ reservation.customer.full_name|default:"—" }}
+      </dd>
+    </div>
+    <div>
+      <dt class="text-xs text-slate-500">{% translate "Recogida" %}</dt>
+      <dd class="font-medium text-slate-900">{{ reservation.pickup_at|date:"d/m/y H:i" }}</dd>
+      <dd class="truncate text-xs text-slate-500">{{ reservation.pickup_office.name }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs text-slate-500">{% translate "Devolucion" %}</dt>
+      <dd class="font-medium text-slate-900">{{ reservation.return_at|date:"d/m/y H:i" }}</dd>
+      <dd class="truncate text-xs text-slate-500">{{ reservation.return_office.name }}</dd>
+    </div>
+    <div class="min-w-0">
+      <dt class="text-xs text-slate-500">{% translate "Categoria" %}</dt>
+      <dd class="truncate font-medium text-slate-900">{{ reservation.category.name }}</dd>
+    </div>
+    <div class="min-w-0">
+      <dt class="text-xs text-slate-500">{% translate "Vehiculo" %}</dt>
+      <dd class="truncate font-medium text-slate-900">
+        {% if reservation.vehicle %}
+          <span class="font-mono">{{ reservation.vehicle.plate }}</span>
+        {% else %}—{% endif %}
+      </dd>
+    </div>
+    <div>
+      <dt class="text-xs text-slate-500">{% translate "Total" %}</dt>
+      <dd class="font-semibold tabular text-slate-900">{{ header.total }} €</dd>
+    </div>
+    <div>
+      <dt class="text-xs text-slate-500">{% translate "Cobrado / pendiente" %}</dt>
+      <dd class="tabular font-medium text-slate-900">
+        {{ header.paid }} €
+        <span class="{% if header.pending %}text-rose-700{% else %}text-emerald-700{% endif %}">
+          / {{ header.pending }} €
+        </span>
+      </dd>
+    </div>
+  </dl>
+</header>

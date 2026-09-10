@@ -1,12 +1,23 @@
 """Escenario de mostrador: oficina, categoria, flota, tarifa y cliente."""
 
 import pytest
+from django.utils import timezone
 
 from apps.accounts.tests.factories import RoleFactory, UserFactory
 from apps.customers.tests.factories import CustomerFactory
 from apps.fleet.tests.factories import VehicleCategoryFactory, VehicleFactory
 from apps.offices.tests.factories import OfficeFactory, OfficePoolFactory
 from apps.pricing.tests.factories import TRAMOS_ESTANDAR, RateFactory
+
+
+@pytest.fixture(autouse=True)
+def _reloj_estable():
+    """Congela el "ahora" de los helpers durante cada test."""
+    from .factories import fijar_referencia
+
+    fijar_referencia(timezone.now())
+    yield
+    fijar_referencia(None)
 
 
 @pytest.fixture

@@ -35,7 +35,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.services import ServiceError
-from apps.fleet.models import Vehicle, VehicleCategory, VehicleStatus
+from apps.fleet.models import Vehicle, VehicleBlock, VehicleCategory, VehicleStatus
 from apps.offices.models import Office
 from apps.reservations.models import (
     CAPACITY_CONSUMING_STATUSES,
@@ -670,3 +670,94 @@ def assign_vehicle(
         actor_id=getattr(actor, "pk", None),
     )
     return reservation
+
+
+# ---------------------------------------------------------------------------
+# Eleccion de vehiculo en mostrador
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class VehicleOption:
+    """Un coche de la categoria y por que se puede usar o no.
+
+    La lista de los que quedan no basta: cuando no hay ninguno, lo que resuelve
+    la llamada del cliente es saber si estan todos alquilados o si hay tres en
+    el taller. Por eso se devuelven tambien los descartados, con su motivo.
+    """
+
+    vehicle: Vehicle
+    available: bool
+    reason: str = ""
+
+    @property
+    def plate(self) -> str:
+        return self.vehicle.plate
+
+
+def vehicle_options(
+    category: VehicleCategory,
+    office: Office,
+    start: datetime,
+    end: datetime,
+    exclude_reservation=None,
+    *,
+    rotation_minutes: int | None = None,
+) -> list[VehicleOption]:
+    """Todos los coches de la categoria en el grupo, disponibles o no.
+
+    Los disponibles primero y por matricula; detras los descartados, cada uno
+    con el motivo por el que no sirve para ese periodo.
+    """
+    _validar_periodo(start, end)
+    period = occupancy_range(start, end, _rotacion(rotation_minutes))
+    _scope_key, office_ids = pool_scope(office)
+
+    flota = list(
+        Vehicle.objects.filter(category=category, current_office_id__in=office_ids)
+        .exclude(status=VehicleStatus.RETIRED)
+        .order_by("plate")
+    )
+    if not flota:
+        return []
+
+    ids = [vehiculo.pk for vehiculo in flota]
+
+    comprometidos = Reservation.objects.consuming_capacity().filter(
+        vehicle_id__in=ids, occupancy_period__overlap=period
+    )
+    exclude_pk = _pk(exclude_reservation)
+    if exclude_pk is not None:
+        comprometidos = comprometidos.exclude(pk=exclude_pk)
+    reservas_por_vehiculo = dict(comprometidos.values_list("vehicle_id", "number"))
+
+    bloqueos_por_vehiculo: dict[int, set[str]] = {}
+    bloqueos = VehicleBlock.objects.filter(
+        vehicle_id__in=ids, start_at__lt=period.upper, end_at__gt=period.lower
+    )
+    for bloqueo in bloqueos:
+        bloqueos_por_vehiculo.setdefault(bloqueo.vehicle_id, set()).add(
+            str(bloqueo.get_reason_display())
+        )
+
+    opciones = []
+    for vehiculo in flota:
+        if not vehiculo.is_active:
+            motivo = _("Fuera de flota")
+        elif vehiculo.pk in reservas_por_vehiculo:
+            motivo = _("Comprometido en la reserva %(numero)s") % {
+                "numero": reservas_por_vehiculo[vehiculo.pk]
+            }
+        elif vehiculo.pk in bloqueos_por_vehiculo:
+            motivo = _("Bloqueado: %(motivos)s") % {
+                "motivos": ", ".join(sorted(bloqueos_por_vehiculo[vehiculo.pk]))
+            }
+        elif vehiculo.documentation_expired:
+            motivo = _("ITV o seguro caducados")
+        else:
+            motivo = ""
+
+        opciones.append(VehicleOption(vehicle=vehiculo, available=not motivo, reason=str(motivo)))
+
+    # Los utiles primero: en mostrador se elige de la parte de arriba.
+    return sorted(opciones, key=lambda opcion: (not opcion.available, opcion.plate))

@@ -1,0 +1,27 @@
+{% load i18n %}
+{% comment %} Navegacion de pestanas. Cada una se trae solo su panel; la
+   cabecera y el resto de la pagina no se recargan. {% endcomment %}
+<nav class="mb-4 flex gap-1 overflow-x-auto border-b border-line"
+     aria-label="{% translate 'Secciones de la reserva' %}">
+  {% for codigo, etiqueta, lista in tabs %}
+    {% if lista %}
+      <button type="button"
+              role="tab"
+              aria-selected="{% if codigo == tab_activa %}true{% else %}false{% endif %}"
+              class="-mb-px shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors
+                     {% if codigo == tab_activa %}border-brand-600 text-brand-700{% else %}border-transparent text-slate-500 hover:border-line hover:text-slate-800{% endif %}"
+              hx-get="{% url 'reservations:tab' reservation.pk codigo %}"
+              hx-target="#panel-pestana"
+              hx-swap="innerHTML"
+              hx-push-url="false">
+        {{ etiqueta }}
+      </button>
+    {% else %}
+      <span class="-mb-px shrink-0 cursor-not-allowed border-b-2 border-transparent px-3 py-2
+                   text-sm font-medium text-slate-300"
+            title="{% translate 'Todavia no: llega en su propio prompt.' %}">
+        {{ etiqueta }}
+      </span>
+    {% endif %}
+  {% endfor %}
+</nav>
