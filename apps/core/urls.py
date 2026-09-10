@@ -6,6 +6,7 @@ app_name = "core"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("demo/", views.demo_login, name="demo_login"),
     path("oficina-activa/", views.set_active_office, name="set_active_office"),
     # Demostracion de componentes. Fuera cuando haya pantallas reales.
     path("ui-kit/", views.ui_kit, name="ui_kit"),

@@ -344,6 +344,23 @@ una contraseña que haya que dictarle por teléfono: la estrena él con el enlac
 El admin de Django queda en `/admin-interno/` como herramienta de soporte técnico, solo para
 `is_staff`, y con el borrado de usuarios y oficinas desactivado.
 
+## Modo demostración
+
+Con `DEMO_MODE=True` la portada pública ofrece entrar con un clic a una cuenta de prueba:
+
+```bash
+make manage ARGS="seed_demo"        # empresa, flota, clientes y un mes de actividad
+make manage ARGS="seed_demo --reset"  # rehace solo las reservas
+```
+
+Carga una empresa con tres oficinas, veintiséis coches, doce clientes y una veintena de
+reservas **creadas por los mismos servicios que usa el mostrador**: hay reservas terminadas,
+coches fuera ahora mismo, entregas de hoy con y sin vehículo asignado, cobros a medias y
+fianzas retenidas. Acceso: `demo@webcar.example` / `demo-webcar-2026`.
+
+**En producción `DEMO_MODE` se queda en `False`.** Con él encendido, cualquiera que abra la
+portada entra en el sistema; con él apagado, `/demo/` responde 404.
+
 ## Producción
 
 La imagen `runtime` arranca Gunicorn con `config.settings.prod` y sirve estáticos con Whitenoise

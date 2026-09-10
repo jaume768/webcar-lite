@@ -220,6 +220,13 @@ CORE_OFFICE_PROVIDER = "apps.offices.selectors.office_choices_for_request"
 RENTAL_COURTESY_MINUTES = env("RENTAL_COURTESY_MINUTES")
 DEFAULT_CURRENCY = "EUR"
 
+# Modo demostracion: ensena la landing con acceso de un clic a una cuenta de
+# prueba. Apagado por defecto y **nunca** se enciende en produccion: cualquiera
+# que llegue a la portada entraria en el sistema.
+DEMO_MODE = env.bool("DEMO_MODE", default=False)
+DEMO_EMAIL = env("DEMO_EMAIL", default="demo@webcar.example")
+DEMO_PASSWORD = env("DEMO_PASSWORD", default="demo-webcar-2026")
+
 # Cada cuantos segundos se refresca solo el panel de mostrador.
 DASHBOARD_REFRESH_SECONDS = env.int("DASHBOARD_REFRESH_SECONDS", default=120)
 

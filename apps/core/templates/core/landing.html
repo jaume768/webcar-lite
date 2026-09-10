@@ -1,0 +1,347 @@
+{% load i18n static %}<!DOCTYPE html>
+{% comment %} Portada publica. No usa `base.html` a proposito: quien llega aqui
+   todavia no es nadie para el sistema, asi que no hay menu, ni oficina activa,
+   ni nada del shell de la aplicacion. {% endcomment %}
+<html lang="es" class="h-full scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% translate "Illes CRM · El sistema de gestion para tu rent a car" %}</title>
+  <meta name="description" content="{% translate 'CRM de alquiler de vehiculos sin conductor: disponibilidad fiable, mostrador rapido, cobros cuadrados y contrato en PDF.' %}">
+  <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="h-full bg-surface text-slate-900">
+
+<a class="skip-link" href="#contenido">{% translate "Saltar al contenido" %}</a>
+
+{# ---------------------------------------------------------------- cabecera #}
+<header class="sticky top-0 z-30 border-b border-line/70 bg-surface/85 backdrop-blur">
+  <div class="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
+    <a href="#" class="flex items-center gap-2">
+      <span class="flex size-9 items-center justify-center rounded-xl bg-brand-600 text-sm font-bold text-white">RC</span>
+      <span class="text-base font-semibold tracking-tight">Illes CRM</span>
+    </a>
+
+    <nav class="ml-6 hidden items-center gap-6 text-sm text-slate-600 md:flex"
+         aria-label="{% translate 'Secciones' %}">
+      <a class="hover:text-slate-900" href="#que-hace">{% translate "Que hace" %}</a>
+      <a class="hover:text-slate-900" href="#modulos">{% translate "Modulos" %}</a>
+      <a class="hover:text-slate-900" href="#como-funciona">{% translate "Como funciona" %}</a>
+      <a class="hover:text-slate-900" href="#demo">{% translate "Demo" %}</a>
+    </nav>
+
+    <div class="ml-auto flex items-center gap-2">
+      {% if demo_activa %}
+        <form method="post" action="{% url 'core:demo_login' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-secondary py-1.5">{% translate "Probar la demo" %}</button>
+        </form>
+      {% endif %}
+      <a href="{% url 'accounts:login' %}" class="btn-primary py-1.5">{% translate "Entrar" %}</a>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+
+  {# ------------------------------------------------------------------ hero #}
+  <section class="relative overflow-hidden bg-brand-950">
+    <div aria-hidden="true"
+         class="pointer-events-none absolute inset-0 opacity-70
+                [background:radial-gradient(60rem_30rem_at_75%_-10%,theme(colors.brand.700),transparent_60%),radial-gradient(40rem_24rem_at_10%_110%,theme(colors.brand.800),transparent_65%)]"></div>
+
+    <div class="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-24">
+      <div>
+        <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-brand-100">
+          <span class="size-1.5 rounded-full bg-emerald-400"></span>
+          {% translate "Alquiler de vehiculos sin conductor · Espana" %}
+        </p>
+
+        <h1 class="mt-5 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+          {% translate "El mostrador entero" %}
+          <span class="block text-brand-300">{% translate "en una sola pantalla" %}</span>
+        </h1>
+
+        <p class="mt-5 max-w-xl text-lg leading-relaxed text-brand-100/90">
+          {% translate "Disponibilidad que no falla, reservas en tres clics, cobros que cuadran y el contrato en PDF antes de que el cliente termine de firmar. Pensado para trabajar de pie, con alguien esperando delante." %}
+        </p>
+
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          {% if demo_activa %}
+            <form method="post" action="{% url 'core:demo_login' %}">
+              {% csrf_token %}
+              <button type="submit"
+                      class="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-50">
+                {% translate "Entrar en la demo" %}
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                </svg>
+              </button>
+            </form>
+          {% endif %}
+          <a href="{% url 'accounts:login' %}"
+             class="inline-flex items-center rounded-lg border border-white/25 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+            {% translate "Acceso de empleado" %}
+          </a>
+        </div>
+
+        <dl class="mt-10 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-6">
+          <div>
+            <dt class="text-xs text-brand-200/80">{% translate "Disponibilidad" %}</dt>
+            <dd class="text-sm font-medium text-white">{% translate "Por grupo de oficinas" %}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-brand-200/80">{% translate "Aislamiento" %}</dt>
+            <dd class="text-sm font-medium text-white">{% translate "Datos por oficina" %}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-brand-200/80">{% translate "Trazabilidad" %}</dt>
+            <dd class="text-sm font-medium text-white">{% translate "Todo queda escrito" %}</dd>
+          </div>
+        </dl>
+      </div>
+
+      {# Maqueta del panel: es lo primero que ve el empleado cada manana. #}
+      <div class="relative" aria-hidden="true">
+        <div class="rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur">
+          <div class="rounded-xl bg-canvas p-4">
+            <div class="mb-3 flex items-center gap-2">
+              <span class="size-2.5 rounded-full bg-rose-400"></span>
+              <span class="size-2.5 rounded-full bg-amber-400"></span>
+              <span class="size-2.5 rounded-full bg-emerald-400"></span>
+              <span class="ml-2 text-xs text-slate-500">{% translate "Mostrador · Palma Centro" %}</span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2">
+              <div class="card p-2.5">
+                <p class="text-[10px] text-slate-500">{% translate "Activas" %}</p>
+                <p class="text-lg font-semibold tabular">14</p>
+              </div>
+              <div class="card p-2.5">
+                <p class="text-[10px] text-slate-500">{% translate "Entregas" %}</p>
+                <p class="text-lg font-semibold tabular text-brand-700">5</p>
+              </div>
+              <div class="card p-2.5">
+                <p class="text-[10px] text-slate-500">{% translate "Pendiente" %}</p>
+                <p class="text-lg font-semibold tabular text-rose-700">840 €</p>
+              </div>
+              <div class="card p-2.5">
+                <p class="text-[10px] text-slate-500">{% translate "Ocupacion" %}</p>
+                <p class="text-lg font-semibold tabular">72%</p>
+              </div>
+            </div>
+
+            <div class="card mt-2 overflow-hidden">
+              <div class="border-b border-line px-3 py-2 text-xs font-semibold">
+                {% translate "Entregas de hoy" %}
+              </div>
+              <table class="w-full text-[11px]">
+                <tbody>
+                  <tr class="border-b border-line/70">
+                    <td class="px-3 py-1.5 font-medium tabular">09:00</td>
+                    <td class="px-1 py-1.5 font-mono text-brand-700">R2026-00118</td>
+                    <td class="px-1 py-1.5">Ana Garcia</td>
+                    <td class="px-1 py-1.5 font-mono text-slate-500">4821 KLM</td>
+                    <td class="px-3 py-1.5 text-right">
+                      <span class="rounded bg-brand-600 px-2 py-0.5 text-[10px] font-medium text-white">
+                        {% translate "Entregar" %}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr class="border-b border-line/70">
+                    <td class="px-3 py-1.5 font-medium tabular">11:30</td>
+                    <td class="px-1 py-1.5 font-mono text-brand-700">R2026-00121</td>
+                    <td class="px-1 py-1.5">Marc Ferrer</td>
+                    <td class="px-1 py-1.5 text-[10px] font-medium text-amber-700">
+                      {% translate "sin coche" %}
+                    </td>
+                    <td class="px-3 py-1.5 text-right">
+                      <span class="rounded border border-line px-2 py-0.5 text-[10px]">
+                        {% translate "Asignar" %}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-3 py-1.5 font-medium tabular">13:00</td>
+                    <td class="px-1 py-1.5 font-mono text-brand-700">R2026-00124</td>
+                    <td class="px-1 py-1.5">Lucia Martin</td>
+                    <td class="px-1 py-1.5 font-mono text-slate-500">7310 PRT</td>
+                    <td class="px-3 py-1.5 text-right">
+                      <span class="rounded bg-brand-600 px-2 py-0.5 text-[10px] font-medium text-white">
+                        {% translate "Entregar" %}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ------------------------------------------------------------- problemas #}
+  <section id="que-hace" class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+    <h2 class="max-w-2xl text-3xl font-semibold tracking-tight">
+      {% translate "Tres cosas que arruinan un dia en el mostrador" %}
+    </h2>
+    <p class="mt-3 max-w-2xl text-slate-600">
+      {% translate "Y como las resuelve el sistema, sin que nadie tenga que acordarse de nada." %}
+    </p>
+
+    <div class="mt-10 grid gap-6 md:grid-cols-3">
+      <article class="card p-6">
+        <span class="flex size-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+          <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+          </svg>
+        </span>
+        <h3 class="mt-4 font-semibold">{% translate "Vender un coche que no tienes" %}</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">
+          {% translate "La disponibilidad se cuenta por capacidad de categoria dentro del grupo de oficinas, con bloqueos de taller y tiempo de limpieza incluidos. Dos empleados que venden a la vez el ultimo coche: solo uno lo consigue." %}
+        </p>
+      </article>
+
+      <article class="card p-6">
+        <span class="flex size-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+          <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </span>
+        <h3 class="mt-4 font-semibold">{% translate "Tardar diez minutos en cerrar una reserva" %}</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">
+          {% translate "Alta rapida con el cliente por documento o telefono, alta al vuelo si no existe, y disponibilidad y precio en vivo mientras se teclea. Al guardar se vuelve a comprobar todo." %}
+        </p>
+      </article>
+
+      <article class="card p-6">
+        <span class="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+          <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </span>
+        <h3 class="mt-4 font-semibold">{% translate "No saber cuanto has cobrado" %}</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">
+          {% translate "Total, cobrado, pendiente y fianza retenida siempre a la vista. La fianza va aparte porque no es un cobro. Un cobro registrado no se edita: se corrige con un apunte contrario, y la caja cuadra." %}
+        </p>
+      </article>
+    </div>
+  </section>
+
+  {# --------------------------------------------------------------- modulos #}
+  <section id="modulos" class="border-y border-line bg-canvas">
+    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+      <h2 class="text-3xl font-semibold tracking-tight">{% translate "Todo lo que necesita una empresa de alquiler" %}</h2>
+      <p class="mt-3 max-w-2xl text-slate-600">
+        {% translate "Nada de modulos que se venden aparte: el sistema es uno y las piezas se conocen entre si." %}
+      </p>
+
+      <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for titulo, texto in modulos %}
+          <article class="card p-5 transition-shadow hover:shadow-md">
+            <h3 class="font-semibold text-slate-900">{{ titulo }}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{{ texto }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# --------------------------------------------------------- como funciona #}
+  <section id="como-funciona" class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+    <h2 class="text-3xl font-semibold tracking-tight">{% translate "Un alquiler, de principio a fin" %}</h2>
+
+    <ol class="mt-10 grid gap-6 md:grid-cols-4">
+      {% for paso in pasos %}
+        <li class="relative card p-5">
+          <span class="flex size-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
+            {{ forloop.counter }}
+          </span>
+          <h3 class="mt-3 font-semibold">{{ paso.0 }}</h3>
+          <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{{ paso.1 }}</p>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  {# ------------------------------------------------------------------ demo #}
+  <section id="demo" class="border-t border-line bg-brand-950">
+    <div class="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:py-20">
+      {% if demo_activa %}
+        <h2 class="text-3xl font-semibold tracking-tight text-white">
+          {% translate "Entra y toquetea" %}
+        </h2>
+        <p class="mx-auto mt-3 max-w-2xl text-brand-100/90">
+          {% translate "La demo trae una empresa con tres oficinas, veintiseis coches y un mes de actividad: reservas terminadas, coches fuera ahora mismo, entregas de hoy y cobros a medias. Todo creado por los mismos servicios que usa el mostrador." %}
+        </p>
+
+        <form method="post" action="{% url 'core:demo_login' %}" class="mt-8">
+          {% csrf_token %}
+          <button type="submit"
+                  class="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-50">
+            {% translate "Entrar en la demo" %}
+          </button>
+        </form>
+
+        <p class="mt-6 text-sm text-brand-200/80">
+          {% translate "O con el formulario normal:" %}
+          <span class="font-mono text-brand-100">{{ demo_email }}</span>
+          ·
+          <span class="font-mono text-brand-100">{{ demo_password }}</span>
+        </p>
+        <p class="mt-2 text-xs text-brand-300/70">
+          {% translate "Los datos se reinician al recargar la demostracion. No metas nada real." %}
+        </p>
+      {% else %}
+        <h2 class="text-3xl font-semibold tracking-tight text-white">
+          {% translate "Quieres verlo funcionando?" %}
+        </h2>
+        <p class="mx-auto mt-3 max-w-xl text-brand-100/90">
+          {% translate "La demostracion esta apagada en esta instalacion. Si tienes cuenta, entra con tu usuario." %}
+        </p>
+        <a href="{% url 'accounts:login' %}"
+           class="mt-8 inline-flex items-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-brand-900 hover:bg-brand-50">
+          {% translate "Entrar" %}
+        </a>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ----------------------------------------------------------- por dentro #}
+  <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <div class="grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:items-start">
+      <div>
+        <h2 class="text-2xl font-semibold tracking-tight">{% translate "Por dentro" %}</h2>
+        <p class="mt-3 text-slate-600">
+          {% translate "Decisiones que no se ven en pantalla pero se notan el dia que algo va mal." %}
+        </p>
+      </div>
+      <dl class="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+        {% for titulo, texto in tecnico %}
+          <div>
+            <dt class="font-medium text-slate-900">{{ titulo }}</dt>
+            <dd class="mt-1 text-sm leading-relaxed text-slate-600">{{ texto }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+    </div>
+  </section>
+
+</main>
+
+<footer class="border-t border-line bg-canvas">
+  <div class="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:px-6">
+    <p>
+      <span class="font-semibold text-slate-700">Illes CRM</span> ·
+      {% translate "Gestion de alquiler de vehiculos sin conductor" %}
+    </p>
+    <p class="sm:ml-auto">
+      <a class="hover:text-slate-800" href="{% url 'accounts:login' %}">{% translate "Acceso de empleado" %}</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

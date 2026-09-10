@@ -3,10 +3,11 @@
 import redis
 import structlog
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_not_required
 from django.core.exceptions import PermissionDenied
 from django.db import connection
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -63,14 +64,160 @@ def health(request):
     )
 
 
+#: Lo que se cuenta en la portada. Vive aqui y no en la plantilla para que el
+#: texto de venta se pueda revisar sin abrir HTML.
+MODULOS_LANDING = [
+    (
+        _("Reservas"),
+        _(
+            "Alta rapida de mostrador, ficha completa con pestanas y una maquina de "
+            "estados que no deja saltarse pasos: nadie finaliza una reserva que no "
+            "ha entregado."
+        ),
+    ),
+    (
+        _("Disponibilidad"),
+        _(
+            "Capacidad por categoria dentro de un grupo de oficinas, con bloqueos de "
+            "taller, tiempo de limpieza entre alquileres y one-way resuelto."
+        ),
+    ),
+    (
+        _("Tarifas"),
+        _(
+            "Tramos por dias, temporadas, canales, suplementos y descuentos. Un unico "
+            "motor calcula el precio y guarda el desglose entero."
+        ),
+    ),
+    (
+        _("Flota"),
+        _(
+            "Categorias y vehiculos con ITV, seguro, kilometros y estado. Los bloqueos "
+            "de taller restan disponibilidad de verdad."
+        ),
+    ),
+    (
+        _("Clientes"),
+        _(
+            "Busqueda por documento, telefono o apellidos, conductores adicionales con "
+            "el carnet validado y documentos escaneados en almacen privado."
+        ),
+    ),
+    (
+        _("Cobros y caja"),
+        _(
+            "Anticipos, pagos, fianzas y reembolsos. La fianza no cuenta como cobrado, "
+            "y el arqueo del dia cuadra por oficina y medio de pago."
+        ),
+    ),
+    (
+        _("Entregas y devoluciones"),
+        _(
+            "Kilometros, combustible y parte de danos con croquis. Los cargos por "
+            "kilometros, gasolina y retraso se calculan solos."
+        ),
+    ),
+    (
+        _("Contratos"),
+        _(
+            "Contrato en PDF con las condiciones generales versionadas: se sabe "
+            "siempre que texto firmo cada cliente."
+        ),
+    ),
+    (
+        _("Usuarios y permisos"),
+        _(
+            "Roles con permisos por operacion y aislamiento por oficina: quien lleva "
+            "Palma no ve nada de Alcudia, ni escribiendo la URL."
+        ),
+    ),
+]
+
+PASOS_LANDING = [
+    (
+        _("Se reserva"),
+        _(
+            "Categoria, fechas y cliente. La pantalla ensena si hay coche y cuanto "
+            "cuesta antes de guardar."
+        ),
+    ),
+    (
+        _("Se entrega"),
+        _(
+            "Kilometros, combustible y documentos comprobados. El coche pasa a "
+            "alquilado y la reserva a en curso."
+        ),
+    ),
+    (
+        _("Se devuelve"),
+        _("Se anotan danos nuevos y el sistema calcula gasolina, kilometros de mas y retraso."),
+    ),
+    (
+        _("Se cobra"),
+        _("Lo pendiente queda a la vista hasta que se cobra, y la fianza se devuelve aparte."),
+    ),
+]
+
+TECNICO_LANDING = [
+    (
+        _("PostgreSQL de verdad"),
+        _(
+            "Rangos de tiempo y constraints de exclusion: la base impide fisicamente "
+            "que un coche se alquile dos veces a la vez."
+        ),
+    ),
+    (
+        _("Nada se borra"),
+        _(
+            "Vehiculos, clientes y tarifas se desactivan. Una reserva de hace dos anos "
+            "se sigue leyendo tal como se vendio."
+        ),
+    ),
+    (
+        _("Precios congelados"),
+        _("Cambiar un extra en el catalogo no mueve ni un euro de lo ya vendido."),
+    ),
+    (
+        _("Todo queda escrito"),
+        _("Cambios de estado, de precio y accesos quedan registrados con quien y por que."),
+    ),
+    (
+        _("Multi-oficina"),
+        _("Cada consulta de datos operativos pasa por el filtro de oficina del usuario."),
+    ),
+    (
+        _("Sin sorpresas de concurrencia"),
+        _("Las reservas se cuentan y se crean dentro de la misma transaccion, con cerrojo."),
+    ),
+]
+
+
+@login_not_required
 def home(request):
-    """Panel de mostrador: lo primero que ve el empleado al entrar.
+    """Portada publica o panel de mostrador, segun quien mire.
+
+    Es la misma URL a proposito: quien llega sin sesion ve la pagina que explica
+    el producto, y quien ya ha entrado ve su trabajo del dia.
 
     Los datos los arma `operations.dashboard`, que es quien sabe de entregas y
     devoluciones. El import va dentro de la funcion a proposito: `core` es la
     base sobre la que se apoyan las demas apps y no debe depender de ellas al
     importarse.
     """
+    if not request.user.is_authenticated:
+        return render(
+            request,
+            "core/landing.html",
+            {
+                "modulos": MODULOS_LANDING,
+                "pasos": PASOS_LANDING,
+                "tecnico": TECNICO_LANDING,
+                "demo_activa": settings.DEMO_MODE,
+                "demo_email": settings.DEMO_EMAIL,
+                "demo_password": settings.DEMO_PASSWORD,
+            },
+        )
+
     from apps.offices.selectors import offices_for_user
     from apps.operations.dashboard import build_dashboard
 
@@ -228,3 +375,34 @@ def ui_kit_error(request, code: int):
         # ensuciaria los logs y, en produccion, dispararia las alertas.
         return render(request, "500.html", status=500)
     raise Http404
+
+
+@login_not_required
+@require_POST
+def demo_login(request):
+    """Entra en la demostracion sin escribir credenciales.
+
+    Solo existe con `DEMO_MODE` encendido. Con el apagado responde 404, que es
+    lo que corresponde: en una instalacion real esta puerta no esta ahi.
+    """
+    if not settings.DEMO_MODE:
+        raise Http404
+
+    from django.contrib.auth import authenticate, login
+
+    usuario = authenticate(request, username=settings.DEMO_EMAIL, password=settings.DEMO_PASSWORD)
+    if usuario is None:
+        logger.warning("demo_sin_datos", email=settings.DEMO_EMAIL)
+        messages.error(
+            request,
+            _("La demostracion no esta preparada todavia. Ejecuta: manage.py seed_demo"),
+        )
+        return HttpResponseRedirect(reverse("accounts:login"))
+
+    login(request, usuario)
+    logger.info("acceso_de_demostracion", user_id=usuario.pk)
+    messages.info(
+        request,
+        _("Estas en la demostracion con datos de mentira. Mira, prueba y rompe lo que quieras."),
+    )
+    return HttpResponseRedirect(reverse("core:home"))
