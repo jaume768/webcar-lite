@@ -12,10 +12,21 @@ from apps.availability.services import (
     pool_scope,
     reserve_capacity,
 )
-from apps.reservations.models import ReservationStatus
-from apps.reservations.services import set_status
+from apps.reservations.models import Reservation, ReservationStatus
 
 from .factories import en
+
+pytestmark = pytest.mark.django_db
+
+
+def _cerrar(reserva):
+    """Deja la reserva finalizada sin pasar por la maquina de estados.
+
+    Aqui interesa el efecto sobre la capacidad, no el camino: las transiciones
+    tienen su propio fichero de tests.
+    """
+    Reservation.objects.filter(pk=reserva.pk).update(status=ReservationStatus.FINISHED)
+
 
 pytestmark = pytest.mark.django_db
 
@@ -139,7 +150,7 @@ def test_al_cerrar_la_reserva_deja_de_restar_en_origen(economico, palma, valenci
     )
     assert not check_category_availability(economico, palma, en(10), en(12)).available
 
-    set_status(reservation=reserva, status=ReservationStatus.FINISHED)
+    _cerrar(reserva)
 
     # La reserva ya no ocupa. La capacidad de Palma vuelve a depender solo de
     # donde este el coche, que es lo que actualiza la devolucion.
@@ -156,7 +167,7 @@ def test_tras_el_traslado_el_coche_cuenta_en_el_grupo_de_destino(
         start=en(1),
         end=en(3),
     )
-    set_status(reservation=reserva, status=ReservationStatus.FINISHED)
+    _cerrar(reserva)
 
     # La devolucion deja el coche aparcado en Valencia.
     un_coche.current_office = valencia

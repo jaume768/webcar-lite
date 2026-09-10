@@ -51,6 +51,19 @@ def suelta(db):
 
 
 @pytest.fixture
+def responsable(db, palma):
+    """Usuario con permiso para cancelar reservas."""
+    from apps.accounts.tests.factories import RoleFactory, UserFactory
+
+    rol = RoleFactory(
+        code="responsable-disp",
+        name="Responsable",
+        permissions=["reservations.cancel_reservation"],
+    )
+    return UserFactory(email="responsable@disponibilidad.es", role=rol, offices=[palma])
+
+
+@pytest.fixture
 def economico(db):
     return VehicleCategoryFactory(code="eco", name="Economico")
 

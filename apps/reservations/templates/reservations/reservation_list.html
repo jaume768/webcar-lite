@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Reservas" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block page_actions %}
+  {% if perms.reservations.add_reservation %}
+    <a href="{% url 'reservations:quick' %}" class="btn-primary">
+      {% translate "Reserva rapida" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% include "ui/_table.html" %}
+{% endblock %}

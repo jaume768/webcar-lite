@@ -1,0 +1,23 @@
+{% load i18n %}
+{% comment %} Sustituye al buscador cuando ya hay cliente elegido. {% endcomment %}
+<div id="bloque-cliente" class="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+  <input type="hidden" name="customer" value="{{ cliente.pk }}">
+  <div class="flex items-center justify-between gap-2">
+    <div>
+      <p class="text-sm font-semibold text-slate-900">
+        {{ cliente.first_name }} {{ cliente.last_name }}
+      </p>
+      <p class="text-xs text-slate-600">
+        {{ cliente.get_document_type_display }} {{ cliente.document_number }}
+        {% if cliente.phone %}· {{ cliente.phone }}{% endif %}
+      </p>
+    </div>
+    <button type="button" class="btn-ghost px-2 py-1 text-xs"
+            hx-get="{% url 'reservations:quick' %}"
+            hx-select="#bloque-cliente"
+            hx-target="#bloque-cliente"
+            hx-swap="outerHTML">
+      {% translate "Cambiar" %}
+    </button>
+  </div>
+</div>

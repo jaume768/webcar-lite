@@ -244,7 +244,7 @@ def check_category_availability(
     bloqueados = _vehiculos_bloqueados(flota, period)
     reservas = list(
         _reservas_que_ocupan(category, office_ids, period, _pk(exclude_reservation)).values_list(
-            "code", "vehicle_id"
+            "number", "vehicle_id"
         )
     )
 
@@ -438,7 +438,7 @@ def _mensaje_sin_hueco(category, resultado: AvailabilityResult) -> str:
 def _mensaje_vehiculo_ocupado(vehicle, reservas, bloqueos) -> str:
     partes = []
     if reservas:
-        codigos = ", ".join(r.code for r in reservas[:MAX_CONFLICTOS_EN_MENSAJE])
+        codigos = ", ".join(r.number for r in reservas[:MAX_CONFLICTOS_EN_MENSAJE])
         if len(reservas) > MAX_CONFLICTOS_EN_MENSAJE:
             codigos += "..."
         partes.append(str(_("ya lo tiene la reserva %(codigos)s")) % {"codigos": codigos})
@@ -476,7 +476,7 @@ def _registrar_override(reservation: Reservation, override: Override, resultado)
     # reserva, que es donde nadie lo puede perder de vista.
     logger.warning(
         "overbooking_autorizado",
-        reservation_code=reservation.code,
+        reservation_number=reservation.number,
         category_id=reservation.category_id,
         pickup_office_id=reservation.pickup_office_id,
         libre=getattr(resultado, "free", None),
@@ -547,7 +547,7 @@ def reserve_capacity(
 
     logger.info(
         "reserva_creada",
-        reservation_code=reservation.code,
+        reservation_number=reservation.number,
         category_id=category.pk,
         pickup_office_id=pickup_office.pk,
         return_office_id=return_office.pk,
@@ -626,7 +626,7 @@ def update_reservation_period(
 
     logger.info(
         "reserva_reprogramada",
-        reservation_code=reservation.code,
+        reservation_number=reservation.number,
         pickup_at=nuevo_inicio.isoformat(),
         return_at=nuevo_fin.isoformat(),
         actor_id=getattr(actor, "pk", None),
@@ -664,7 +664,7 @@ def assign_vehicle(
 
     logger.info(
         "vehiculo_asignado_a_reserva",
-        reservation_code=reservation.code,
+        reservation_number=reservation.number,
         vehicle_id=vehicle.pk,
         plate=vehicle.plate,
         actor_id=getattr(actor, "pk", None),

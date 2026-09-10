@@ -1,0 +1,136 @@
+"""Formularios de reserva."""
+
+from datetime import timedelta
+
+from django import forms
+from django.utils.translation import gettext_lazy as _
+
+from apps.core.forms import DateTimeField
+from apps.customers.models import Customer, DocumentType
+from apps.fleet.models import VehicleCategory
+from apps.offices.models import Office
+from apps.pricing.models import Extra
+
+from .models import CancellationPolicy, FuelPolicy
+
+
+class QuickReservationForm(forms.Form):
+    """Alta de mostrador. Lo minimo para cerrar una reserva de pie.
+
+    La devolucion se puede dar como fecha o como numero de dias, que es como se
+    habla en el mostrador ("una semana"). Si vienen las dos, manda la fecha.
+    """
+
+    customer = forms.ModelChoiceField(
+        label=_("Cliente"),
+        queryset=Customer.objects.active(),
+        widget=forms.HiddenInput,
+        error_messages={"required": _("Elige un cliente o dalo de alta.")},
+    )
+    category = forms.ModelChoiceField(
+        label=_("Categoria"),
+        queryset=VehicleCategory.objects.active().order_by("sort_order", "name"),
+        empty_label=None,
+    )
+    pickup_office = forms.ModelChoiceField(
+        label=_("Oficina de recogida"), queryset=Office.objects.active().order_by("name")
+    )
+    return_office = forms.ModelChoiceField(
+        label=_("Oficina de devolucion"),
+        queryset=Office.objects.active().order_by("name"),
+        required=False,
+        help_text=_("En blanco: se devuelve en la misma oficina."),
+    )
+
+    pickup_at = DateTimeField(label=_("Recogida"))
+    days = forms.IntegerField(
+        label=_("Dias"),
+        min_value=1,
+        max_value=365,
+        required=False,
+        help_text=_("O indica la fecha de devolucion."),
+    )
+    return_at = DateTimeField(label=_("Devolucion"), required=False)
+
+    extras = forms.ModelMultipleChoiceField(
+        label=_("Extras"),
+        queryset=Extra.objects.active().order_by("name"),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    fuel_policy = forms.ChoiceField(
+        label=_("Combustible"), choices=FuelPolicy.choices, initial=FuelPolicy.FULL_FULL
+    )
+    cancellation_policy = forms.ChoiceField(
+        label=_("Cancelacion"),
+        choices=CancellationPolicy.choices,
+        initial=CancellationPolicy.FLEXIBLE,
+    )
+    notes = forms.CharField(
+        label=_("Notas"), required=False, widget=forms.Textarea(attrs={"rows": 2})
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        if user is not None and not user.is_superuser:
+            # Solo se reserva desde las oficinas propias.
+            propias = user.offices.filter(is_active=True)
+            self.fields["pickup_office"].queryset = propias
+            self.fields["return_office"].queryset = Office.objects.active().order_by("name")
+
+    def clean(self):
+        datos = super().clean()
+        recogida = datos.get("pickup_at")
+        devolucion = datos.get("return_at")
+        dias = datos.get("days")
+
+        if recogida and not devolucion:
+            if not dias:
+                self.add_error("days", _("Dime los dias o la fecha de devolucion."))
+            else:
+                devolucion = recogida + timedelta(days=dias)
+                datos["return_at"] = devolucion
+
+        if recogida and devolucion and devolucion <= recogida:
+            self.add_error("return_at", _("La devolucion tiene que ser posterior a la recogida."))
+
+        if not datos.get("return_office"):
+            datos["return_office"] = datos.get("pickup_office")
+
+        return datos
+
+
+class QuickCustomerForm(forms.ModelForm):
+    """Alta de cliente al vuelo, con lo justo para poder alquilar.
+
+    La ficha completa se rellena despues; aqui lo que no puede faltar es a quien
+    se le entrega el coche y como localizarlo.
+    """
+
+    class Meta:
+        model = Customer
+        fields = ["first_name", "last_name", "document_type", "document_number", "phone"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["document_type"].initial = DocumentType.DNI
+        for nombre in ("first_name", "last_name", "document_number", "phone"):
+            self.fields[nombre].required = True
+
+
+class TransitionForm(forms.Form):
+    """Motivo de un cambio de estado. Algunas transiciones no van sin el."""
+
+    reason = forms.CharField(
+        label=_("Motivo"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def __init__(self, *args, requires_reason=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["reason"].required = requires_reason
+        if requires_reason:
+            self.fields["reason"].help_text = _("Obligatorio para esta operacion.")

@@ -1,0 +1,23 @@
+{% load i18n %}
+<td class="font-mono tabular">
+  <a class="font-medium text-brand-700 hover:underline" href="{% url 'reservations:detail' row.pk %}">
+    {{ row.number }}
+  </a>
+</td>
+<td class="font-medium text-slate-900">{{ row.customer.full_name|default:"—" }}</td>
+<td>
+  {{ row.category.name }}
+  {% if row.vehicle %}
+    <span class="ml-1 font-mono text-xs text-slate-500">{{ row.vehicle.plate }}</span>
+  {% elif row.needs_reassignment %}
+    <span class="ml-1 text-xs font-medium text-amber-700">{% translate "sin coche" %}</span>
+  {% endif %}
+</td>
+<td class="whitespace-nowrap">{{ row.pickup_at|date:"d/m/y H:i" }}<br>
+  <span class="text-xs text-slate-500">{{ row.pickup_office.name }}</span>
+</td>
+<td class="whitespace-nowrap">{{ row.return_at|date:"d/m/y H:i" }}<br>
+  <span class="text-xs text-slate-500">{{ row.return_office.name }}</span>
+</td>
+<td>{% include "ui/_badge.html" with status=row.status label=row.get_status_display only %}</td>
+<td class="text-right tabular">{{ row.total }} €</td>

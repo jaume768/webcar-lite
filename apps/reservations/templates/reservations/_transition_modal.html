@@ -1,0 +1,36 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{{ salto.label }}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {% blocktranslate with numero=reservation.number %}Reserva {{ numero }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  {% if salto.confirm %}
+    <p class="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{{ salto.confirm }}</p>
+  {% endif %}
+
+  <form id="form-transicion" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    {% include "ui/_field.html" with field=form.reason %}
+  </form>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-transicion"
+          class="{% if salto.requires_reason %}btn-danger{% else %}btn-primary{% endif %}">
+    {{ salto.label }}
+  </button>
+{% endblock %}

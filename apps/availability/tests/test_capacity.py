@@ -10,7 +10,7 @@ from apps.availability.services import (
 )
 from apps.fleet.tests.factories import VehicleBlockFactory
 from apps.reservations.models import ReservationStatus
-from apps.reservations.services import cancel
+from apps.reservations.state_machine import transition
 
 from .factories import en
 
@@ -40,11 +40,11 @@ def test_con_tres_coches_la_cuarta_reserva_solapada_se_rechaza(economico, palma,
     assert fallo.value.result.free == 0
 
 
-def test_al_cancelar_una_la_cuarta_pasa_a_ser_posible(economico, palma, tres_coches):
+def test_al_cancelar_una_la_cuarta_pasa_a_ser_posible(economico, palma, tres_coches, responsable):
     reservas = [_reservar(economico, palma) for _ in range(3)]
     assert not check_category_availability(economico, palma, en(1), en(3)).available
 
-    cancel(reservation=reservas[0])
+    transition(reservas[0], ReservationStatus.CANCELLED, responsable)
 
     assert check_category_availability(economico, palma, en(1), en(3)).available
     assert _reservar(economico, palma).pk is not None

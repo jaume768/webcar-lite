@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Reserva rapida" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block content %}
+{% comment %} El panel de la derecha se recalcula solo con cada cambio del
+   formulario (hx-trigger change from:#form-reserva). Nada de esto escribe en
+   base de datos: el alta ocurre al enviar el formulario. {% endcomment %}
+<div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+
+  <form id="form-reserva" method="post" class="card p-5" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <fieldset class="mb-5">
+      <legend class="field-label">{% translate "Cliente" %}</legend>
+
+      <div id="bloque-cliente">
+        {% url 'reservations:customer_search' as url_clientes %}
+        {% include "ui/_select_search.html" with name="customer" url=url_clientes placeholder=_("Documento, telefono o apellidos") only %}
+        <div class="mt-2">
+          <button type="button" class="btn-secondary py-1.5 text-xs"
+                  hx-get="{% url 'reservations:quick_customer' %}"
+                  hx-target="#modal-host" hx-swap="innerHTML">
+            {% translate "No esta: darlo de alta" %}
+          </button>
+        </div>
+      </div>
+      {% for error in form.customer.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </fieldset>
+
+    <div class="grid gap-x-4 sm:grid-cols-2">
+      {% include "ui/_field.html" with field=form.category %}
+      {% include "ui/_field.html" with field=form.pickup_office %}
+      {% include "ui/_field.html" with field=form.pickup_at %}
+      {% include "ui/_field.html" with field=form.days %}
+      {% include "ui/_field.html" with field=form.return_at %}
+      {% include "ui/_field.html" with field=form.return_office %}
+      {% include "ui/_field.html" with field=form.fuel_policy %}
+      {% include "ui/_field.html" with field=form.cancellation_policy %}
+    </div>
+
+    <fieldset class="mb-4">
+      <legend class="field-label">{{ form.extras.label }}</legend>
+      <div class="grid gap-1 sm:grid-cols-2">
+        {% for opcion in form.extras %}
+          <label class="flex items-center gap-2 text-sm text-slate-700">
+            {{ opcion.tag }} {{ opcion.choice_label }}
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    {% include "ui/_field.html" with field=form.notes %}
+
+    <div class="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+      <button type="submit" class="btn-primary">{% translate "Crear reserva" %}</button>
+      <a href="{% url 'reservations:list' %}" class="btn-secondary">{% translate "Cancelar" %}</a>
+      <p class="field-hint ml-auto">
+        {% translate "La disponibilidad se vuelve a comprobar al guardar." %}
+      </p>
+    </div>
+  </form>
+
+  <div hx-get="{% url 'reservations:quick_preview' %}"
+       hx-trigger="load, change from:#form-reserva delay:250ms, keyup changed delay:500ms from:#form-reserva"
+       hx-include="#form-reserva"
+       hx-target="this"
+       hx-swap="innerHTML">
+    {% include "reservations/_preview.html" with incompleto=True %}
+  </div>
+</div>
+{% endblock %}

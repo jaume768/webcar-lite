@@ -74,7 +74,7 @@ def test_alargar_cuando_el_coche_ya_esta_vendido_a_otro_se_rechaza(economico, pa
         update_reservation_period(reservation=en_curso, end=en(5))
 
     mensaje = str(fallo.value)
-    assert siguiente.code in mensaje, mensaje
+    assert siguiente.number in mensaje, mensaje
     assert un_coche.plate in mensaje
 
     en_curso.refresh_from_db()
@@ -127,7 +127,7 @@ def test_asignar_un_coche_ya_comprometido_se_rechaza(economico, palma, tres_coch
     with pytest.raises(VehicleNotAvailableError) as fallo:
         assign_vehicle(reservation=otra, vehicle=tres_coches[0])
 
-    assert ocupada.code in str(fallo.value)
+    assert ocupada.number in str(fallo.value)
 
 
 def test_asignar_un_coche_de_otra_categoria_se_rechaza(economico, premium, palma, tres_coches):

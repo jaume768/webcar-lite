@@ -220,6 +220,16 @@ CORE_OFFICE_PROVIDER = "apps.offices.selectors.office_choices_for_request"
 RENTAL_COURTESY_MINUTES = env("RENTAL_COURTESY_MINUTES")
 DEFAULT_CURRENCY = "EUR"
 
+# Formato del numero de reserva. Marcadores disponibles: {year} y {sequence}.
+# Si lleva {year}, la numeracion se reinicia cada ano; si no, es continua.
+# La serie no tiene huecos: la lleva un contador con bloqueo, no una secuencia
+# de Postgres (que salta numeros al deshacer una transaccion).
+RESERVATION_NUMBER_FORMAT = env("RESERVATION_NUMBER_FORMAT", default="R{year}-{sequence:05d}")
+
+# Fianza y franquicia por defecto de una reserva nueva, en euros.
+RESERVATION_DEFAULT_DEPOSIT = env("RESERVATION_DEFAULT_DEPOSIT", default="150.00")
+RESERVATION_DEFAULT_FRANCHISE = env("RESERVATION_DEFAULT_FRANCHISE", default="600.00")
+
 # Minutos de rotacion entre dos alquileres del mismo vehiculo: limpieza y
 # revision. Cuentan como ocupacion, asi que dos reservas seguidas del mismo
 # coche tienen que dejar al menos este hueco. Lo consume

@@ -41,7 +41,7 @@ def _reservar_en_paralelo(hilos, category, office, inicio, fin):
             except Exception as exc:  # el test reporta cualquier fallo inesperado
                 salida = ("error", f"{type(exc).__name__}: {exc}")
             else:
-                salida = ("aceptado", reserva.code)
+                salida = ("aceptado", reserva.number)
         finally:
             connection.close()
 
