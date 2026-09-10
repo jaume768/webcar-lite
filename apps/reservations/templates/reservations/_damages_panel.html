@@ -1,0 +1,48 @@
+{% load i18n %}
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{ titulo }}</h2>
+    {% if perms.reservations.change_reservation and reservation.vehicle %}
+      <button type="button" class="btn-secondary py-1.5 text-xs"
+              hx-get="{% url 'operations:damage_create' reservation.pk %}"
+              hx-target="#modal-host" hx-swap="innerHTML">
+        {% translate "Anotar dano" %}
+      </button>
+    {% endif %}
+  </div>
+  <ul class="divide-y divide-line">
+    {% for dano in danos %}
+      <li class="px-4 py-3 text-sm">
+        <p class="font-medium text-slate-900">{{ dano.get_zone_display }}</p>
+        <p class="text-xs text-slate-500">
+          {{ dano.get_damage_type_display }} · {{ dano.get_severity_display }}
+          {% if dano.is_preexisting %}
+            · <span class="text-amber-700">{% translate "ya estaba" %}</span>
+          {% elif dano.charge_to_customer %}
+            · <span class="text-rose-700">{% translate "se repercute" %}</span>
+          {% endif %}
+        </p>
+        {% if dano.description %}
+          <p class="mt-1 text-slate-600">{{ dano.description }}</p>
+        {% endif %}
+        {% if dano.estimated_cost %}
+          <p class="mt-0.5 text-xs tabular text-slate-500">
+            {% translate "Coste estimado" %}: {{ dano.estimated_cost }} €
+          </p>
+        {% endif %}
+        {% if dano.photos.all %}
+          <div class="mt-2 flex flex-wrap gap-2">
+            {% for foto in dano.photos.all %}
+              <img src="{{ foto.image.url }}" alt="{{ foto.caption }}"
+                   class="size-16 rounded border border-line object-cover">
+            {% endfor %}
+          </div>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li class="px-4 py-6 text-center text-sm text-slate-500">
+        {% translate "Sin danos anotados." %}
+      </li>
+    {% endfor %}
+  </ul>
+</section>

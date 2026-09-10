@@ -36,7 +36,7 @@ class HeaderData:
 
 def header_data(reservation) -> HeaderData:
     return HeaderData(
-        total=reservation.total,
+        total=reservation.grand_total,
         paid=paid_amount(reservation),
         pending=pending_amount(reservation),
         deposit=deposit_held(reservation),

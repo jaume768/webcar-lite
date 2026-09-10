@@ -220,6 +220,16 @@ CORE_OFFICE_PROVIDER = "apps.offices.selectors.office_choices_for_request"
 RENTAL_COURTESY_MINUTES = env("RENTAL_COURTESY_MINUTES")
 DEFAULT_CURRENCY = "EUR"
 
+# --- Cargos de devolucion --------------------------------------------------
+# Precio por kilometro pasado del limite incluido.
+EXTRA_KM_PRICE = env("EXTRA_KM_PRICE", default="0.15")
+# Precio del litro con el que se cobra el combustible que falta.
+FUEL_PRICE_PER_LITER = env("FUEL_PRICE_PER_LITER", default="1.60")
+# Capacidad de deposito por defecto, para vehiculos sin dato propio.
+DEFAULT_TANK_LITERS = env.int("DEFAULT_TANK_LITERS", default=50)
+# Estado del vehiculo tras la devolucion: "cleaning" o "available".
+VEHICLE_STATUS_AFTER_CHECKOUT = env("VEHICLE_STATUS_AFTER_CHECKOUT", default="cleaning")
+
 # Formato del numero de reserva. Marcadores disponibles: {year} y {sequence}.
 # Si lleva {year}, la numeracion se reinicia cada ano; si no, es continua.
 # La serie no tiene huecos: la lleva un contador con bloqueo, no una secuencia

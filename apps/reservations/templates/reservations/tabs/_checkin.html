@@ -1,0 +1,76 @@
+{% load i18n %}
+<div class="grid gap-6 lg:grid-cols-3">
+  <section class="card lg:col-span-2">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Entrega" %}</h2>
+      {% comment %} Sin coche asignado no se ofrece entregar: el servicio lo
+         rechazaria igual, pero un boton que siempre falla no ayuda a nadie.
+      {% endcomment %}
+      {% if not entrega and reservation.vehicle and perms.reservations.change_reservation %}
+        <button type="button" class="btn-primary py-1.5 text-xs"
+                hx-get="{% url 'operations:check_in' reservation.pk %}"
+                hx-target="#modal-host" hx-swap="innerHTML">
+          {% translate "Entregar el coche" %}
+        </button>
+      {% endif %}
+    </div>
+
+    {% if entrega %}
+      <dl class="grid grid-cols-2 gap-4 p-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-slate-500">{% translate "Entregado" %}</dt>
+          <dd class="font-medium text-slate-900">{{ entrega.actual_datetime|date:"d/m/Y H:i" }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Vehiculo" %}</dt>
+          <dd class="font-mono font-medium text-slate-900">{{ entrega.vehicle.plate }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Kilometros" %}</dt>
+          <dd class="font-medium tabular text-slate-900">{{ entrega.mileage }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Combustible" %}</dt>
+          <dd class="font-medium text-slate-900">{{ entrega.get_fuel_level_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Empleado" %}</dt>
+          <dd class="font-medium text-slate-900">{{ entrega.employee.get_short_name|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Documentos" %}</dt>
+          <dd class="font-medium">
+            {% if entrega.documents_verified %}
+              <span class="text-emerald-700">{% translate "Comprobados" %}</span>
+            {% else %}
+              <span class="text-rose-700">{% translate "Sin comprobar" %}</span>
+            {% endif %}
+          </dd>
+        </div>
+      </dl>
+      {% if entrega.observations %}
+        <p class="border-t border-line px-4 py-3 text-sm text-slate-600">
+          {{ entrega.observations|linebreaksbr }}
+        </p>
+      {% endif %}
+      <p class="border-t border-line px-4 py-2 text-xs text-slate-400">
+        {% translate "La firma del cliente se recoge en el contrato en papel. La firma digital no entra en la v1." %}
+      </p>
+    {% else %}
+      <div class="p-6 text-center">
+        {% if not reservation.vehicle %}
+          <p class="text-sm font-medium text-amber-800">
+            {% translate "La reserva no tiene vehiculo asignado." %}
+          </p>
+          <p class="mt-1 text-sm text-slate-500">
+            {% translate "Asignale uno en la pestana Vehiculo antes de entregar." %}
+          </p>
+        {% else %}
+          <p class="text-sm text-slate-500">{% translate "El coche todavia no se ha entregado." %}</p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+
+  {% include "reservations/_damages_panel.html" with titulo=_("Danos al entregar") danos=danos_previos %}
+</div>

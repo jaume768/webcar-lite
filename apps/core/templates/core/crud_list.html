@@ -9,11 +9,16 @@
 
 {% block page_actions %}
   {% if create_url %}
-    {# href real para quien navegue sin JS; con HTMX se abre en modal. #}
-    <a class="btn-primary" href="{{ create_url }}"
-       hx-get="{{ create_url }}" hx-target="#modal-host" hx-swap="innerHTML">
-      {{ create_label }}
-    </a>
+    {% if create_in_modal %}
+      {# href real para quien navegue sin JS; con HTMX se abre en modal. #}
+      <a class="btn-primary" href="{{ create_url }}"
+         hx-get="{{ create_url }}" hx-target="#modal-host" hx-swap="innerHTML">
+        {{ create_label }}
+      </a>
+    {% else %}
+      {# Altas que son una pantalla entera, no un modal. #}
+      <a class="btn-primary" href="{{ create_url }}">{{ create_label }}</a>
+    {% endif %}
   {% endif %}
 {% endblock %}
 

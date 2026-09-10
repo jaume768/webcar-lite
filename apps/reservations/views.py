@@ -83,6 +83,12 @@ class ReservationListView(CrudListView):
     empty_title = _("Ninguna reserva coincide")
     empty_message = _("Cambia la busqueda o quita algun filtro.")
     page_title = _("Reservas")
+    # El alta es una pantalla entera, no un modal: el formulario de mostrador
+    # ensena disponibilidad y precio en vivo mientras se teclea.
+    create_url_name = "reservations:quick"
+    create_label = _("Nueva reserva")
+    create_permission = "reservations.add_reservation"
+    create_in_modal = False
     scope_to_user = True
 
     def get_base_queryset(self):
@@ -102,8 +108,8 @@ TABS = [
     ("extras", _("Extras"), True),
     ("precio", _("Precio"), True),
     ("cobros", _("Cobros"), True),
-    ("checkin", _("Check-in"), False),
-    ("checkout", _("Check-out"), False),
+    ("checkin", _("Check-in"), True),
+    ("checkout", _("Check-out"), True),
     ("documentos", _("Documentos"), False),
     ("historial", _("Historial"), True),
 ]
@@ -234,6 +240,16 @@ def contexto_de_pestana(request, reserva: Reservation, pestana: str) -> dict:
         return {
             "cobros": reserva.payments.select_related("created_by", "office"),
             "saldo": summary(reserva),
+        }
+    if pestana in ("checkin", "checkout"):
+        from apps.operations.services import new_damages, preexisting_damages
+
+        return {
+            "entrega": getattr(reserva, "check_in", None),
+            "devolucion": getattr(reserva, "check_out", None),
+            "danos_previos": preexisting_damages(reserva),
+            "danos_nuevos": new_damages(reserva),
+            "cargos": reserva.charges.all(),
         }
     if pestana == "historial":
         return {"historial": timeline(reserva)}

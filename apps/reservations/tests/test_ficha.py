@@ -75,7 +75,17 @@ def test_la_cabecera_se_sirve_suelta(client, reserva, agente):
 
 @pytest.mark.parametrize(
     "pestana",
-    ["resumen", "cliente", "vehiculo", "extras", "precio", "cobros", "historial"],
+    [
+        "resumen",
+        "cliente",
+        "vehiculo",
+        "extras",
+        "precio",
+        "cobros",
+        "checkin",
+        "checkout",
+        "historial",
+    ],
 )
 def test_las_pestanas_implementadas_responden_sueltas(client, reserva, agente, pestana):
     client.force_login(agente)
@@ -86,7 +96,7 @@ def test_las_pestanas_implementadas_responden_sueltas(client, reserva, agente, p
     assert "<!DOCTYPE html>" not in respuesta.content.decode()
 
 
-@pytest.mark.parametrize("pestana", ["checkin", "checkout", "documentos"])
+@pytest.mark.parametrize("pestana", ["documentos"])
 def test_las_pestanas_que_faltan_lo_dicen(client, reserva, agente, pestana):
     client.force_login(agente)
 

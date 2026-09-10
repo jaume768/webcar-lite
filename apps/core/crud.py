@@ -60,6 +60,8 @@ class CrudListView(CrudPermissionMixin, ListView):
     #: Alta: nombre de la ruta, etiqueta del boton y permiso que lo destapa.
     create_url_name = ""
     create_label = _("Nuevo")
+    #: False cuando el alta es una pantalla entera y no un modal.
+    create_in_modal = True
     create_permission = ""
     page_title = ""
     #: Ultima miga de pan. Vacia: se usa `page_title`.
@@ -116,6 +118,7 @@ class CrudListView(CrudPermissionMixin, ListView):
         contexto["page_title"] = self.page_title
         contexto["create_url"] = self.get_create_url()
         contexto["create_label"] = self.create_label
+        contexto["create_in_modal"] = self.create_in_modal
         contexto["breadcrumbs"] = [
             {"label": _("Inicio"), "url": reverse("core:home")},
             {"label": self.breadcrumb_label or self.page_title},

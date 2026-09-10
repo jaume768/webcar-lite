@@ -29,13 +29,13 @@ def deposit_held(reservation) -> Decimal:
 
 
 def pending_amount(reservation) -> Decimal:
-    """Lo que falta por cobrar del alquiler. Nunca negativo."""
-    return max(reservation.total - paid_amount(reservation), CERO)
+    """Lo que falta por cobrar: alquiler mas cargos de devolucion."""
+    return max(reservation.grand_total - paid_amount(reservation), CERO)
 
 
 def overpaid_amount(reservation) -> Decimal:
     """Lo cobrado de mas, si es que hay. Sirve para avisar, no para cuadrar."""
-    return max(paid_amount(reservation) - reservation.total, CERO)
+    return max(paid_amount(reservation) - reservation.grand_total, CERO)
 
 
 def issued_invoice_for(reservation):
@@ -113,7 +113,9 @@ def cash_totals_by_method(*, office, day) -> list[tuple[str, Decimal]]:
 def summary(reservation) -> dict:
     """Los cuatro numeros de la cabecera, calculados de una vez."""
     return {
-        "total": reservation.total,
+        "total": reservation.grand_total,
+        "rental_total": reservation.total,
+        "charges": reservation.charges_total,
         "paid": paid_amount(reservation),
         "pending": pending_amount(reservation),
         "deposit": deposit_held(reservation),

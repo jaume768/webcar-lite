@@ -1,0 +1,99 @@
+{% load i18n %}
+{% comment %} Croquis del coche visto desde arriba. Cada zona es pinchable y
+   escribe el campo `zone` del formulario. Es como se marca un dano en papel,
+   que es lo que el mostrador ya sabe hacer. {% endcomment %}
+<div x-data="{ zona: '{{ form.zone.value|default:'' }}' }" class="select-none">
+  <p class="field-label">{% translate "Zona danada" %}</p>
+  <p class="field-hint mb-2">{% translate "Pincha en el croquis donde este el dano." %}</p>
+
+  <svg viewBox="0 0 220 400" class="mx-auto h-72 w-auto" role="group"
+       aria-label="{% translate 'Croquis del vehiculo' %}">
+    <defs>
+      <style>
+        .zona { fill: #e2e8f0; stroke: #94a3b8; stroke-width: 1.5; cursor: pointer; }
+        .zona:hover { fill: #dbe6fe; }
+        .zona[data-activa="true"] { fill: #3b6df6; stroke: #1d3bd8; }
+        .etiqueta { font-size: 9px; fill: #475569; pointer-events: none; text-anchor: middle; }
+      </style>
+    </defs>
+
+    <rect class="zona" x="55" y="8" width="110" height="34" rx="14"
+          :data-activa="zona === 'front_bumper'" @click="zona = 'front_bumper'"
+          role="button" tabindex="0" @keydown.enter="zona = 'front_bumper'">
+      <title>{% translate "Paragolpes delantero" %}</title>
+    </rect>
+    <text class="etiqueta" x="110" y="30">{% translate "Delantero" %}</text>
+
+    <rect class="zona" x="55" y="46" width="110" height="42" rx="8"
+          :data-activa="zona === 'bonnet'" @click="zona = 'bonnet'">
+      <title>{% translate "Capo" %}</title>
+    </rect>
+    <text class="etiqueta" x="110" y="72">{% translate "Capo" %}</text>
+
+    <rect class="zona" x="60" y="92" width="100" height="28" rx="6"
+          :data-activa="zona === 'windscreen'" @click="zona = 'windscreen'">
+      <title>{% translate "Parabrisas" %}</title>
+    </rect>
+    <text class="etiqueta" x="110" y="110">{% translate "Parabrisas" %}</text>
+
+    <rect class="zona" x="18" y="92" width="38" height="90" rx="6"
+          :data-activa="zona === 'front_left'" @click="zona = 'front_left'">
+      <title>{% translate "Lateral delantero izquierdo" %}</title>
+    </rect>
+    <text class="etiqueta" x="37" y="140">{% translate "Del. izq." %}</text>
+
+    <rect class="zona" x="164" y="92" width="38" height="90" rx="6"
+          :data-activa="zona === 'front_right'" @click="zona = 'front_right'">
+      <title>{% translate "Lateral delantero derecho" %}</title>
+    </rect>
+    <text class="etiqueta" x="183" y="140">{% translate "Del. der." %}</text>
+
+    <rect class="zona" x="60" y="124" width="100" height="96" rx="8"
+          :data-activa="zona === 'roof'" @click="zona = 'roof'">
+      <title>{% translate "Techo" %}</title>
+    </rect>
+    <text class="etiqueta" x="110" y="176">{% translate "Techo" %}</text>
+
+    <rect class="zona" x="18" y="186" width="38" height="90" rx="6"
+          :data-activa="zona === 'rear_left'" @click="zona = 'rear_left'">
+      <title>{% translate "Lateral trasero izquierdo" %}</title>
+    </rect>
+    <text class="etiqueta" x="37" y="234">{% translate "Tras. izq." %}</text>
+
+    <rect class="zona" x="164" y="186" width="38" height="90" rx="6"
+          :data-activa="zona === 'rear_right'" @click="zona = 'rear_right'">
+      <title>{% translate "Lateral trasero derecho" %}</title>
+    </rect>
+    <text class="etiqueta" x="183" y="234">{% translate "Tras. der." %}</text>
+
+    <rect class="zona" x="60" y="224" width="100" height="46" rx="8"
+          :data-activa="zona === 'boot'" @click="zona = 'boot'">
+      <title>{% translate "Porton trasero" %}</title>
+    </rect>
+    <text class="etiqueta" x="110" y="252">{% translate "Porton" %}</text>
+
+    <rect class="zona" x="55" y="276" width="110" height="34" rx="14"
+          :data-activa="zona === 'rear_bumper'" @click="zona = 'rear_bumper'">
+      <title>{% translate "Paragolpes trasero" %}</title>
+    </rect>
+    <text class="etiqueta" x="110" y="298">{% translate "Trasero" %}</text>
+
+    <rect class="zona" x="18" y="322" width="86" height="30" rx="6"
+          :data-activa="zona === 'wheels'" @click="zona = 'wheels'">
+      <title>{% translate "Ruedas y llantas" %}</title>
+    </rect>
+    <text class="etiqueta" x="61" y="341">{% translate "Ruedas" %}</text>
+
+    <rect class="zona" x="116" y="322" width="86" height="30" rx="6"
+          :data-activa="zona === 'interior'" @click="zona = 'interior'">
+      <title>{% translate "Interior" %}</title>
+    </rect>
+    <text class="etiqueta" x="159" y="341">{% translate "Interior" %}</text>
+  </svg>
+
+  <input type="hidden" name="zone" :value="zona" x-ref="zona">
+  <p class="mt-2 text-center text-sm font-medium text-slate-700" x-show="zona" x-cloak>
+    {% translate "Zona elegida" %}: <span x-text="zona"></span>
+  </p>
+  {% for error in form.zone.errors %}<p class="field-error text-center">{{ error }}</p>{% endfor %}
+</div>

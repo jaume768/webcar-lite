@@ -1,0 +1,61 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Entregar el coche" %}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {{ reservation.number }} · {{ reservation.vehicle.plate|default:"—" }}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  <form id="form-entrega" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="grid gap-x-4 sm:grid-cols-2">
+      {% include "ui/_field.html" with field=form.actual_datetime %}
+      {% include "ui/_field.html" with field=form.mileage %}
+      {% include "ui/_field.html" with field=form.fuel_level %}
+    </div>
+    {% include "ui/_field.html" with field=form.observations %}
+
+    <fieldset class="rounded-lg border border-line p-3">
+      <legend class="px-1 text-sm font-medium text-slate-700">
+        {% translate "Documentos del cliente" %}
+      </legend>
+      {% include "ui/_field.html" with field=form.licence_verified %}
+      {% include "ui/_field.html" with field=form.id_verified %}
+      <p class="field-hint">
+        {% translate "Sin las dos comprobaciones el coche no sale. Queda registrado con tu nombre." %}
+      </p>
+    </fieldset>
+  </form>
+
+  {% if danos_previos %}
+    <div class="mt-4 rounded-lg border border-line bg-slate-50 p-3">
+      <p class="text-sm font-medium text-slate-700">
+        {% translate "Danos ya anotados" %} ({{ danos_previos|length }})
+      </p>
+      <ul class="mt-1 space-y-0.5 text-sm text-slate-600">
+        {% for dano in danos_previos %}
+          <li>{{ dano.get_zone_display }} · {{ dano.get_damage_type_display }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-entrega" class="btn-primary">
+    {% translate "Entregar y poner en curso" %}
+  </button>
+{% endblock %}

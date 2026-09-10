@@ -221,6 +221,15 @@ class Vehicle(TimeStampedModel, ActivableModel, UserStampedModel):
     transmission = models.CharField(_("cambio"), max_length=20, choices=Transmission.choices)
     seats = models.PositiveSmallIntegerField(_("plazas"), default=5)
     color = models.CharField(_("color"), max_length=40, blank=True)
+    tank_liters = models.PositiveSmallIntegerField(
+        _("deposito (litros)"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "Capacidad del deposito. Con ella se calcula el combustible que "
+            "falta al devolver. En blanco se usa el valor por defecto."
+        ),
+    )
 
     registration_date = models.DateField(_("primera matriculacion"), null=True, blank=True)
     itv_expiry = models.DateField(

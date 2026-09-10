@@ -1,0 +1,107 @@
+{% load i18n %}
+<div class="grid gap-6 lg:grid-cols-3">
+  <section class="card lg:col-span-2">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Devolucion" %}</h2>
+      {% if entrega and not devolucion and perms.reservations.change_reservation %}
+        <button type="button" class="btn-primary py-1.5 text-xs"
+                hx-get="{% url 'operations:check_out' reservation.pk %}"
+                hx-target="#modal-host" hx-swap="innerHTML">
+          {% translate "Devolver el coche" %}
+        </button>
+      {% endif %}
+    </div>
+
+    {% if devolucion %}
+      <dl class="grid grid-cols-2 gap-4 p-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-slate-500">{% translate "Devuelto" %}</dt>
+          <dd class="font-medium text-slate-900">{{ devolucion.actual_datetime|date:"d/m/Y H:i" }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Oficina" %}</dt>
+          <dd class="font-medium text-slate-900">{{ devolucion.return_office.name }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Kilometros" %}</dt>
+          <dd class="font-medium tabular text-slate-900">
+            {{ devolucion.mileage }}
+            <span class="block text-xs text-slate-500">
+              {% blocktranslate with km=devolucion.km_driven %}{{ km }} km recorridos{% endblocktranslate %}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Combustible" %}</dt>
+          <dd class="font-medium text-slate-900">{{ devolucion.get_fuel_level_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Empleado" %}</dt>
+          <dd class="font-medium text-slate-900">{{ devolucion.employee.get_short_name|default:"—" }}</dd>
+        </div>
+      </dl>
+      {% if devolucion.observations %}
+        <p class="border-t border-line px-4 py-3 text-sm text-slate-600">
+          {{ devolucion.observations|linebreaksbr }}
+        </p>
+      {% endif %}
+    {% elif not entrega %}
+      <div class="p-6 text-center">
+        <p class="text-sm font-medium text-amber-800">
+          {% translate "No se puede devolver un coche que no consta entregado." %}
+        </p>
+        <p class="mt-1 text-sm text-slate-500">
+          {% translate "Registra primero la entrega en la pestana Check-in." %}
+        </p>
+      </div>
+    {% else %}
+      <p class="p-6 text-center text-sm text-slate-500">
+        {% translate "El coche sigue fuera." %}
+      </p>
+    {% endif %}
+
+    {% if cargos %}
+      <div class="border-t border-line">
+        <h3 class="px-4 pt-3 text-sm font-semibold text-slate-900">
+          {% translate "Cargos de la devolucion" %}
+        </h3>
+        <table class="data-table mt-2">
+          <caption class="sr-only">{% translate "Cargos anadidos al cerrar" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Concepto" %}</th>
+              <th scope="col" class="text-right">{% translate "Base" %}</th>
+              <th scope="col" class="text-right">{% translate "Total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cargo in cargos %}
+              <tr>
+                <td>
+                  {{ cargo.concept }}
+                  {% if not cargo.is_automatic %}
+                    <span class="ml-1 text-xs text-slate-400">({% translate "a mano" %})</span>
+                  {% endif %}
+                </td>
+                <td class="text-right tabular">{{ cargo.base_amount }} €</td>
+                <td class="text-right tabular font-medium">{{ cargo.total }} €</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" colspan="2" class="px-3 py-2 text-right font-semibold">
+                {% translate "Total de cargos" %}
+              </th>
+              <td class="px-3 py-2 text-right font-semibold tabular">
+                {{ reservation.charges_total }} €
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+
+  {% include "reservations/_damages_panel.html" with titulo=_("Danos nuevos") danos=danos_nuevos %}
+</div>

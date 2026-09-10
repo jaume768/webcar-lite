@@ -296,6 +296,13 @@ class Reservation(TimeStampedModel, UserStampedModel):
     total = models.DecimalField(
         _("total"), max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
+    charges_total = models.DecimalField(
+        _("total de cargos"),
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text=_("Kilometros, combustible, retraso y danos. Con impuesto incluido."),
+    )
     price_breakdown = models.JSONField(
         _("desglose"),
         default=dict,
@@ -447,6 +454,16 @@ class Reservation(TimeStampedModel, UserStampedModel):
     @property
     def has_unlimited_km(self) -> bool:
         return self.included_km is None
+
+    @property
+    def grand_total(self) -> Decimal:
+        """Lo que debe el cliente en total: el alquiler mas los cargos.
+
+        `total` es el precio del alquiler tal como se vendio y lo recalcula el
+        motor de tarifas; los cargos de la devolucion se suman aparte para que
+        un recalculo de precio no se los lleve por delante.
+        """
+        return self.total + self.charges_total
 
 
 class ReservationExtra(models.Model):
@@ -648,3 +665,66 @@ class ReservationPriceChange(models.Model):
     @property
     def difference(self):
         return self.new_total - self.previous_total
+
+
+class ChargeKind(models.TextChoices):
+    """De donde sale un cargo de devolucion."""
+
+    EXTRA_KM = "extra_km", _("Kilometros de mas")
+    FUEL = "fuel", _("Combustible")
+    LATE_RETURN = "late_return", _("Devolucion tardia")
+    CLEANING = "cleaning", _("Limpieza especial")
+    DAMAGE = "damage", _("Danos")
+    OTHER = "other", _("Otros")
+
+
+class ReservationCharge(models.Model):
+    """Cargo anadido al cerrar el alquiler.
+
+    Son lineas de la reserva como los extras, pero no salen del catalogo: las
+    calcula la devolucion (kilometros, combustible, retraso) o las escribe a
+    mano el mostrador (limpieza, danos). Se cobran aparte o se descuentan de la
+    fianza.
+    """
+
+    reservation = models.ForeignKey(
+        Reservation,
+        verbose_name=_("reserva"),
+        on_delete=models.CASCADE,
+        related_name="charges",
+    )
+    kind = models.CharField(_("tipo"), max_length=20, choices=ChargeKind.choices)
+    concept = models.CharField(_("concepto"), max_length=160)
+
+    quantity = models.DecimalField(_("cantidad"), max_digits=10, decimal_places=2, default=1)
+    unit_price = models.DecimalField(_("precio unitario"), max_digits=10, decimal_places=2)
+    tax_rate = models.DecimalField(_("tipo de impuesto"), max_digits=5, decimal_places=2)
+
+    base_amount = models.DecimalField(_("base imponible"), max_digits=10, decimal_places=2)
+    tax_amount = models.DecimalField(_("impuesto"), max_digits=10, decimal_places=2)
+    total = models.DecimalField(_("total"), max_digits=10, decimal_places=2)
+
+    is_automatic = models.BooleanField(
+        _("calculado"),
+        default=True,
+        help_text=_("Lo calculo la devolucion; si no, lo escribio una persona."),
+    )
+    notes = models.TextField(_("notas"), blank=True, default="")
+
+    created_at = models.DateTimeField(_("creado el"), auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("anadido por"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="reservation_charges",
+    )
+
+    class Meta:
+        verbose_name = _("cargo")
+        verbose_name_plural = _("cargos")
+        ordering = ["created_at", "id"]
+
+    def __str__(self):
+        return f"{self.concept}: {self.total} EUR"
