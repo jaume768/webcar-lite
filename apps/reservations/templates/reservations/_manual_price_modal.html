@@ -1,0 +1,38 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Precio a mano" %}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {{ reservation.number }} · {% translate "queda registrado con tu nombre" %}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  <form id="form-precio" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    <div hx-get="{{ form_action }}?preview=1"
+         hx-trigger="change from:#form-precio delay:250ms, keyup changed delay:400ms from:#form-precio"
+         hx-include="#form-precio"
+         hx-target="#panel-diferencia"
+         hx-swap="outerHTML">
+      {% include "ui/_field.html" with field=form.daily_price %}
+      {% include "ui/_field.html" with field=form.reason %}
+    </div>
+  </form>
+
+  {% include "reservations/_price_diff.html" %}
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-precio" class="btn-primary">{% translate "Guardar precio" %}</button>
+{% endblock %}

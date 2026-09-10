@@ -1,0 +1,145 @@
+{% load i18n %}
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="space-y-6 lg:col-span-2">
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Desglose" %}</h2>
+        <div class="flex gap-2">
+          {% if perms.reservations.change_reservation %}
+            <button type="button" class="btn-secondary py-1.5 text-xs"
+                    hx-get="{% url 'reservations:recalculate_price' reservation.pk %}"
+                    hx-target="#modal-host" hx-swap="innerHTML">
+              {% translate "Recalcular" %}
+            </button>
+          {% endif %}
+          {% if perms.reservations.change_reservation_price %}
+            <button type="button" class="btn-secondary py-1.5 text-xs"
+                    hx-get="{% url 'reservations:manual_price' reservation.pk %}"
+                    hx-target="#modal-host" hx-swap="innerHTML">
+              {% translate "Precio a mano" %}
+            </button>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if reservation.is_price_manual %}
+        <div class="border-b border-line bg-amber-50 px-4 py-3">
+          <p class="text-sm font-medium text-amber-900">{% translate "Precio puesto a mano" %}</p>
+          <p class="mt-1 text-sm text-amber-800">{{ reservation.manual_price_reason }}</p>
+        </div>
+      {% endif %}
+
+      <dl class="grid grid-cols-2 gap-4 border-b border-line px-4 py-3 text-sm sm:grid-cols-4">
+        <div>
+          <dt class="text-slate-500">{% translate "Tarifa aplicada" %}</dt>
+          <dd class="font-medium text-slate-900">
+            {{ desglose.applied_rate_name|default:reservation.rate.name|default:"—" }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Tramo" %}</dt>
+          <dd class="font-medium text-slate-900">{{ desglose.applied_tier|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Temporada" %}</dt>
+          <dd class="font-medium text-slate-900">{{ desglose.applied_season|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt class="text-slate-500">{% translate "Dias facturados" %}</dt>
+          <dd class="font-medium tabular text-slate-900">{{ desglose.rental_days|default:"—" }}</dd>
+        </div>
+      </dl>
+
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <caption class="sr-only">{% translate "Desglose tal como se calculo" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Concepto" %}</th>
+              <th scope="col" class="text-right">{% translate "Cant." %}</th>
+              <th scope="col" class="text-right">{% translate "Unidad" %}</th>
+              <th scope="col" class="text-right">{% translate "Base" %}</th>
+              <th scope="col" class="text-right">{% translate "IVA" %}</th>
+              <th scope="col" class="text-right">{% translate "Total" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for linea in lineas %}
+              <tr>
+                <td class="{% if linea.kind == 'discount' %}text-emerald-700{% endif %}">
+                  {{ linea.concept }}
+                </td>
+                <td class="text-right tabular">{{ linea.quantity }}</td>
+                <td class="text-right tabular">{{ linea.unit_price }} €</td>
+                <td class="text-right tabular">{{ linea.base }} €</td>
+                <td class="text-right tabular">{{ linea.tax_amount }} €</td>
+                <td class="text-right tabular font-medium">{{ linea.total }} €</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-slate-500">{% translate "Sin desglose guardado." %}</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="border-t-2 border-line">
+            <tr>
+              <th scope="row" colspan="3" class="px-3 py-1.5 text-right text-slate-600">
+                {% translate "Base imponible" %}
+              </th>
+              <td colspan="2"></td>
+              <td class="px-3 py-1.5 text-right tabular">{{ desglose.taxable_base|default:"—" }} €</td>
+            </tr>
+            <tr>
+              <th scope="row" colspan="3" class="px-3 py-1.5 text-right text-slate-600">
+                {% translate "Impuestos" %}
+              </th>
+              <td colspan="2"></td>
+              <td class="px-3 py-1.5 text-right tabular">{{ reservation.tax_total }} €</td>
+            </tr>
+            <tr>
+              <th scope="row" colspan="3" class="px-3 py-2 text-right text-base font-semibold">
+                {% translate "Total" %}
+              </th>
+              <td colspan="2"></td>
+              <td class="px-3 py-2 text-right text-base font-semibold tabular">
+                {{ reservation.total }} €
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {% for aviso in desglose.warnings %}
+        <p class="border-t border-line px-4 py-2 text-xs text-amber-700">{{ aviso }}</p>
+      {% endfor %}
+    </section>
+  </div>
+
+  <div class="space-y-6">
+    <section class="card">
+      <div class="card-header"><h2 class="card-title">{% translate "Cambios de precio" %}</h2></div>
+      <ol class="divide-y divide-line">
+        {% for cambio in cambios_de_precio %}
+          <li class="px-4 py-3 text-sm">
+            <p class="font-medium text-slate-900">
+              {{ cambio.get_kind_display }}
+              <span class="tabular font-normal text-slate-500">
+                {{ cambio.previous_total }} € → {{ cambio.new_total }} €
+              </span>
+            </p>
+            {% if cambio.reason %}
+              <p class="mt-0.5 text-slate-600">{{ cambio.reason }}</p>
+            {% endif %}
+            <p class="mt-0.5 text-xs text-slate-500">
+              {{ cambio.created_at|date:"d/m/Y H:i" }}
+              {% if cambio.changed_by %}· {{ cambio.changed_by.get_short_name }}{% endif %}
+            </p>
+          </li>
+        {% empty %}
+          <li class="px-4 py-6 text-center text-sm text-slate-500">
+            {% translate "El precio no se ha tocado desde el alta." %}
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+  </div>
+</div>

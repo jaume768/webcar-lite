@@ -25,6 +25,7 @@ FORZAR_DISPONIBILIDAD = "availability.override_availability"
 # --- Dinero -----------------------------------------------------------------
 VER_FACTURACION = "billing.view_billing"
 COBRAR = "billing.add_payment"
+SOBREPAGO = "billing.allow_overpayment"
 GESTIONAR_TARIFAS = "pricing.manage_rates"
 
 # --- Maestros ---------------------------------------------------------------
@@ -89,6 +90,7 @@ RESPONSABLE = [
     CAMBIAR_PRECIO,
     FORZAR_DISPONIBILIDAD,
     VER_FACTURACION,
+    SOBREPAGO,
     EDITAR_FLOTA,
 ]
 

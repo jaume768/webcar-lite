@@ -1,0 +1,104 @@
+{% load i18n %}
+<div class="space-y-6">
+
+  <div class="grid gap-4 sm:grid-cols-4">
+    <div class="card p-4">
+      <p class="text-xs text-slate-500">{% translate "Total" %}</p>
+      <p class="mt-1 text-lg font-semibold tabular text-slate-900">{{ saldo.total }} €</p>
+    </div>
+    <div class="card p-4">
+      <p class="text-xs text-slate-500">{% translate "Cobrado" %}</p>
+      <p class="mt-1 text-lg font-semibold tabular text-emerald-700">{{ saldo.paid }} €</p>
+    </div>
+    <div class="card p-4">
+      <p class="text-xs text-slate-500">{% translate "Pendiente" %}</p>
+      <p class="mt-1 text-lg font-semibold tabular {% if saldo.pending %}text-rose-700{% else %}text-slate-400{% endif %}">
+        {{ saldo.pending }} €
+      </p>
+    </div>
+    <div class="card border-sky-200 bg-sky-50/50 p-4">
+      <p class="text-xs text-sky-700">{% translate "Fianza retenida" %}</p>
+      <p class="mt-1 text-lg font-semibold tabular text-sky-900">{{ saldo.deposit }} €</p>
+      <p class="mt-0.5 text-xs text-sky-700">{% translate "No es un cobro del alquiler" %}</p>
+    </div>
+  </div>
+
+  {% if saldo.overpaid %}
+    <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+      {% blocktranslate with importe=saldo.overpaid %}
+        Hay {{ importe }} € cobrados de mas. Devuelvelos con un apunte contrario.
+      {% endblocktranslate %}
+    </p>
+  {% endif %}
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Movimientos" %}</h2>
+      {% if perms.billing.add_payment %}
+        <button type="button" class="btn-secondary py-1.5 text-xs"
+                hx-get="{% url 'billing:payment_create' reservation.pk %}"
+                hx-target="#modal-host" hx-swap="innerHTML">
+          {% translate "Registrar cobro" %}
+        </button>
+      {% endif %}
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <caption class="sr-only">{% translate "Cobros y devoluciones de la reserva" %}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Fecha" %}</th>
+            <th scope="col">{% translate "Concepto" %}</th>
+            <th scope="col">{% translate "Medio" %}</th>
+            <th scope="col">{% translate "Referencia" %}</th>
+            <th scope="col" class="text-right">{% translate "Importe" %}</th>
+            <th scope="col" class="text-right">{% translate "Acciones" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cobro in cobros %}
+            <tr>
+              <td class="whitespace-nowrap">
+                {{ cobro.paid_at|date:"d/m/y H:i" }}
+                {% if cobro.created_by %}
+                  <span class="block text-xs text-slate-500">{{ cobro.created_by.get_short_name }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {{ cobro.get_payment_type_display }}
+                {% if cobro.is_deposit %}
+                  <span class="ml-1 text-xs text-sky-700">({% translate "fianza" %})</span>
+                {% endif %}
+              </td>
+              <td>{{ cobro.get_method_display }}</td>
+              <td class="font-mono text-xs">{{ cobro.reference|default:"—" }}</td>
+              <td class="text-right tabular font-medium {% if cobro.is_outgoing %}text-rose-700{% else %}text-slate-900{% endif %}">
+                {{ cobro.amount }} €
+              </td>
+              <td class="text-right">
+                {% if perms.billing.add_payment and not cobro.is_outgoing %}
+                  <button type="button" class="btn-ghost px-2 py-1 text-xs"
+                          hx-get="{% url 'billing:payment_refund' reservation.pk cobro.pk %}"
+                          hx-target="#modal-host" hx-swap="innerHTML">
+                    {% translate "Devolver" %}
+                  </button>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="py-8 text-center text-sm text-slate-500">
+                {% translate "Todavia no se ha cobrado nada." %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="border-t border-line px-4 py-2 text-xs text-slate-500">
+      {% translate "Un cobro registrado no se edita ni se borra: se corrige con un apunte contrario." %}
+    </p>
+  </section>
+</div>

@@ -1,0 +1,42 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Anadir extra" %}{% endblock %}
+
+{% block modal_body %}
+  {% if aviso_precio_manual %}
+    <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3" role="alert">
+      <p class="text-sm text-amber-900">{{ aviso_precio_manual }}</p>
+      <button type="submit" form="form-extra" name="confirm_manual" value="1"
+              class="btn-danger mt-3 py-1.5 text-xs">
+        {% translate "Anadir y recalcular de todos modos" %}
+      </button>
+    </div>
+  {% endif %}
+
+  <form id="form-extra" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    <div hx-get="{{ form_action }}?preview=1"
+         hx-trigger="change from:#form-extra delay:200ms"
+         hx-include="#form-extra"
+         hx-target="#panel-diferencia"
+         hx-swap="outerHTML">
+      {% include "ui/_field.html" with field=form.extra %}
+      {% include "ui/_field.html" with field=form.quantity %}
+    </div>
+  </form>
+
+  {% include "reservations/_price_diff.html" %}
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-extra" class="btn-primary">{% translate "Anadir" %}</button>
+{% endblock %}

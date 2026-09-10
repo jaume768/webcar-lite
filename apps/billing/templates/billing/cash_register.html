@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Arqueo de caja" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block content %}
+  <form class="card mb-5 flex flex-wrap items-end gap-3 p-4"
+        hx-get="{% url 'billing:cash_register' %}"
+        hx-target="#panel-arqueo"
+        hx-swap="outerHTML"
+        hx-push-url="true">
+    <div>{% include "ui/_field.html" with field=form.day %}</div>
+    <div>{% include "ui/_field.html" with field=form.office %}</div>
+    <button type="submit" class="btn-primary mb-4">{% translate "Ver caja" %}</button>
+  </form>
+
+  {% include "billing/_cash_register_panel.html" %}
+{% endblock %}

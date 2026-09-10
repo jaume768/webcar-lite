@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 import structlog
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -32,8 +33,10 @@ from apps.pricing.services import (
 from .models import (
     CancellationPolicy,
     FuelPolicy,
+    PriceChangeKind,
     Reservation,
     ReservationExtra,
+    ReservationPriceChange,
     ReservationStatus,
     ReservationStatusChange,
 )
@@ -121,24 +124,35 @@ def _congelar_extras(reservation: Reservation, breakdown: PriceBreakdown, extras
 
     A partir de aqui, la reserva no vuelve a mirar el maestro de extras para
     saber cuanto cobro.
+
+    Las lineas se actualizan en su sitio en vez de borrarlas y recrearlas: un
+    recalculo no puede cambiarles el id, porque son las filas a las que
+    apuntaran manana las lineas de factura.
     """
     lineas = {linea.source_code: linea for linea in breakdown.lines_of("extra")}
+    vivas = []
     for peticion in extras:
         linea = lineas.get(peticion.extra.code)
         if linea is None:
             # El motor no la cobro (tope, no aplicable...): no se guarda linea.
             continue
-        ReservationExtra.objects.create(
+        fila, _creada = ReservationExtra.objects.update_or_create(
             reservation=reservation,
             extra=peticion.extra,
-            concept=linea.concept or peticion.extra.name,
-            quantity=peticion.quantity,
-            unit_price=linea.unit_price,
-            tax_rate=linea.tax_rate,
-            base_amount=linea.base,
-            tax_amount=linea.tax_amount,
-            total=linea.total,
+            defaults={
+                "concept": linea.concept or peticion.extra.name,
+                "quantity": peticion.quantity,
+                "unit_price": linea.unit_price,
+                "tax_rate": linea.tax_rate,
+                "base_amount": linea.base,
+                "tax_amount": linea.tax_amount,
+                "total": linea.total,
+            },
         )
+        vivas.append(fila.pk)
+
+    # Lo que ya no se vende, fuera.
+    reservation.extras.exclude(pk__in=vivas).delete()
 
 
 # ---------------------------------------------------------------------------
@@ -365,6 +379,8 @@ class ChangePreview:
     releases_vehicle: bool = False
     vehicle_conflict: str = ""
     blocked_reason: str = ""
+    #: Aviso de que el cambio pisaria un precio pactado a mano.
+    manual_price_warning: str = ""
     warnings: tuple[str, ...] = ()
 
     @property
@@ -480,6 +496,9 @@ def preview_change(
         bloqueo = bloqueo or str(exc)
 
     return ChangePreview(
+        manual_price_warning=(
+            _avisar_precio_manual(reservation) if reservation.is_price_manual else ""
+        ),
         pickup_at=nueva_recogida,
         return_at=nueva_devolucion,
         category=nueva_categoria,
@@ -503,6 +522,7 @@ def apply_change(
     return_at=None,
     category=None,
     release_vehicle: bool = False,
+    confirm_manual_override: bool = False,
     actor=None,
 ) -> Reservation:
     """Cambia fechas o categoria: revalida disponibilidad y recalcula precio.
@@ -514,6 +534,9 @@ def apply_change(
     _comprobar_factura(reservation, actor)
 
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    # Un cambio de fechas o de categoria recalcula, y eso se llevaria por
+    # delante un precio pactado a mano. Nunca en silencio.
+    _comprobar_precio_manual(reservation, confirm_manual_override)
     nueva_categoria = category or reservation.category
 
     if reservation.vehicle_id and (
@@ -555,14 +578,17 @@ def apply_change(
     )
 
     total_anterior = reservation.total
-    for campo, valor in _campos_de_precio(breakdown).items():
-        setattr(reservation, campo, valor)
-    reservation.save()
-
     # Al cambiar los dias, un extra por dia cuesta otra cosa: se recongelan con
     # el calculo nuevo. Lo que nunca los mueve es un cambio en el maestro.
-    reservation.extras.all().delete()
-    _congelar_extras(reservation, breakdown, peticiones)
+    _aplicar_desglose(reservation, breakdown, peticiones)
+
+    _registrar_cambio_de_precio(
+        reservation,
+        anterior=total_anterior,
+        kind=PriceChangeKind.CATEGORY if category else PriceChangeKind.DATES,
+        reason=str(_("Recalculado tras el cambio")),
+        actor=actor,
+    )
 
     logger.info(
         "reserva_modificada",
@@ -663,3 +689,298 @@ def remove_driver(*, driver, actor=None) -> None:
     }
     driver.delete()
     logger.info("conductor_retirado", **datos)
+
+
+# ---------------------------------------------------------------------------
+# Precio: extras, precio manual y recalculo
+# ---------------------------------------------------------------------------
+
+
+class ManualPriceWouldBeLost(ReservationServiceError):
+    """El recalculo pisaria un precio puesto a mano.
+
+    Es el error clasico de estas pantallas: alguien acuerda un precio con el
+    cliente, luego toca las fechas y el sistema recalcula por detras dejando la
+    reserva a tarifa. Aqui no pasa en silencio: hay que confirmarlo.
+    """
+
+
+PERMISO_PRECIO_MANUAL = "reservations.change_reservation_price"
+
+
+def _avisar_precio_manual(reservation: Reservation) -> str:
+    return str(
+        _(
+            "%(numero)s tiene un precio puesto a mano (%(total)s EUR). Si sigues, "
+            "se recalcula con la tarifa y ese acuerdo se pierde."
+        )
+        % {"numero": reservation.number, "total": reservation.total}
+    )
+
+
+def _comprobar_precio_manual(reservation: Reservation, confirmado: bool) -> None:
+    if reservation.is_price_manual and not confirmado:
+        raise ManualPriceWouldBeLost(_avisar_precio_manual(reservation))
+
+
+def _registrar_cambio_de_precio(
+    reservation: Reservation, *, anterior: Decimal, kind: str, reason: str = "", actor=None
+) -> None:
+    if anterior == reservation.total and kind != PriceChangeKind.MANUAL:
+        return
+    ReservationPriceChange.objects.create(
+        reservation=reservation,
+        kind=kind,
+        previous_total=anterior,
+        new_total=reservation.total,
+        reason=reason,
+        changed_by=actor if getattr(actor, "pk", None) else None,
+    )
+    logger.info(
+        "precio_de_reserva_cambiado",
+        reservation_number=reservation.number,
+        kind=kind,
+        total_anterior=str(anterior),
+        total_nuevo=str(reservation.total),
+        motivo=reason,
+        actor_id=getattr(actor, "pk", None),
+    )
+
+
+def _aplicar_desglose(
+    reservation: Reservation,
+    breakdown: PriceBreakdown,
+    peticiones,
+    *,
+    manual: bool = False,
+    reason: str = "",
+) -> None:
+    """Escribe el calculo en la reserva y vuelve a congelar los extras."""
+    for campo, valor in _campos_de_precio(breakdown).items():
+        setattr(reservation, campo, valor)
+    reservation.is_price_manual = manual
+    reservation.manual_price_reason = reason if manual else ""
+    reservation.save()
+
+    _congelar_extras(reservation, breakdown, peticiones)
+
+
+def _recalcular(
+    reservation: Reservation,
+    *,
+    peticiones=None,
+    manual_override: Decimal | None = None,
+) -> PriceBreakdown:
+    if peticiones is None:
+        peticiones = _extras_como_peticion(reservation)
+    return quote(
+        category=reservation.category,
+        pickup_office=reservation.pickup_office,
+        return_office=reservation.return_office,
+        pickup_at=reservation.pickup_at,
+        return_at=reservation.return_at,
+        extras=peticiones,
+        channel=reservation.channel,
+        customer=reservation.customer,
+        manual_override=manual_override,
+    )
+
+
+def price_preview(
+    *,
+    reservation: Reservation,
+    extras=None,
+    manual_override: Decimal | None = None,
+) -> tuple[PriceBreakdown, Decimal]:
+    """Calculo y diferencia contra el total actual, sin escribir nada."""
+    breakdown = _recalcular(reservation, peticiones=extras, manual_override=manual_override)
+    return breakdown, breakdown.total - reservation.total
+
+
+@transaction.atomic
+def add_extra(
+    *,
+    reservation: Reservation,
+    extra,
+    quantity: int = 1,
+    confirm_manual_override: bool = False,
+    actor=None,
+) -> Reservation:
+    """Anade un extra y recalcula el precio con el tope que tenga."""
+    reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    _comprobar_factura(reservation, actor)
+    _comprobar_precio_manual(reservation, confirm_manual_override)
+
+    if reservation.extras.filter(extra=extra).exists():
+        raise ReservationServiceError(
+            _("%(extra)s ya esta en la reserva. Cambia la cantidad en su linea.")
+            % {"extra": extra.name}
+        )
+    if extra.max_quantity and quantity > extra.max_quantity:
+        raise ReservationServiceError(
+            _("De %(extra)s no se pueden poner mas de %(tope)s.")
+            % {"extra": extra.name, "tope": extra.max_quantity}
+        )
+
+    anterior = reservation.total
+    peticiones = (*_extras_como_peticion(reservation), ExtraRequest(extra=extra, quantity=quantity))
+    breakdown = _recalcular(reservation, peticiones=peticiones)
+    _aplicar_desglose(reservation, breakdown, peticiones)
+
+    _registrar_cambio_de_precio(
+        reservation,
+        anterior=anterior,
+        kind=PriceChangeKind.EXTRAS,
+        reason=str(
+            _("Anadido %(extra)s x%(cantidad)s") % {"extra": extra.name, "cantidad": quantity}
+        ),
+        actor=actor,
+    )
+    return reservation
+
+
+@transaction.atomic
+def set_extra_quantity(
+    *,
+    reservation: Reservation,
+    line: ReservationExtra,
+    quantity: int,
+    confirm_manual_override: bool = False,
+    actor=None,
+) -> Reservation:
+    """Cambia la cantidad de un extra ya vendido."""
+    reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    _comprobar_factura(reservation, actor)
+    _comprobar_precio_manual(reservation, confirm_manual_override)
+
+    if quantity < 1:
+        raise ReservationServiceError(_("La cantidad tiene que ser al menos 1."))
+    if line.extra.max_quantity and quantity > line.extra.max_quantity:
+        raise ReservationServiceError(
+            _("De %(extra)s no se pueden poner mas de %(tope)s.")
+            % {"extra": line.extra.name, "tope": line.extra.max_quantity}
+        )
+
+    anterior = reservation.total
+    peticiones = tuple(
+        ExtraRequest(extra=otra.extra, quantity=quantity if otra.pk == line.pk else otra.quantity)
+        for otra in reservation.extras.select_related("extra")
+    )
+    breakdown = _recalcular(reservation, peticiones=peticiones)
+    _aplicar_desglose(reservation, breakdown, peticiones)
+
+    _registrar_cambio_de_precio(
+        reservation,
+        anterior=anterior,
+        kind=PriceChangeKind.EXTRAS,
+        reason=str(
+            _("%(extra)s pasa a x%(cantidad)s") % {"extra": line.extra.name, "cantidad": quantity}
+        ),
+        actor=actor,
+    )
+    return reservation
+
+
+@transaction.atomic
+def remove_extra(
+    *,
+    reservation: Reservation,
+    line: ReservationExtra,
+    confirm_manual_override: bool = False,
+    actor=None,
+) -> Reservation:
+    """Quita un extra de la reserva y recalcula."""
+    reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    _comprobar_factura(reservation, actor)
+    _comprobar_precio_manual(reservation, confirm_manual_override)
+
+    nombre = line.concept
+    anterior = reservation.total
+    peticiones = tuple(
+        ExtraRequest(extra=otra.extra, quantity=otra.quantity)
+        for otra in reservation.extras.select_related("extra")
+        if otra.pk != line.pk
+    )
+    breakdown = _recalcular(reservation, peticiones=peticiones)
+    _aplicar_desglose(reservation, breakdown, peticiones)
+
+    _registrar_cambio_de_precio(
+        reservation,
+        anterior=anterior,
+        kind=PriceChangeKind.EXTRAS,
+        reason=str(_("Quitado %(extra)s") % {"extra": nombre}),
+        actor=actor,
+    )
+    return reservation
+
+
+@transaction.atomic
+def set_manual_price(
+    *,
+    reservation: Reservation,
+    daily_price: Decimal,
+    reason: str,
+    actor=None,
+) -> Reservation:
+    """Fija a mano el precio por dia del alquiler.
+
+    Exige permiso y motivo escrito. Los extras, suplementos e impuestos se
+    siguen calculando: lo que se fuerza es el alquiler, que es lo que se negocia
+    en el mostrador.
+    """
+    if actor is None or not actor.has_perm(PERMISO_PRECIO_MANUAL):
+        raise PermissionDenied(
+            _("Tu usuario no puede modificar el precio de una reserva (%(permiso)s).")
+            % {"permiso": PERMISO_PRECIO_MANUAL}
+        )
+    motivo = (reason or "").strip()
+    if not motivo:
+        raise ReservationServiceError(
+            _("Un precio puesto a mano no se guarda sin explicar por que.")
+        )
+    if daily_price is None or daily_price < 0:
+        raise ReservationServiceError(_("El precio por dia no puede ser negativo."))
+
+    reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    _comprobar_factura(reservation, actor)
+
+    anterior = reservation.total
+    peticiones = _extras_como_peticion(reservation)
+    breakdown = _recalcular(reservation, peticiones=peticiones, manual_override=daily_price)
+    _aplicar_desglose(reservation, breakdown, peticiones, manual=True, reason=motivo)
+
+    _registrar_cambio_de_precio(
+        reservation,
+        anterior=anterior,
+        kind=PriceChangeKind.MANUAL,
+        reason=motivo,
+        actor=actor,
+    )
+    return reservation
+
+
+@transaction.atomic
+def recalculate_price(
+    *,
+    reservation: Reservation,
+    confirm_manual_override: bool = False,
+    actor=None,
+) -> Reservation:
+    """Rehace el precio desde la tarifa, olvidando cualquier acuerdo manual."""
+    reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    _comprobar_factura(reservation, actor)
+    _comprobar_precio_manual(reservation, confirm_manual_override)
+
+    anterior = reservation.total
+    peticiones = _extras_como_peticion(reservation)
+    breakdown = _recalcular(reservation, peticiones=peticiones)
+    _aplicar_desglose(reservation, breakdown, peticiones)
+
+    _registrar_cambio_de_precio(
+        reservation,
+        anterior=anterior,
+        kind=PriceChangeKind.RECALCULATED,
+        reason=str(_("Recalculado desde tarifa")),
+        actor=actor,
+    )
+    return reservation

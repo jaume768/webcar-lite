@@ -1,0 +1,105 @@
+{% load i18n %}
+<div id="panel-arqueo" class="space-y-6">
+  {% if arqueo %}
+    <div class="grid gap-4 sm:grid-cols-4">
+      <div class="card p-4">
+        <p class="text-xs text-slate-500">{% translate "Entradas en efectivo" %}</p>
+        <p class="mt-1 text-lg font-semibold tabular text-emerald-700">{{ arqueo.cash_in }} €</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs text-slate-500">{% translate "Salidas en efectivo" %}</p>
+        <p class="mt-1 text-lg font-semibold tabular text-rose-700">{{ arqueo.cash_out }} €</p>
+      </div>
+      <div class="card border-brand-200 bg-brand-50/50 p-4">
+        <p class="text-xs text-brand-700">{% translate "Deberia haber en caja" %}</p>
+        <p class="mt-1 text-lg font-semibold tabular text-brand-900">{{ arqueo.cash_balance }} €</p>
+      </div>
+      <div class="card p-4">
+        <p class="text-xs text-slate-500">{% translate "Movimientos" %}</p>
+        <p class="mt-1 text-lg font-semibold tabular text-slate-900">{{ arqueo.count }}</p>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Efectivo del dia" %}</h2>
+        <span class="text-xs text-slate-500">
+          {{ arqueo.office.name }} · {{ arqueo.day|date:"d/m/Y" }}
+        </span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <caption class="sr-only">{% translate "Cobros en efectivo de la oficina" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Hora" %}</th>
+              <th scope="col">{% translate "Reserva" %}</th>
+              <th scope="col">{% translate "Concepto" %}</th>
+              <th scope="col">{% translate "Quien" %}</th>
+              <th scope="col" class="text-right">{% translate "Importe" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cobro in arqueo.payments %}
+              <tr>
+                <td class="tabular">{{ cobro.paid_at|date:"H:i" }}</td>
+                <td>
+                  <a class="font-mono text-brand-700 hover:underline"
+                     href="{% url 'reservations:detail' cobro.reservation.pk %}">
+                    {{ cobro.reservation.number }}
+                  </a>
+                </td>
+                <td>{{ cobro.get_payment_type_display }}</td>
+                <td class="text-slate-600">{{ cobro.created_by.get_short_name|default:"—" }}</td>
+                <td class="text-right tabular font-medium {% if cobro.is_outgoing %}text-rose-700{% endif %}">
+                  {{ cobro.amount }} €
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="py-8 text-center text-sm text-slate-500">
+                  {% translate "No ha entrado efectivo ese dia." %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          {% if arqueo.payments %}
+            <tfoot>
+              <tr>
+                <th scope="row" colspan="4" class="px-3 py-2 text-right font-semibold">
+                  {% translate "Saldo de caja" %}
+                </th>
+                <td class="px-3 py-2 text-right text-base font-semibold tabular">
+                  {{ arqueo.cash_balance }} €
+                </td>
+              </tr>
+            </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </section>
+
+    {% if por_metodo %}
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Todos los medios de pago" %}</h2>
+          <span class="text-xs text-slate-500">
+            {% translate "Para contrastar con el datafono y el banco" %}
+          </span>
+        </div>
+        <ul class="divide-y divide-line">
+          {% for etiqueta, total in por_metodo %}
+            <li class="flex justify-between px-4 py-2 text-sm">
+              <span class="text-slate-700">{{ etiqueta }}</span>
+              <span class="tabular font-medium text-slate-900">{{ total }} €</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  {% else %}
+    <div class="card p-8 text-center text-sm text-slate-500">
+      {% translate "Elige una oficina para ver su caja." %}
+    </div>
+  {% endif %}
+</div>

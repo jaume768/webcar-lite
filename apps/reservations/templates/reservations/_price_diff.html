@@ -1,0 +1,29 @@
+{% load i18n %}
+{% comment %} Diferencia contra el total actual. Se recalcula en vivo. {% endcomment %}
+<div id="panel-diferencia">
+  {% if preview_precio %}
+    <dl class="rounded-lg border border-line bg-slate-50 p-3 text-sm">
+      <div class="flex justify-between">
+        <dt class="text-slate-600">{% translate "Total actual" %}</dt>
+        <dd class="tabular text-slate-700">{{ reservation.total }} €</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-slate-600">{% translate "Total nuevo" %}</dt>
+        <dd class="tabular font-medium text-slate-900">{{ preview_precio.total }} €</dd>
+      </div>
+      <div class="mt-1 flex justify-between border-t border-line pt-1">
+        <dt class="font-medium text-slate-900">{% translate "Diferencia" %}</dt>
+        <dd class="tabular font-semibold {% if diferencia < 0 %}text-emerald-700{% else %}text-slate-900{% endif %}">
+          {% if diferencia >= 0 %}+{% endif %}{{ diferencia }} €
+        </dd>
+      </div>
+    </dl>
+    {% for aviso in preview_precio.warnings %}
+      <p class="mt-2 text-xs text-amber-700">{{ aviso }}</p>
+    {% endfor %}
+  {% else %}
+    <p class="text-sm text-slate-500">
+      {% translate "Completa los datos para ver la diferencia." %}
+    </p>
+  {% endif %}
+</div>

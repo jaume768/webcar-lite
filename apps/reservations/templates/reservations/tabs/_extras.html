@@ -1,0 +1,103 @@
+{% load i18n %}
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">{% translate "Extras vendidos" %}</h2>
+    {% if perms.reservations.change_reservation %}
+      <button type="button" class="btn-secondary py-1.5 text-xs"
+              hx-get="{% url 'reservations:extra_add' reservation.pk %}"
+              hx-target="#modal-host" hx-swap="innerHTML">
+        {% translate "Anadir extra" %}
+      </button>
+    {% endif %}
+  </div>
+
+  {% if reservation.is_price_manual %}
+    <p class="border-b border-line bg-amber-50 px-4 py-2 text-sm text-amber-900">
+      {% translate "Esta reserva tiene un precio puesto a mano. Tocar los extras obliga a recalcular." %}
+    </p>
+  {% endif %}
+
+  <div class="overflow-x-auto">
+    <table class="data-table">
+      <caption class="sr-only">{% translate "Extras con el precio con el que se vendieron" %}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Concepto" %}</th>
+          <th scope="col" class="text-right">{% translate "Cant." %}</th>
+          <th scope="col" class="text-right">{% translate "Unidad" %}</th>
+          <th scope="col" class="text-right">{% translate "Base" %}</th>
+          <th scope="col" class="text-right">{% translate "Total" %}</th>
+          <th scope="col" class="text-right">{% translate "Acciones" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for linea in extras %}
+          <tr>
+            <td class="font-medium text-slate-900">{{ linea.concept }}</td>
+            <td class="text-right">
+              {% if perms.reservations.change_reservation %}
+                <form method="post" action="{% url 'reservations:extra_line' reservation.pk linea.pk %}"
+                      hx-post="{% url 'reservations:extra_line' reservation.pk linea.pk %}"
+                      hx-target="#modal-host" hx-swap="innerHTML" class="inline-flex items-center gap-1">
+                  {% csrf_token %}
+                  <label class="sr-only" for="cantidad-{{ linea.pk }}">{% translate "Cantidad" %}</label>
+                  <input type="number" id="cantidad-{{ linea.pk }}" name="quantity" min="1"
+                         value="{{ linea.quantity }}"
+                         {% if linea.extra.max_quantity %}max="{{ linea.extra.max_quantity }}"{% endif %}
+                         class="input w-16 px-2 py-1 text-right text-sm">
+                  <button type="submit" class="btn-ghost px-2 py-1 text-xs">
+                    {% translate "Guardar" %}
+                  </button>
+                </form>
+              {% else %}
+                <span class="tabular">{{ linea.quantity }}</span>
+              {% endif %}
+              {% if linea.extra.max_quantity %}
+                <span class="block text-xs text-slate-400">
+                  {% blocktranslate with tope=linea.extra.max_quantity %}max. {{ tope }}{% endblocktranslate %}
+                </span>
+              {% endif %}
+            </td>
+            <td class="text-right tabular">{{ linea.unit_price }} €</td>
+            <td class="text-right tabular">{{ linea.base_amount }} €</td>
+            <td class="text-right tabular font-medium">{{ linea.total }} €</td>
+            <td class="text-right">
+              {% if perms.reservations.change_reservation %}
+                <form method="post" action="{% url 'reservations:extra_line' reservation.pk linea.pk %}"
+                      hx-post="{% url 'reservations:extra_line' reservation.pk linea.pk %}"
+                      hx-target="#modal-host" hx-swap="innerHTML" class="inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="accion" value="quitar">
+                  <button type="submit" class="btn-ghost px-2 py-1 text-xs text-rose-700">
+                    {% translate "Quitar" %}
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="py-8 text-center text-sm text-slate-500">
+              {% translate "La reserva no lleva extras." %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      {% if extras %}
+        <tfoot>
+          <tr>
+            <th scope="row" colspan="4" class="px-3 py-2 text-right font-semibold">
+              {% translate "Extras (base)" %}
+            </th>
+            <td class="px-3 py-2 text-right font-semibold tabular">{{ reservation.extras_total }} €</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      {% endif %}
+    </table>
+  </div>
+
+  <p class="border-t border-line px-4 py-2 text-xs text-slate-500">
+    {% translate "El precio de cada extra es el del dia en que se vendio: cambiarlo en el catalogo no mueve esta reserva." %}
+  </p>
+</section>

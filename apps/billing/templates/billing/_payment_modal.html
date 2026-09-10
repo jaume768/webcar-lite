@@ -1,0 +1,55 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Registrar cobro" %}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {{ reservation.number }} · {% translate "pendiente" %}
+    <span class="tabular font-medium">{{ pendiente }} €</span>
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  {% if aviso_sobrepago %}
+    <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3" role="alert">
+      <p class="text-sm text-amber-900">{{ aviso_sobrepago }}</p>
+      {% if puede_autorizar %}
+        <button type="submit" form="form-cobro" name="allow_overpayment" value="1"
+                class="btn-danger mt-3 py-1.5 text-xs">
+          {% translate "Cobrar de mas de todos modos" %}
+        </button>
+      {% else %}
+        <p class="mt-2 text-xs text-amber-800">
+          {% translate "Tu usuario no puede autorizarlo: pideselo a un responsable." %}
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <form id="form-cobro" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    <div class="grid gap-x-4 sm:grid-cols-2">
+      {% include "ui/_field.html" with field=form.amount %}
+      {% include "ui/_field.html" with field=form.method %}
+      {% include "ui/_field.html" with field=form.payment_type %}
+      {% include "ui/_field.html" with field=form.reference %}
+    </div>
+    {% include "ui/_field.html" with field=form.notes %}
+    <p class="field-hint">
+      {% translate "La fianza va aparte: no cuenta como cobrado del alquiler." %}
+    </p>
+  </form>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-cobro" class="btn-primary">{% translate "Registrar" %}</button>
+{% endblock %}

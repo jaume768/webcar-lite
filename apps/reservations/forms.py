@@ -201,3 +201,56 @@ class DriverForm(forms.ModelForm):
         except ReservationServiceError as exc:
             self.add_error("licence_expiry", str(exc))
         return datos
+
+
+class AddExtraForm(forms.Form):
+    """Anadir un extra a una reserva ya creada."""
+
+    extra = forms.ModelChoiceField(
+        label=_("Extra"),
+        queryset=Extra.objects.active().order_by("name"),
+        empty_label=None,
+    )
+    quantity = forms.IntegerField(label=_("Cantidad"), min_value=1, initial=1)
+
+    def __init__(self, *args, reservation=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.reservation = reservation
+        if reservation is not None:
+            # Los que ya estan no se ofrecen otra vez: se cambia su cantidad.
+            puestos = reservation.extras.values_list("extra_id", flat=True)
+            self.fields["extra"].queryset = Extra.objects.active().exclude(pk__in=puestos)
+
+    def clean(self):
+        datos = super().clean()
+        extra, cantidad = datos.get("extra"), datos.get("quantity")
+        if extra and cantidad and extra.max_quantity and cantidad > extra.max_quantity:
+            self.add_error(
+                "quantity",
+                _("De %(extra)s no se pueden poner mas de %(tope)s.")
+                % {"extra": extra.name, "tope": extra.max_quantity},
+            )
+        return datos
+
+
+class ManualPriceForm(forms.Form):
+    """Precio del alquiler acordado a mano. Motivo obligatorio."""
+
+    daily_price = forms.DecimalField(
+        label=_("Precio por dia"),
+        min_value=0,
+        max_digits=10,
+        decimal_places=2,
+        help_text=_("Base imponible del alquiler por dia. Los extras siguen su tarifa."),
+    )
+    reason = forms.CharField(
+        label=_("Motivo"),
+        widget=forms.Textarea(attrs={"rows": 3}),
+        help_text=_("Queda registrado con tu nombre. Sin motivo no se guarda."),
+    )
+
+    def clean_reason(self):
+        motivo = self.cleaned_data["reason"].strip()
+        if not motivo:
+            raise forms.ValidationError(_("Explica por que se cambia el precio."))
+        return motivo

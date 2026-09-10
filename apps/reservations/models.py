@@ -589,3 +589,62 @@ class ReservationStatusChange(models.Model):
 
     def __str__(self):
         return f"{self.reservation_id}: {self.from_status} -> {self.to_status}"
+
+
+class PriceChangeKind(models.TextChoices):
+    MANUAL = "manual", _("Precio puesto a mano")
+    RECALCULATED = "recalculated", _("Recalculado desde tarifa")
+    DATES = "dates", _("Cambio de fechas")
+    CATEGORY = "category", _("Cambio de categoria")
+    EXTRAS = "extras", _("Cambio de extras")
+
+
+class ReservationPriceChange(models.Model):
+    """Cada vez que el precio de una reserva se mueve, y por que.
+
+    El dominio exige registrar los cambios de precio manuales, y con ellos
+    conviene guardar tambien los automaticos: la pregunta de mostrador nunca es
+    "cuanto vale" sino "por que ahora vale otra cosa".
+
+    No se edita ni se borra. Cuando exista `AuditLog`, esta tabla es la que
+    alimenta sus apuntes de precio.
+    """
+
+    reservation = models.ForeignKey(
+        Reservation,
+        verbose_name=_("reserva"),
+        on_delete=models.CASCADE,
+        related_name="price_changes",
+    )
+    kind = models.CharField(_("motivo del cambio"), max_length=20, choices=PriceChangeKind.choices)
+
+    previous_total = models.DecimalField(_("total anterior"), max_digits=10, decimal_places=2)
+    new_total = models.DecimalField(_("total nuevo"), max_digits=10, decimal_places=2)
+
+    reason = models.TextField(
+        _("motivo"),
+        blank=True,
+        default="",
+        help_text=_("Obligatorio cuando el precio se pone a mano."),
+    )
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("hecho por"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="reservation_price_changes",
+    )
+    created_at = models.DateTimeField(_("cuando"), auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = _("cambio de precio")
+        verbose_name_plural = _("cambios de precio")
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.reservation_id}: {self.previous_total} -> {self.new_total}"
+
+    @property
+    def difference(self):
+        return self.new_total - self.previous_total

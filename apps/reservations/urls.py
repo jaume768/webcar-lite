@@ -39,6 +39,18 @@ urlpatterns = [
         views.DriverDeleteView.as_view(),
         name="driver_delete",
     ),
+    path("reservas/<int:pk>/extras/", views.AddExtraView.as_view(), name="extra_add"),
+    path(
+        "reservas/<int:pk>/extras/<int:line_pk>/",
+        views.ExtraLineView.as_view(),
+        name="extra_line",
+    ),
+    path("reservas/<int:pk>/precio/manual/", views.ManualPriceView.as_view(), name="manual_price"),
+    path(
+        "reservas/<int:pk>/precio/recalcular/",
+        views.RecalculatePriceView.as_view(),
+        name="recalculate_price",
+    ),
     path(
         "reservas/<int:pk>/estado/<str:to_status>/",
         views.ReservationTransitionView.as_view(),

@@ -1,0 +1,35 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+{% comment %} Se abre cuando una accion pisaria un precio pactado a mano. No se
+   ha hecho nada todavia: el mismo POST se reintenta con confirm_manual. {% endcomment %}
+
+{% block modal_title %}{% translate "Hay un precio puesto a mano" %}{% endblock %}
+
+{% block modal_body %}
+  <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+    {{ aviso }}
+  </p>
+  <p class="mt-3 text-sm text-slate-600">
+    {% translate "Si continuas, el precio vuelve a calcularse con la tarifa y el acuerdo con el cliente se pierde." %}
+  </p>
+
+  <form id="form-confirmar-precio" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML">
+    {% csrf_token %}
+    {% for campo, valor in reintento.items %}
+      {% if campo != "csrfmiddlewaretoken" %}
+        <input type="hidden" name="{{ campo }}" value="{{ valor }}">
+      {% endif %}
+    {% endfor %}
+    <input type="hidden" name="confirm_manual" value="1">
+  </form>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">
+    {% translate "Dejarlo como esta" %}
+  </button>
+  <button type="submit" form="form-confirmar-precio" class="btn-danger">
+    {% translate "Recalcular de todos modos" %}
+  </button>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Recalcular desde tarifa" %}{% endblock %}
+
+{% block modal_body %}
+  {% if aviso_precio_manual %}
+    <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+         role="alert">
+      {{ aviso_precio_manual }}
+    </div>
+  {% endif %}
+  {% if error %}
+    <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+         role="alert">{{ error }}</div>
+  {% endif %}
+
+  <p class="mb-3 text-sm text-slate-600">
+    {% translate "El precio se rehace con la tarifa vigente para estas fechas y estos extras." %}
+  </p>
+  {% include "reservations/_price_diff.html" %}
+
+  <form id="form-recalcular" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML">
+    {% csrf_token %}
+    {% if aviso_precio_manual %}<input type="hidden" name="confirm_manual" value="1">{% endif %}
+  </form>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-recalcular"
+          class="{% if aviso_precio_manual %}btn-danger{% else %}btn-primary{% endif %}">
+    {% if aviso_precio_manual %}{% translate "Recalcular y perder el precio manual" %}
+    {% else %}{% translate "Recalcular" %}{% endif %}
+  </button>
+{% endblock %}

@@ -25,9 +25,11 @@ from apps.pricing.services import PricingError
 
 from .filters import ReservationFilter
 from .forms import (
+    AddExtraForm,
     ChangeCategoryForm,
     ChangeDatesForm,
     DriverForm,
+    ManualPriceForm,
     QuickCustomerForm,
     QuickReservationForm,
     TransitionForm,
@@ -35,13 +37,21 @@ from .forms import (
 from .models import Reservation
 from .selectors import header_data, timeline
 from .services import (
+    ManualPriceWouldBeLost,
+    _avisar_precio_manual,
     add_driver,
+    add_extra,
     apply_change,
     create_quick_reservation,
     preview_change,
+    price_preview,
     quote,
+    recalculate_price,
     release_vehicle,
     remove_driver,
+    remove_extra,
+    set_extra_quantity,
+    set_manual_price,
 )
 from .state_machine import (
     InvalidTransition,
@@ -89,9 +99,9 @@ TABS = [
     ("resumen", _("Resumen"), True),
     ("cliente", _("Cliente"), True),
     ("vehiculo", _("Vehiculo"), True),
-    ("extras", _("Extras"), False),
-    ("precio", _("Precio"), False),
-    ("cobros", _("Cobros"), False),
+    ("extras", _("Extras"), True),
+    ("precio", _("Precio"), True),
+    ("cobros", _("Cobros"), True),
     ("checkin", _("Check-in"), False),
     ("checkout", _("Check-out"), False),
     ("documentos", _("Documentos"), False),
@@ -206,6 +216,24 @@ def contexto_de_pestana(request, reserva: Reservation, pestana: str) -> dict:
                 exclude_reservation=reserva,
                 rotation_minutes=reserva.rotation_minutes,
             )
+        }
+    if pestana == "extras":
+        return {
+            "extras": reserva.extras.select_related("extra"),
+            "form_extra": AddExtraForm(reservation=reserva),
+        }
+    if pestana == "precio":
+        return {
+            "lineas": reserva.price_breakdown.get("lines", []),
+            "desglose": reserva.price_breakdown,
+            "cambios_de_precio": reserva.price_changes.select_related("changed_by"),
+        }
+    if pestana == "cobros":
+        from apps.billing.selectors import summary
+
+        return {
+            "cobros": reserva.payments.select_related("created_by", "office"),
+            "saldo": summary(reserva),
         }
     if pestana == "historial":
         return {"historial": timeline(reserva)}
@@ -653,3 +681,213 @@ class DriverDeleteView(ReservationBaseView, View):
         conductor = get_object_or_404(reserva.drivers, pk=kwargs["driver_pk"])
         remove_driver(driver=conductor, actor=request.user)
         return _respuesta_de_cambio(_("Conductor retirado."))
+
+
+# ---------------------------------------------------------------------------
+# Extras y precio
+# ---------------------------------------------------------------------------
+
+
+def _respuesta_de_precio_manual(vista, contexto, aviso: str) -> HttpResponse:
+    """Devuelve el modal con el aviso y el boton que confirma pisar el precio."""
+    contexto["aviso_precio_manual"] = aviso
+    return vista.render_to_response(contexto, status=422)
+
+
+class AddExtraView(ReservationBaseView, FormView):
+    permission_required = "reservations.change_reservation"
+    template_name = "reservations/_extra_modal.html"
+    form_class = AddExtraForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["reservation"] = self.get_reservation()
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(self.contexto_de_ficha())
+        contexto["form_action"] = self.request.path
+        form = contexto["form"]
+        if form.is_bound and form.is_valid():
+            breakdown, diferencia = price_preview(
+                reservation=self.get_reservation(),
+                extras=(
+                    *_extras_actuales(self.get_reservation()),
+                    ExtraRequest(
+                        extra=form.cleaned_data["extra"], quantity=form.cleaned_data["quantity"]
+                    ),
+                ),
+            )
+            contexto["preview_precio"] = breakdown
+            contexto["diferencia"] = diferencia
+        return contexto
+
+    def get(self, request, *args, **kwargs):
+        # Con `preview` viaja solo el panel del importe, no el modal entero.
+        if request.GET.get("preview"):
+            form = self.get_form_class()(request.GET, reservation=self.get_reservation())
+            contexto = self.get_context_data(form=form)
+            return render(request, "reservations/_price_diff.html", contexto)
+        return super().get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        try:
+            add_extra(
+                reservation=self.get_reservation(),
+                extra=form.cleaned_data["extra"],
+                quantity=form.cleaned_data["quantity"],
+                confirm_manual_override=bool(self.request.POST.get("confirm_manual")),
+                actor=self.request.user,
+            )
+        except ManualPriceWouldBeLost as exc:
+            return _respuesta_de_precio_manual(self, self.get_context_data(form=form), str(exc))
+        except ServiceError as exc:
+            form.add_error(None, str(exc))
+            return self.form_invalid(form)
+
+        return _respuesta_de_cambio(_("Extra anadido."))
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form), status=422)
+
+
+def _extras_actuales(reserva):
+    return tuple(
+        ExtraRequest(extra=linea.extra, quantity=linea.quantity)
+        for linea in reserva.extras.select_related("extra")
+    )
+
+
+class ExtraLineView(ReservationBaseView, View):
+    """Cambiar cantidad o quitar una linea de extra."""
+
+    permission_required = "reservations.change_reservation"
+
+    def post(self, request, *args, **kwargs):
+        reserva = self.get_reservation()
+        linea = get_object_or_404(reserva.extras.select_related("extra"), pk=kwargs["line_pk"])
+        confirmado = bool(request.POST.get("confirm_manual"))
+
+        try:
+            if request.POST.get("accion") == "quitar":
+                remove_extra(
+                    reservation=reserva,
+                    line=linea,
+                    confirm_manual_override=confirmado,
+                    actor=request.user,
+                )
+                mensaje = _("Extra quitado.")
+            else:
+                set_extra_quantity(
+                    reservation=reserva,
+                    line=linea,
+                    quantity=int(request.POST.get("quantity") or 1),
+                    confirm_manual_override=confirmado,
+                    actor=request.user,
+                )
+                mensaje = _("Cantidad actualizada.")
+        except ManualPriceWouldBeLost as exc:
+            # 409: no se ha hecho nada y hace falta una decision del usuario.
+            respuesta = render(
+                request,
+                "reservations/_manual_price_confirm.html",
+                {
+                    "reservation": reserva,
+                    "aviso": str(exc),
+                    "reintento": request.POST.dict(),
+                    "form_action": request.path,
+                },
+                status=409,
+            )
+            return respuesta
+        except ServiceError as exc:
+            return trigger_toast(HttpResponse(status=200), str(exc), "warning")
+
+        return _respuesta_de_cambio(mensaje)
+
+
+class ManualPriceView(ReservationBaseView, FormView):
+    """Precio del alquiler puesto a mano. Permiso y motivo obligatorios."""
+
+    permission_required = "reservations.change_reservation_price"
+    template_name = "reservations/_manual_price_modal.html"
+    form_class = ManualPriceForm
+
+    def get_initial(self):
+        reserva = self.get_reservation()
+        return {"daily_price": reserva.price_breakdown.get("daily_price")}
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(self.contexto_de_ficha())
+        contexto["form_action"] = self.request.path
+        form = contexto["form"]
+        if form.is_bound and form.is_valid():
+            breakdown, diferencia = price_preview(
+                reservation=self.get_reservation(),
+                manual_override=form.cleaned_data["daily_price"],
+            )
+            contexto["preview_precio"] = breakdown
+            contexto["diferencia"] = diferencia
+        return contexto
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get("preview"):
+            form = self.get_form_class()(request.GET)
+            return render(
+                request, "reservations/_price_diff.html", self.get_context_data(form=form)
+            )
+        return super().get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        try:
+            set_manual_price(
+                reservation=self.get_reservation(),
+                daily_price=form.cleaned_data["daily_price"],
+                reason=form.cleaned_data["reason"],
+                actor=self.request.user,
+            )
+        except ServiceError as exc:
+            form.add_error(None, str(exc))
+            return self.form_invalid(form)
+
+        return _respuesta_de_cambio(_("Precio actualizado a mano."))
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form), status=422)
+
+
+class RecalculatePriceView(ReservationBaseView, TemplateView):
+    """Rehace el precio desde la tarifa, ensenando antes la diferencia."""
+
+    permission_required = "reservations.change_reservation"
+    template_name = "reservations/_recalculate_modal.html"
+
+    def get_context_data(self, **kwargs):
+        reserva = self.get_reservation()
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(self.contexto_de_ficha())
+        contexto["form_action"] = self.request.path
+        breakdown, diferencia = price_preview(reservation=reserva)
+        contexto["preview_precio"] = breakdown
+        contexto["diferencia"] = diferencia
+        if reserva.is_price_manual:
+            contexto["aviso_precio_manual"] = _avisar_precio_manual(reserva)
+        return contexto
+
+    def post(self, request, *args, **kwargs):
+        try:
+            recalculate_price(
+                reservation=self.get_reservation(),
+                confirm_manual_override=bool(request.POST.get("confirm_manual")),
+                actor=request.user,
+            )
+        except ManualPriceWouldBeLost as exc:
+            return _respuesta_de_precio_manual(self, self.get_context_data(), str(exc))
+        except ServiceError as exc:
+            contexto = self.get_context_data()
+            contexto["error"] = str(exc)
+            return self.render_to_response(contexto, status=422)
+
+        return _respuesta_de_cambio(_("Precio recalculado desde la tarifa."))

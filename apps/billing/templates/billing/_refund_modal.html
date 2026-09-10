@@ -1,0 +1,36 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Devolver dinero" %}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {% blocktranslate with concepto=payment.get_payment_type_display importe=payment.amount %}
+      Sobre el apunte de {{ concepto }} de {{ importe }} €
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  <p class="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+    {% translate "El cobro original no se toca: se anade un apunte contrario, que es lo que vera el arqueo." %}
+  </p>
+
+  <form id="form-devolucion" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    {% include "ui/_field.html" with field=form.amount %}
+    {% include "ui/_field.html" with field=form.notes %}
+  </form>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-devolucion" class="btn-danger">{% translate "Devolver" %}</button>
+{% endblock %}

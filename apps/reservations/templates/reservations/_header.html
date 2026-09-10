@@ -36,7 +36,7 @@
     </div>
   </div>
 
-  <dl class="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3 text-sm sm:grid-cols-4 lg:grid-cols-7">
+  <dl class="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3 text-sm sm:grid-cols-4 lg:grid-cols-8">
     <div class="min-w-0">
       <dt class="text-xs text-slate-500">{% translate "Cliente" %}</dt>
       <dd class="truncate font-medium text-slate-900">
@@ -76,6 +76,14 @@
         <span class="{% if header.pending %}text-rose-700{% else %}text-emerald-700{% endif %}">
           / {{ header.pending }} €
         </span>
+      </dd>
+    </div>
+    <div>
+      {% comment %} La fianza va aparte: es dinero del cliente que hay que
+         devolverle, no un cobro del alquiler. {% endcomment %}
+      <dt class="text-xs text-slate-500">{% translate "Fianza retenida" %}</dt>
+      <dd class="tabular font-medium {% if header.deposit %}text-sky-800{% else %}text-slate-400{% endif %}">
+        {{ header.deposit }} €
       </dd>
     </div>
   </dl>
