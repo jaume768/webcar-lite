@@ -64,8 +64,33 @@ def health(request):
 
 
 def home(request):
-    """Portada provisional del esqueleto. La sustituira el panel de mostrador."""
-    return render(request, "core/home.html", {"page_title": _("Inicio")})
+    """Panel de mostrador: lo primero que ve el empleado al entrar.
+
+    Los datos los arma `operations.dashboard`, que es quien sabe de entregas y
+    devoluciones. El import va dentro de la funcion a proposito: `core` es la
+    base sobre la que se apoyan las demas apps y no debe depender de ellas al
+    importarse.
+    """
+    from apps.offices.selectors import offices_for_user
+    from apps.operations.dashboard import build_dashboard
+
+    oficina = None
+    elegida = request.GET.get("office")
+    if elegida:
+        oficina = offices_for_user(request.user).filter(pk=elegida).first()
+
+    panel = build_dashboard(user=request.user, office=oficina)
+
+    contexto = {
+        "page_title": _("Mostrador"),
+        "panel": panel,
+        "refresh_seconds": settings.DASHBOARD_REFRESH_SECONDS,
+    }
+
+    if request.htmx:
+        # Solo los datos: el filtro se queda quieto y no se pierde el foco.
+        return render(request, "core/_dashboard_panels.html", contexto)
+    return render(request, "core/home.html", contexto)
 
 
 @require_POST

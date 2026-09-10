@@ -1,14 +1,38 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block title %}{% translate "Mostrador" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+
+{% block page_actions %}
+  {% if perms.reservations.add_reservation %}
+    <a href="{% url 'reservations:quick' %}" class="btn-primary">{% translate "Nueva reserva" %}</a>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
-  <div class="card max-w-2xl p-6">
-    <h2 class="text-base font-semibold text-slate-900">{% translate "Esqueleto operativo" %}</h2>
-    <p class="mt-2 text-sm text-slate-600">
-      {% translate "Todavia no hay pantallas de negocio. El sistema de interfaz esta en" %}
-      <a class="font-medium text-brand-700 underline" href="{% url 'core:ui_kit' %}">/ui-kit/</a>
-      {% translate "y el estado del sistema en" %}
-      <a class="font-medium text-brand-700 underline" href="{% url 'health' %}">/health/</a>.
-    </p>
-  </div>
+  {% comment %} El filtro vive fuera del bloque que se autorefresca: asi el
+     refresco no le quita el foco a nadie. {% endcomment %}
+  {% if panel.show_office_picker %}
+    <form class="card mb-5 flex flex-wrap items-end gap-3 p-3"
+          hx-get="{% url 'core:home' %}"
+          hx-target="#panel-mostrador"
+          hx-swap="outerHTML"
+          hx-push-url="true">
+      <div>
+        <label class="field-label" for="office">{% translate "Oficina" %}</label>
+        <select class="input w-auto" id="office" name="office">
+          <option value="">{% translate "Todas mis oficinas" %}</option>
+          {% for oficina in panel.offices %}
+            <option value="{{ oficina.pk }}"
+                    {% if panel.office and panel.office.pk == oficina.pk %}selected{% endif %}>
+              {{ oficina.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn-secondary">{% translate "Ver" %}</button>
+    </form>
+  {% endif %}
+
+  {% include "core/_dashboard_panels.html" %}
 {% endblock %}

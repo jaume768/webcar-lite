@@ -220,6 +220,9 @@ CORE_OFFICE_PROVIDER = "apps.offices.selectors.office_choices_for_request"
 RENTAL_COURTESY_MINUTES = env("RENTAL_COURTESY_MINUTES")
 DEFAULT_CURRENCY = "EUR"
 
+# Cada cuantos segundos se refresca solo el panel de mostrador.
+DASHBOARD_REFRESH_SECONDS = env.int("DASHBOARD_REFRESH_SECONDS", default=120)
+
 # --- Cargos de devolucion --------------------------------------------------
 # Precio por kilometro pasado del limite incluido.
 EXTRA_KM_PRICE = env("EXTRA_KM_PRICE", default="0.15")

@@ -123,3 +123,41 @@ def summary(reservation) -> dict:
         "invoiced": has_issued_invoice(reservation),
         "label_pending": _("Pendiente"),
     }
+
+
+# ---------------------------------------------------------------------------
+# Saldos en bloque
+# ---------------------------------------------------------------------------
+
+
+def annotate_balance(queryset):
+    """Anota `cobrado` y `pendiente` sobre un queryset de reservas.
+
+    Preguntar el pendiente reserva a reserva es una consulta por fila, y el
+    panel de mostrador ensena decenas: aqui se resuelve con una subconsulta y
+    la lista entera cuesta lo mismo que una.
+
+    La fianza no entra, igual que en `paid_amount`: es dinero retenido.
+    """
+    from django.db.models import DecimalField, F, OuterRef, Subquery, Sum, Value
+    from django.db.models.functions import Coalesce, Greatest
+
+    from .models import RENTAL_TYPES, Payment
+
+    importe = DecimalField(max_digits=10, decimal_places=2)
+    cobros = (
+        Payment.objects.filter(reservation=OuterRef("pk"), payment_type__in=RENTAL_TYPES)
+        .values("reservation")
+        .annotate(suma=Sum("amount"))
+        .values("suma")
+    )
+    return queryset.annotate(
+        cobrado=Coalesce(Subquery(cobros, output_field=importe), Value(CERO), output_field=importe),
+        pendiente=Greatest(
+            F("total")
+            + F("charges_total")
+            - Coalesce(Subquery(cobros, output_field=importe), Value(CERO), output_field=importe),
+            Value(CERO),
+            output_field=importe,
+        ),
+    )
