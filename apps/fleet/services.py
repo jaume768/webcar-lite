@@ -14,6 +14,7 @@ from .models import (
     VehicleCategory,
     VehicleStatus,
 )
+from .signals import vehicle_retired
 
 logger = structlog.get_logger(__name__)
 
@@ -162,6 +163,13 @@ def set_vehicle_active(*, vehicle: Vehicle, active: bool, actor=None) -> Vehicle
         plate=vehicle.plate,
         actor_id=getattr(actor, "pk", None),
     )
+
+    if not active:
+        # Las reservas futuras que lo tenian asignado no se pierden: se quedan
+        # sin coche y marcadas para reasignar. Quien escucha es reservations;
+        # la flota no tiene por que saber que existen.
+        vehicle_retired.send(sender=Vehicle, vehicle=vehicle, actor=actor)
+
     return vehicle
 
 

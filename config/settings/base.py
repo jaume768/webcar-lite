@@ -220,6 +220,12 @@ CORE_OFFICE_PROVIDER = "apps.offices.selectors.office_choices_for_request"
 RENTAL_COURTESY_MINUTES = env("RENTAL_COURTESY_MINUTES")
 DEFAULT_CURRENCY = "EUR"
 
+# Minutos de rotacion entre dos alquileres del mismo vehiculo: limpieza y
+# revision. Cuentan como ocupacion, asi que dos reservas seguidas del mismo
+# coche tienen que dejar al menos este hueco. Lo consume
+# availability.services; cada reserva guarda el valor que se le aplico.
+VEHICLE_ROTATION_MINUTES = env.int("VEHICLE_ROTATION_MINUTES", default=60)
+
 # IVA por defecto de las lineas de alquiler. Los extras y los suplementos
 # llevan el suyo propio, porque no todos tributan igual.
 DEFAULT_TAX_RATE = env("DEFAULT_TAX_RATE")

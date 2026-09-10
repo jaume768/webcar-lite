@@ -7,3 +7,12 @@ class ReservationsConfig(AppConfig):
     name = "apps.reservations"
     label = "reservations"
     verbose_name = _("Reservas")
+
+    def ready(self):
+        from apps.fleet.signals import vehicle_retired
+
+        from . import receivers
+
+        vehicle_retired.connect(
+            receivers.on_vehicle_retired, dispatch_uid="reservations_vehicle_retired"
+        )
