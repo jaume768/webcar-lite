@@ -24,7 +24,11 @@
     <div class="flex min-w-0 flex-1 flex-col">
       {% include "shell/_topbar.html" %}
 
-      <main id="contenido" tabindex="-1" class="flex-1 px-4 py-6 focus:outline-none sm:px-6">
+      {% comment %} Ancho maximo y margenes generosos: en un monitor de
+         mostrador, el contenido pegado a los bordes se lee peor. {% endcomment %}
+      <main id="contenido" tabindex="-1"
+            class="mx-auto w-full max-w-[1600px] flex-1 px-5 py-7 focus:outline-none
+                   sm:px-8 lg:px-10 xl:px-12">
         {% block breadcrumb %}
           {% include "shell/_breadcrumb.html" %}
         {% endblock %}

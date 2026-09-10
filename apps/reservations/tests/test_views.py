@@ -286,3 +286,149 @@ def test_el_buscador_de_clientes_responde(client, agente, cliente):
 
     assert respuesta.status_code == 200
     assert cliente.last_name in respuesta.content.decode()
+
+
+# ---------------------------------------------------------------------------
+# Desplegable de clientes
+# ---------------------------------------------------------------------------
+
+
+def test_el_desplegable_se_abre_con_todos_los_clientes(client, agente, palma):
+    """Al pinchar en el campo, sin escribir nada, salen los clientes."""
+    from apps.customers.tests.factories import CustomerFactory
+
+    for apellido in ("Zapata", "Alvarez", "Moreno"):
+        CustomerFactory(first_name="Cliente", last_name=apellido)
+    client.force_login(agente)
+
+    respuesta = client.get(reverse("reservations:customer_search"))
+    contenido = respuesta.content.decode()
+
+    assert respuesta.status_code == 200
+    assert contenido.count('role="option"') == 3
+    assert "Sin coincidencias" not in contenido
+
+
+def test_el_desplegable_viene_ordenado_alfabeticamente(client, agente):
+    from apps.customers.tests.factories import CustomerFactory
+
+    for apellido in ("Zapata", "Alvarez", "Moreno"):
+        CustomerFactory(first_name="Cliente", last_name=apellido)
+    client.force_login(agente)
+
+    contenido = client.get(reverse("reservations:customer_search")).content.decode()
+
+    assert contenido.index("Alvarez") < contenido.index("Moreno") < contenido.index("Zapata")
+
+
+def test_escribiendo_se_filtra(client, agente):
+    from apps.customers.tests.factories import CustomerFactory
+
+    CustomerFactory(first_name="Ana", last_name="Zapata")
+    CustomerFactory(first_name="Luis", last_name="Moreno")
+    client.force_login(agente)
+
+    contenido = client.get(
+        reverse("reservations:customer_search"), {"q": "zapata"}
+    ).content.decode()
+
+    assert "Zapata" in contenido
+    assert "Moreno" not in contenido
+
+
+def test_el_desplegable_pagina_al_bajar(client, agente):
+    """Con muchos clientes no se trae la tabla entera: hay centinela de scroll."""
+    from apps.customers.tests.factories import CustomerFactory
+    from apps.reservations.views import CLIENTES_POR_PAGINA
+
+    for indice in range(CLIENTES_POR_PAGINA + 5):
+        CustomerFactory(first_name="Cliente", last_name=f"Apellido{indice:03d}")
+    client.force_login(agente)
+
+    primera = client.get(reverse("reservations:customer_search")).content.decode()
+
+    assert primera.count('role="option"') == CLIENTES_POR_PAGINA
+    assert "page=2" in primera, "falta el centinela que carga la pagina siguiente"
+
+    segunda = client.get(reverse("reservations:customer_search"), {"page": 2}).content.decode()
+    assert segunda.count('role="option"') == 5
+    assert "page=3" not in segunda
+
+
+def test_una_pagina_vacia_no_dice_sin_coincidencias(client, agente):
+    """El mensaje solo tiene sentido en la primera pagina.
+
+    Por defecto se ensena: un endpoint que no pagine (el del ui-kit, por
+    ejemplo) no tiene que enterarse de que esto existe.
+    """
+    from apps.customers.tests.factories import CustomerFactory
+
+    CustomerFactory(first_name="Ana", last_name="Zapata")
+    client.force_login(agente)
+
+    contenido = client.get(reverse("reservations:customer_search"), {"page": 9}).content.decode()
+
+    assert "Sin coincidencias" not in contenido
+
+
+# ---------------------------------------------------------------------------
+# Alta de cliente desde la reserva
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def usuario_con_alta(db, palma):
+    from apps.accounts.tests.factories import RoleFactory, UserFactory
+
+    return UserFactory(
+        email="alta@ejemplo.es",
+        role=RoleFactory(
+            code="alta-cliente",
+            name="Alta",
+            permissions=["reservations.add_reservation", "customers.add_customer"],
+        ),
+        offices=[palma],
+    )
+
+
+def _datos_cliente(**extra):
+    datos = {
+        "first_name": "Nueva",
+        "last_name": "Clienta",
+        "document_type": "dni",
+        "document_number": "12345678Z",
+        "phone": "600111222",
+    }
+    datos.update(extra)
+    return datos
+
+
+def test_el_error_del_alta_se_queda_en_el_modal(client, usuario_con_alta):
+    """Antes se incrustaba dentro del formulario y salia un modal detras de otro."""
+    client.force_login(usuario_con_alta)
+
+    respuesta = client.post(reverse("reservations:quick_customer"), _datos_cliente(last_name=""))
+    contenido = respuesta.content.decode()
+
+    assert respuesta.status_code == 422
+    # Vuelve el modal, no el bloque del formulario de la reserva.
+    assert "form-cliente-rapido" in contenido
+    assert 'id="bloque-cliente"' not in contenido
+    assert 'hx-target="#modal-host"' in contenido
+
+
+def test_al_crear_el_cliente_el_modal_se_cierra_y_el_campo_se_rellena(client, usuario_con_alta):
+    from apps.customers.models import Customer
+
+    client.force_login(usuario_con_alta)
+
+    respuesta = client.post(reverse("reservations:quick_customer"), _datos_cliente())
+    contenido = respuesta.content.decode()
+    cliente = Customer.objects.get(document_number="12345678Z")
+
+    assert respuesta.status_code == 200
+    # Fuera de banda: el bloque va a su sitio y el modal se queda vacio.
+    assert 'hx-swap-oob="true"' in contenido
+    assert "form-cliente-rapido" not in contenido
+    assert f'value="{cliente.pk}"' in contenido
+    assert "Clienta" in contenido

@@ -1,5 +1,7 @@
 """Pantallas de reservas: listado, ficha y alta rapida de mostrador."""
 
+from urllib.parse import urlencode
+
 import structlog
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
@@ -435,14 +437,43 @@ class QuickReservationPreview(CrudPermissionMixin, View):
         return render(request, "reservations/_preview.html", contexto)
 
 
+#: Clientes por pagina en el desplegable. Suficientes para llenar el hueco
+#: visible; el resto llega al bajar con la rueda.
+CLIENTES_POR_PAGINA = 20
+
+
 class CustomerSearchView(CrudPermissionMixin, View):
-    """Autocompletado de cliente por documento, telefono o nombre."""
+    """Desplegable de clientes: al abrirlo salen todos, ordenados.
+
+    Sin escribir nada devuelve la primera pagina alfabetica, que es lo que
+    espera quien pincha en el campo. Al teclear, filtra. Y al bajar con la
+    rueda, pide la pagina siguiente en lugar de traerse la tabla entera.
+    """
 
     permission_required = "reservations.add_reservation"
 
     def get(self, request, *args, **kwargs):
         termino = request.GET.get("q", "").strip()
-        clientes = Customer.objects.active().search(termino)[:10] if termino else []
+        campo = request.GET.get("campo", "customer")
+        try:
+            pagina = max(int(request.GET.get("page", 1)), 1)
+        except (TypeError, ValueError):
+            pagina = 1
+
+        clientes = (
+            Customer.objects.active().search(termino).order_by("last_name", "first_name", "pk")
+        )
+        desde = (pagina - 1) * CLIENTES_POR_PAGINA
+        # Se pide uno de mas para saber si hay pagina siguiente sin contar todo.
+        lote = list(clientes[desde : desde + CLIENTES_POR_PAGINA + 1])
+        hay_mas = len(lote) > CLIENTES_POR_PAGINA
+        lote = lote[:CLIENTES_POR_PAGINA]
+
+        siguiente = ""
+        if hay_mas:
+            parametros = {"q": termino, "campo": campo, "page": pagina + 1}
+            siguiente = f"{request.path}?{urlencode(parametros)}"
+
         return render(
             request,
             "ui/_select_search_options.html",
@@ -450,11 +481,13 @@ class CustomerSearchView(CrudPermissionMixin, View):
                 "options": [
                     {
                         "value": cliente.pk,
-                        "label": f"{cliente.first_name} {cliente.last_name}".strip(),
+                        "label": cliente.full_name,
                         "hint": f"{cliente.document_number} · {cliente.phone}".strip(" ·"),
                     }
-                    for cliente in clientes
-                ]
+                    for cliente in lote
+                ],
+                "next_url": siguiente,
+                "hide_empty_message": pagina > 1,
             },
         )
 
@@ -477,12 +510,13 @@ class QuickCustomerCreateView(CrudPermissionMixin, FormView):
         cliente = save_customer(customer=form.save(commit=False), actor=self.request.user)
         logger.info("cliente_alta_rapida", customer_id=cliente.pk, actor_id=self.request.user.pk)
 
-        # El modal se cierra y el buscador de la reserva se queda con el cliente
-        # ya elegido: quien esta en el mostrador no tiene que buscarlo otra vez.
+        # La respuesta vacia el modal (se cierra) y, fuera de banda, deja el
+        # cliente ya elegido en el formulario: quien esta en el mostrador no
+        # tiene que buscarlo otra vez.
         respuesta = render(
             self.request,
             "reservations/_customer_chosen.html",
-            {"cliente": cliente},
+            {"cliente": cliente, "oob": True},
         )
         return trigger_toast(
             respuesta,

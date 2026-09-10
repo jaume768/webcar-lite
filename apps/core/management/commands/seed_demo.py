@@ -423,6 +423,7 @@ class Command(BaseCommand):
         # Coches que se quedan fuera (entregados y sin devolver): no se pueden
         # volver a asignar, igual que en la realidad.
         ocupados: set[int] = set()
+        entregas_de_hoy = 0
 
         for indice, (desfase, duracion, guion) in enumerate(guiones):
             categoria = list(categorias.values())[indice % len(categorias)]
@@ -464,11 +465,14 @@ class Command(BaseCommand):
                 .exclude(pk__in=ocupados)
                 .order_by("plate")
             )
-            # Las entregas de hoy salen con coche salvo una, que se queda sin
-            # asignar a proposito para que se vea la alerta del panel.
-            con_coche = guion in ("finalizada", "en_curso", "hoy_devolucion") or (
-                guion == "hoy_entrega" and indice % 3 != 1
-            )
+            # Las entregas de hoy salen con coche salvo la primera, que se deja
+            # sin asignar a proposito: asi la demo ensena tambien la alerta del
+            # panel y el boton de "Asignar coche".
+            if guion == "hoy_entrega":
+                entregas_de_hoy += 1
+                con_coche = entregas_de_hoy > 1
+            else:
+                con_coche = guion in ("finalizada", "en_curso", "hoy_devolucion")
             if con_coche and libres:
                 try:
                     assign_vehicle(reservation=reserva, vehicle=libres[0], actor=empleado)

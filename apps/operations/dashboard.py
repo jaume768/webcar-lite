@@ -27,6 +27,87 @@ DIAS_DE_AVISO = 30
 LIMITE_POR_BLOQUE = 50
 
 
+# Los colores van como cadenas completas y no compuestas a trozos en la
+# plantilla: Tailwind solo genera las clases que encuentra escritas tal cual, y
+# `bg-{{ tono }}-50` no existiria en el CSS. Es el mismo criterio que
+# `core.badges`, y el CSS escanea tambien los .py justo por esto.
+#
+# El color no es adorno: en una pantalla que se mira de reojo entre cliente y
+# cliente, es lo que separa "hay que resolverlo ya" de "mirarlo esta semana".
+ESTILO_DE_ALERTA = {
+    "sin_vehiculo": {
+        "card": "border-l-amber-500 bg-amber-50/50",
+        "count": "text-amber-700",
+        "label": "text-amber-900",
+        "detail": "text-amber-800/80",
+    },
+    "documentacion": {
+        "card": "border-l-sky-500 bg-sky-50/50",
+        "count": "text-sky-700",
+        "label": "text-sky-900",
+        "detail": "text-sky-800/80",
+    },
+    "retraso": {
+        "card": "border-l-rose-500 bg-rose-50/50",
+        "count": "text-rose-700",
+        "label": "text-rose-900",
+        "detail": "text-rose-800/80",
+    },
+    "sin_cobrar": {
+        "card": "border-l-violet-500 bg-violet-50/50",
+        "count": "text-violet-700",
+        "label": "text-violet-900",
+        "detail": "text-violet-800/80",
+    },
+}
+
+ESTILO_NEUTRO = {
+    "card": "border-l-slate-400 bg-slate-50/50",
+    "count": "text-slate-700",
+    "label": "text-slate-900",
+    "detail": "text-slate-600",
+}
+
+#: Color de cada estado de flota, para leer la fila de un vistazo.
+ESTILO_DE_ESTADO = {
+    VehicleStatus.AVAILABLE: {
+        "dot": "bg-emerald-500",
+        "top": "border-t-emerald-500",
+        "text": "text-emerald-700",
+    },
+    VehicleStatus.RESERVED: {
+        "dot": "bg-sky-500",
+        "top": "border-t-sky-500",
+        "text": "text-sky-700",
+    },
+    VehicleStatus.RENTED: {
+        "dot": "bg-brand-500",
+        "top": "border-t-brand-500",
+        "text": "text-brand-700",
+    },
+    VehicleStatus.WORKSHOP: {
+        "dot": "bg-amber-500",
+        "top": "border-t-amber-500",
+        "text": "text-amber-700",
+    },
+    VehicleStatus.CLEANING: {
+        "dot": "bg-violet-500",
+        "top": "border-t-violet-500",
+        "text": "text-violet-700",
+    },
+    VehicleStatus.BLOCKED: {
+        "dot": "bg-rose-500",
+        "top": "border-t-rose-500",
+        "text": "text-rose-700",
+    },
+    VehicleStatus.RETIRED: {
+        "dot": "bg-slate-400",
+        "top": "border-t-slate-400",
+        "text": "text-slate-600",
+    },
+}
+
+
 @dataclass(frozen=True)
 class Alert:
     kind: str
@@ -34,6 +115,10 @@ class Alert:
     count: int
     detail: str = ""
     url: str = ""
+
+    @property
+    def style(self) -> dict:
+        return ESTILO_DE_ALERTA.get(self.kind, ESTILO_NEUTRO)
 
     def __bool__(self) -> bool:
         return self.count > 0
@@ -49,14 +134,18 @@ class Stats:
     fleet_by_status: dict = field(default_factory=dict)
 
     @property
-    def fleet_rows(self) -> list[tuple[str, int]]:
-        """Estados de flota con su recuento, listos para pintar.
+    def fleet_rows(self) -> list[tuple[str, int, dict]]:
+        """Estados de flota con su recuento y su color, listos para pintar.
 
         Se arma aqui y no en la plantilla para no necesitar un filtro generico
         que busque en un diccionario por clave variable.
         """
         return [
-            (str(etiqueta), self.fleet_by_status.get(valor, 0))
+            (
+                str(etiqueta),
+                self.fleet_by_status.get(valor, 0),
+                ESTILO_DE_ESTADO.get(valor, ESTILO_DE_ESTADO[VehicleStatus.RETIRED]),
+            )
             for valor, etiqueta in VehicleStatus.choices
         ]
 

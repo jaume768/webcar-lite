@@ -18,7 +18,7 @@
          x-ref="buscador"
          name="q"
          hx-get="{{ url }}"
-         hx-trigger="focus, keyup changed delay:250ms"
+         hx-trigger="focus, click, keyup changed delay:250ms"
          hx-target="#{{ name }}-opciones"
          hx-swap="innerHTML"
          hx-vals='{"campo": "{{ name }}"}'

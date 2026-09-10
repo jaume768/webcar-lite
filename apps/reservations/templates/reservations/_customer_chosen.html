@@ -1,6 +1,12 @@
 {% load i18n %}
-{% comment %} Sustituye al buscador cuando ya hay cliente elegido. {% endcomment %}
-<div id="bloque-cliente" class="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+{% comment %} Sustituye al buscador cuando ya hay cliente elegido.
+
+   Con `oob` viaja fuera de banda: la respuesta del modal apunta a #modal-host
+   (para cerrarlo) y este bloque se coloca solo en su sitio del formulario. Sin
+   eso, el modal acabaria incrustado dentro del formulario de la reserva.
+{% endcomment %}
+<div id="bloque-cliente" {% if oob %}hx-swap-oob="true"{% endif %}
+     class="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
   <input type="hidden" name="customer" value="{{ cliente.pk }}">
   <div class="flex items-center justify-between gap-2">
     <div>

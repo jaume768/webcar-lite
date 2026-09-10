@@ -10,11 +10,13 @@
 {% endblock %}
 
 {% block modal_body %}
+  {% comment %} Todo va a #modal-host: si hay errores se repinta el modal en su
+     sitio, y al guardar la respuesta lo vacia y coloca el cliente elegido en el
+     formulario por fuera de banda. {% endcomment %}
   <form id="form-cliente-rapido" method="post" action="{{ form_action }}"
         hx-post="{{ form_action }}"
-        hx-target="#bloque-cliente"
-        hx-swap="outerHTML"
-        hx-on::after-request="if (event.detail.successful) $root.remove()"
+        hx-target="#modal-host"
+        hx-swap="innerHTML"
         novalidate>
     {% csrf_token %}
     {% if form.non_field_errors %}
