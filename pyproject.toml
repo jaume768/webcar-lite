@@ -31,6 +31,8 @@ dev = [
     "coverage>=7.6,<8.0",
     "factory-boy>=3.3,<4.0",
     "django-debug-toolbar>=5.0,<6.0",
+    # Para mirar dentro de los PDF que genera el contrato.
+    "pypdf>=5.0,<7.0",
 ]
 
 [build-system]

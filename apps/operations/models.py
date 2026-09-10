@@ -242,6 +242,13 @@ class Damage(TimeStampedModel):
         return f"{self.get_zone_display()}: {self.get_damage_type_display()}"
 
 
+def foto_privada():
+    """Las fotos de danos van al almacen privado: son prueba, no galeria."""
+    from django.core.files.storage import storages
+
+    return storages["private"]
+
+
 class DamagePhoto(TimeStampedModel):
     """Foto de un dano. Es la prueba: sin ella, un parte es la palabra de uno."""
 
@@ -251,7 +258,7 @@ class DamagePhoto(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="photos",
     )
-    image = models.ImageField(_("foto"), upload_to="danos/%Y/%m/")
+    image = models.ImageField(_("foto"), upload_to="danos/%Y/%m/", storage=foto_privada)
     caption = models.CharField(_("pie de foto"), max_length=160, blank=True, default="")
 
     class Meta:

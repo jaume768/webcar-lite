@@ -1,0 +1,60 @@
+{% load i18n %}
+{% comment %} Mientras haya un contrato generandose, el panel se repide solo
+   cada dos segundos: el mostrador no tiene que recargar nada. {% endcomment %}
+<div id="panel-documentos"
+     {% if generando %}
+       hx-get="{% url 'contracts:documents_panel' reservation.pk %}"
+       hx-trigger="load delay:2s"
+       hx-swap="outerHTML"
+     {% endif %}>
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Documentos" %}</h2>
+      {% if perms.reservations.change_reservation %}
+        <button type="button" class="btn-secondary py-1.5 text-xs"
+                hx-post="{% url 'contracts:create' reservation.pk %}"
+                hx-swap="none">
+          {% translate "Generar contrato" %}
+        </button>
+      {% endif %}
+    </div>
+
+    {% if generando %}
+      <p class="border-b border-line bg-sky-50 px-4 py-2 text-sm text-sky-800">
+        {% translate "Generando el contrato... la descarga aparece sola en cuanto este." %}
+      </p>
+    {% endif %}
+
+    <ul class="divide-y divide-line">
+      {% for documento in documentos %}
+        <li class="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+          <div class="min-w-0">
+            <p class="font-medium text-slate-900">{{ documento.title }}</p>
+            <p class="text-xs text-slate-500">
+              {{ documento.created_at|date:"d/m/Y H:i" }}
+              {% if documento.detail %}· {{ documento.detail }}{% endif %}
+            </p>
+          </div>
+          {% if documento.is_ready %}
+            <a class="btn-secondary py-1.5 text-xs" href="{{ documento.download_url }}">
+              {% translate "Descargar" %}
+            </a>
+          {% elif documento.status == "pending" %}
+            {% include "ui/_badge.html" with status="info" label=_("Generandose") only %}
+          {% else %}
+            {% include "ui/_badge.html" with status="danger" label=_("Fallo") only %}
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="px-4 py-8 text-center text-sm text-slate-500">
+          {% translate "Todavia no hay documentos. Genera el contrato para empezar." %}
+        </li>
+      {% endfor %}
+    </ul>
+
+    <p class="border-t border-line px-4 py-2 text-xs text-slate-500">
+      {% translate "Los ficheros son privados: se sirven solo a quien tiene permiso y trabaja en la oficina de la reserva." %}
+    </p>
+  </section>
+</div>

@@ -84,6 +84,7 @@ def test_la_cabecera_se_sirve_suelta(client, reserva, agente):
         "cobros",
         "checkin",
         "checkout",
+        "documentos",
         "historial",
     ],
 )
@@ -96,11 +97,13 @@ def test_las_pestanas_implementadas_responden_sueltas(client, reserva, agente, p
     assert "<!DOCTYPE html>" not in respuesta.content.decode()
 
 
-@pytest.mark.parametrize("pestana", ["documentos"])
-def test_las_pestanas_que_faltan_lo_dicen(client, reserva, agente, pestana):
-    client.force_login(agente)
+def test_una_pestana_inventada_no_revienta(client, reserva, agente):
+    """Ya no queda ninguna sin implementar, pero la URL admite cualquier texto."""
+    respuesta = client.get(reverse("reservations:tab", args=[reserva.pk, "inventada"]))
+    assert respuesta.status_code == 302  # sin sesion
 
-    respuesta = client.get(reverse("reservations:tab", args=[reserva.pk, pestana]))
+    client.force_login(agente)
+    respuesta = client.get(reverse("reservations:tab", args=[reserva.pk, "inventada"]))
 
     assert respuesta.status_code == 200
     assert "todavia no existe" in respuesta.content.decode()

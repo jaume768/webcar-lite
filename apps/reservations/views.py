@@ -110,7 +110,7 @@ TABS = [
     ("cobros", _("Cobros"), True),
     ("checkin", _("Check-in"), True),
     ("checkout", _("Check-out"), True),
-    ("documentos", _("Documentos"), False),
+    ("documentos", _("Documentos"), True),
     ("historial", _("Historial"), True),
 ]
 TABS_LISTAS = {codigo for codigo, _etiqueta, lista in TABS if lista}
@@ -250,6 +250,14 @@ def contexto_de_pestana(request, reserva: Reservation, pestana: str) -> dict:
             "danos_previos": preexisting_damages(reserva),
             "danos_nuevos": new_damages(reserva),
             "cargos": reserva.charges.all(),
+        }
+    if pestana == "documentos":
+        from apps.contracts.selectors import documents_for
+
+        documentos = documents_for(reserva)
+        return {
+            "documentos": documentos,
+            "generando": any(doc.status == "pending" for doc in documentos),
         }
     if pestana == "historial":
         return {"historial": timeline(reserva)}
