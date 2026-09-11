@@ -432,3 +432,36 @@ def test_al_crear_el_cliente_el_modal_se_cierra_y_el_campo_se_rellena(client, us
     assert "form-cliente-rapido" not in contenido
     assert f'value="{cliente.pk}"' in contenido
     assert "Clienta" in contenido
+
+
+def test_el_desplegable_escucha_el_swap_en_el_contenedor(client, agente):
+    """El listener tiene que estar por encima de la lista, no al lado.
+
+    `htmx:after-swap` se dispara en el destino del swap (la lista de opciones) y
+    burbujea hacia arriba. Estuvo puesto en el input, que es su hermano, y por
+    eso el desplegable no se abria nunca: el evento no pasaba por ahi.
+    """
+    client.force_login(agente)
+
+    html = client.get(reverse("reservations:quick")).content.decode()
+
+    contenedor = html.index('x-data="selectBuscador()"')
+    listener = html.index('@htmx:after-swap="abrir()"')
+    lista = html.index('id="customer-opciones"')
+    input_buscador = html.index('id="customer-buscador"')
+
+    # El listener esta en la apertura del contenedor, antes que el input y la
+    # lista: es decir, en un ancestro de ambos.
+    assert contenedor < listener < input_buscador < lista
+    # Y ya no cuelga del input.
+    assert "@htmx:after-swap" not in html[input_buscador:lista]
+
+
+def test_el_desplegable_apunta_a_su_lista(client, agente):
+    client.force_login(agente)
+
+    html = client.get(reverse("reservations:quick")).content.decode()
+
+    assert 'hx-target="#customer-opciones"' in html
+    assert 'id="customer-opciones"' in html
+    assert 'hx-trigger="focus, click, keyup changed delay:250ms"' in html

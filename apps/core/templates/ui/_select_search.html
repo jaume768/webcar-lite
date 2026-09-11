@@ -6,7 +6,13 @@
 
    Envia al formulario un <input hidden> con el id elegido. Teclado: flechas
    para moverse, Enter para elegir, Escape para cerrar. {% endcomment %}
-<div class="relative" x-data="selectBuscador()" @click.outside="cerrar()">
+{% comment %} El listener de HTMX va en el contenedor, no en el input: el evento
+   `htmx:after-swap` se dispara en el destino del swap (la lista) y burbujea
+   hacia arriba, asi que un hermano nunca lo recibe. {% endcomment %}
+<div class="relative"
+     x-data="selectBuscador()"
+     @click.outside="cerrar()"
+     @htmx:after-swap="abrir()">
   {% if label %}
     <label class="field-label" for="{{ name }}-buscador">{{ label }}</label>
   {% endif %}
@@ -22,7 +28,6 @@
          hx-target="#{{ name }}-opciones"
          hx-swap="innerHTML"
          hx-vals='{"campo": "{{ name }}"}'
-         @htmx:after-swap="abrir()"
          @keydown.arrow-down.prevent="mover(1)"
          @keydown.arrow-up.prevent="mover(-1)"
          @keydown.enter.prevent="elegirActiva()"

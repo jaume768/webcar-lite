@@ -145,8 +145,12 @@
       },
 
       abrir() {
-        this.abierto = true;
-        this.activa = -1;
+        // Al cargar mas resultados con la rueda, el desplegable ya estaba
+        // abierto: se conserva la opcion marcada en vez de saltar al principio.
+        if (!this.abierto) {
+          this.abierto = true;
+          this.activa = -1;
+        }
         this.pintar();
       },
 
