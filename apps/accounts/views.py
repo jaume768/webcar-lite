@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
+from django.views import csrf
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView
 
@@ -37,6 +38,20 @@ class LoginView(auth_views.LoginView):
     template_name = "accounts/login.html"
     authentication_form = EmailAuthenticationForm
     redirect_authenticated_user = True
+
+
+def csrf_failure(request, reason=""):
+    """Fallo de CSRF: 403, salvo el doble envio del formulario de entrada.
+
+    Al entrar, Django rota el token CSRF. Si el formulario sale dos veces
+    (doble clic, Enter repetido), el segundo envio lleva el token viejo y
+    fallaria con un 403 aunque el primero ya haya abierto la sesion. A quien ya
+    esta dentro se le lleva a su panel; cualquier otro caso sigue siendo 403.
+    """
+    if request.user.is_authenticated and request.path == reverse("accounts:login"):
+        logger.info("login_reenviado_con_sesion", user_id=request.user.pk)
+        return HttpResponseRedirect(reverse("core:home"))
+    return csrf.csrf_failure(request, reason=reason)
 
 
 class LogoutView(auth_views.LogoutView):

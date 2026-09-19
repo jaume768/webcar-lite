@@ -197,6 +197,10 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TIME_LIMIT = 300
 CELERY_TASK_SOFT_TIME_LIMIT = 240
 
+# Un fallo de CSRF en el login de alguien que ya ha entrado es un doble envio,
+# no un ataque: ver accounts.views.csrf_failure.
+CSRF_FAILURE_VIEW = "apps.accounts.views.csrf_failure"
+
 # ---------------------------------------------------------------- bloqueo
 # Intentos fallidos antes de bloquear. Se cuenta la combinacion IP + usuario:
 # por usuario solo, cualquiera podria dejar fuera a un companero de mostrador.

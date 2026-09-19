@@ -18,7 +18,18 @@
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* Caligrafica de la portada ("Baleares se vive mejor sobre ruedas"). Solo se
+   usa ahi, en frases cortas: no vale para leer. */
+@font-face {
+  font-family: "Caveat";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("../fonts/caveat-latin.woff2") format("woff2");
+}
+
 @theme {
+  --font-script: "Caveat", "Segoe Script", cursive;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
@@ -42,6 +53,41 @@
   --color-canvas: #f6f7f9;
   --color-surface: #ffffff;
   --color-line: #e2e8f0;
+
+  /* Movimiento de la portada publica. La aplicacion interna no anima nada:
+     alli el movimiento distrae a quien trabaja. */
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-fade-up: fade-up 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-shine: shine 8s linear infinite;
+
+  @keyframes float {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -12px; }
+  }
+  @keyframes shine {
+    to { background-position: 200% center; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(1.5rem); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+/* Aparicion al hacer scroll sin JavaScript: animaciones ligadas a la vista.
+   Donde el navegador no las soporta, el contenido se ve tal cual, sin mas. */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(2.5rem) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+  }
 }
 
 @layer base {
@@ -91,7 +137,7 @@
 
 @layer components {
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply btn bg-brand-600 text-white shadow-sm shadow-brand-600/20 hover:bg-brand-700;
   }
   .btn-secondary {
     @apply btn border border-line bg-surface text-slate-700 hover:bg-slate-50;
@@ -146,14 +192,20 @@
     @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/30;
   }
 
+  /* Tarjeta: esquinas amplias y sombra suave en capas, sin bordes duros. */
   .card {
-    @apply rounded-xl border border-line bg-surface shadow-sm;
+    @apply rounded-2xl border border-slate-200/70 bg-surface
+           shadow-[0_1px_2px_rgb(15_23_42/0.04),0_4px_16px_rgb(15_23_42/0.04)];
   }
   .card-header {
-    @apply flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3;
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4;
   }
   .card-title {
-    @apply text-sm font-semibold text-slate-900;
+    @apply text-base font-bold text-brand-950;
+  }
+  /* Enlace "Ver todo ->" de la cabecera de una tarjeta. */
+  .card-link {
+    @apply inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-800;
   }
 
   .badge {
@@ -165,14 +217,45 @@
     @apply w-full border-collapse text-sm;
   }
   .data-table thead th {
-    @apply border-b border-line bg-slate-50 px-3 py-2 text-left text-xs font-semibold
-           tracking-wide text-slate-600 uppercase;
+    @apply border-b border-line bg-slate-50/70 px-4 py-2.5 text-left text-xs font-semibold
+           text-slate-500;
   }
   .data-table tbody td {
-    @apply border-b border-line px-3 py-2 text-slate-700;
+    @apply border-b border-line/70 px-4 py-3 text-slate-700;
   }
   .data-table tbody tr:hover {
     @apply bg-brand-50/40;
+  }
+
+  /* Titular con degradado azul -> dorado que se desplaza lentamente (portada). */
+  .text-shine {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      90deg,
+      var(--color-brand-400),
+      var(--color-sky-300),
+      #fcd34d,
+      #f59e0b,
+      var(--color-brand-400)
+    );
+    background-size: 200% auto;
+  }
+
+  /* Maqueta del panel inclinada en 3D; se endereza al pasar el raton. En movil
+     va plana: inclinada no se lee en 390 px. */
+  @media (width >= 64rem) {
+    .tilt {
+      transform: perspective(1800px) rotateY(-16deg) rotateX(6deg) rotateZ(2deg);
+      transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .tilt:hover {
+      transform: perspective(1800px) rotateY(-4deg) rotateX(2deg) rotateZ(0deg);
+    }
+  }
+
+  /* Tarjeta de cristal sobre foto. */
+  .glass {
+    @apply border border-white/15 bg-white/10 backdrop-blur-md;
   }
 
   /* Enlace de salto: invisible hasta que se tabula. */

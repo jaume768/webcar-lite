@@ -1,11 +1,14 @@
 {% extends "accounts/base_auth.html" %}
 {% load i18n ui %}
 
-{% block title %}{% translate "Entrar" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+{% block title %}{% translate "Entrar" %} · Illes CRM{% endblock %}
 {% block heading %}{% translate "Entrar" %}{% endblock %}
 
 {% block content %}
-  <form method="post" class="mt-4" novalidate>
+  {% comment %} El boton se desactiva al enviar: un doble clic mandaria el formulario
+     dos veces, y el segundo envio llega con el token CSRF ya rotado. {% endcomment %}
+  <form method="post" class="mt-4" novalidate
+        onsubmit="this.querySelector('[type=submit]').disabled = true">
     {% csrf_token %}
 
     {% if form.non_field_errors %}

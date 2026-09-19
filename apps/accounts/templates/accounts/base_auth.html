@@ -5,18 +5,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{% translate "CRM Rent a Car" %}{% endblock %}</title>
+  <title>{% block title %}Illes CRM{% endblock %}</title>
   <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body class="h-full bg-canvas">
   <main class="flex min-h-full flex-col items-center justify-center px-4 py-12">
     <div class="w-full max-w-sm">
-      <div class="mb-6 flex items-center justify-center gap-2">
-        <span class="flex size-9 items-center justify-center rounded-lg bg-brand-600 text-sm
-                     font-bold text-white">RC</span>
-        <span class="text-base font-semibold text-slate-900">{% translate "Rent a Car" %}</span>
-      </div>
+      <a href="{% url 'core:home' %}" class="mb-6 flex items-center justify-center gap-2 text-brand-950">
+        <svg class="size-8" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 17 L13 8 L17 12 L20 9 L28 17"/>
+          <path d="M3 22c3 0 3-2 6.5-2s3.5 2 6.5 2 3-2 6.5-2 3.5 2 6.5 2"/>
+          <path d="M3 27c3 0 3-2 6.5-2s3.5 2 6.5 2 3-2 6.5-2 3.5 2 6.5 2" opacity=".6"/>
+        </svg>
+        <span class="text-xl font-bold tracking-tight">Illes CRM</span>
+      </a>
 
       <div class="card p-6">
         <h1 class="text-lg font-semibold text-slate-900">{% block heading %}{% endblock %}</h1>

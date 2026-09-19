@@ -192,3 +192,61 @@ def test_por_debajo_del_limite_todavia_se_entra(client, settings, contrasena):
 
     assert respuesta.status_code == 302
     assert respuesta.wsgi_request.user.is_authenticated
+
+
+# ---------------------------------------------------------------------------
+# Doble envio del formulario de entrada
+# ---------------------------------------------------------------------------
+
+
+def test_doble_envio_del_login_no_acaba_en_403(agente_palma, contrasena):
+    """Regresion: el primer envio entra y rota el token CSRF; el segundo (doble
+    clic, Enter repetido) llega con el token viejo. Quien ya ha entrado no
+    tiene por que ver un 403: se le lleva a su panel."""
+    from django.test import Client
+
+    client = Client(enforce_csrf_checks=True)
+    client.get(reverse(LOGIN))
+    token_viejo = client.cookies["csrftoken"].value
+    datos = {
+        "username": agente_palma.email,
+        "password": contrasena,
+        "csrfmiddlewaretoken": token_viejo,
+    }
+
+    primera = client.post(reverse(LOGIN), datos)
+    assert primera.status_code == 302
+
+    # El segundo envio sale del mismo formulario: token viejo en el POST.
+    segunda = client.post(reverse(LOGIN), datos)
+
+    assert segunda.status_code == 302
+    assert segunda.headers["Location"] == reverse("core:home")
+
+
+def test_un_csrf_invalido_sin_sesion_sigue_siendo_403(agente_palma, contrasena):
+    """La excepcion es solo para quien ya esta dentro: sin sesion no hay atajo."""
+    from django.test import Client
+
+    client = Client(enforce_csrf_checks=True)
+    client.get(reverse(LOGIN))
+
+    respuesta = client.post(
+        reverse(LOGIN),
+        {"username": agente_palma.email, "password": contrasena, "csrfmiddlewaretoken": "x" * 64},
+    )
+
+    assert respuesta.status_code == 403
+    assert not respuesta.wsgi_request.user.is_authenticated
+
+
+def test_un_csrf_invalido_fuera_del_login_sigue_siendo_403(client, agente_palma):
+    """Con sesion, cualquier otro POST con token malo se rechaza como siempre."""
+    from django.test import Client
+
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(agente_palma)
+
+    respuesta = client.post(reverse("accounts:logout"), {"csrfmiddlewaretoken": "x" * 64})
+
+    assert respuesta.status_code == 403

@@ -1,38 +1,71 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% translate "Mostrador" %} · {% translate "CRM Rent a Car" %}{% endblock %}
+{% block title %}{% translate "Mostrador" %} · Illes CRM{% endblock %}
 
-{% block page_actions %}
-  {% if perms.reservations.add_reservation %}
-    <a href="{% url 'reservations:quick' %}" class="btn-primary">{% translate "Nueva reserva" %}</a>
-  {% endif %}
+{% block breadcrumb %}{% endblock %}
+
+{% block page_header %}
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-2xl font-bold tracking-tight text-brand-950 sm:text-4xl">
+          {{ saludo }}, {{ user.first_name|default:user.get_short_name }}
+        </h1>
+        {% if panel.alerts %}
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-800 ring-1 ring-amber-600/20">
+            <span class="size-2 rounded-full bg-amber-500" aria-hidden="true"></span>
+            {% blocktranslate count total=panel.alerts|length %}{{ total }} aviso{% plural %}{{ total }} avisos{% endblocktranslate %}
+          </span>
+        {% else %}
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-800 ring-1 ring-emerald-600/20">
+            <span class="size-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+            {% translate "Todo en marcha" %}
+          </span>
+        {% endif %}
+      </div>
+      <p class="mt-1 text-base text-slate-500 first-letter:uppercase sm:text-lg">{% now "l, j \d\e F" %}</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      {% comment %} Filtro de oficina del panel: solo con mas de una. Recarga la
+         pagina entera para que periodo y oficina viajen siempre juntos. {% endcomment %}
+      {% if panel.show_office_picker %}
+        <form method="get" action="{% url 'core:home' %}">
+          <input type="hidden" name="periodo" value="{{ panel.period.code }}">
+          <label class="sr-only" for="office">{% translate "Oficina" %}</label>
+          <select class="input w-auto rounded-xl py-2.5 font-medium" id="office" name="office"
+                  onchange="this.form.requestSubmit()">
+            <option value="">{% translate "Todas mis oficinas" %}</option>
+            {% for oficina in panel.offices %}
+              <option value="{{ oficina.pk }}"
+                      {% if panel.office and panel.office.pk == oficina.pk %}selected{% endif %}>
+                {{ oficina.name }}
+              </option>
+            {% endfor %}
+          </select>
+          <noscript><button type="submit" class="btn-secondary">{% translate "Ver" %}</button></noscript>
+        </form>
+      {% endif %}
+
+      <nav class="inline-flex rounded-xl border border-line bg-surface p-1 shadow-sm" aria-label="{% translate 'Periodo' %}">
+        {% for codigo, periodo in periods %}
+          <a href="?periodo={{ codigo }}{% if panel.office %}&amp;office={{ panel.office.pk }}{% endif %}"
+             {% if codigo == panel.period.code %}aria-current="page"{% endif %}
+             class="rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:px-6
+                    {% if codigo == panel.period.code %}bg-brand-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
+            {{ periodo.label }}
+          </a>
+        {% endfor %}
+      </nav>
+    </div>
+  </header>
 {% endblock %}
 
 {% block content %}
-  {% comment %} El filtro vive fuera del bloque que se autorefresca: asi el
-     refresco no le quita el foco a nadie. {% endcomment %}
-  {% if panel.show_office_picker %}
-    <form class="card mb-5 flex flex-wrap items-end gap-3 p-3"
-          hx-get="{% url 'core:home' %}"
-          hx-target="#panel-mostrador"
-          hx-swap="outerHTML"
-          hx-push-url="true">
-      <div>
-        <label class="field-label" for="office">{% translate "Oficina" %}</label>
-        <select class="input w-auto" id="office" name="office">
-          <option value="">{% translate "Todas mis oficinas" %}</option>
-          {% for oficina in panel.offices %}
-            <option value="{{ oficina.pk }}"
-                    {% if panel.office and panel.office.pk == oficina.pk %}selected{% endif %}>
-              {{ oficina.name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      <button type="submit" class="btn-secondary">{% translate "Ver" %}</button>
-    </form>
-  {% endif %}
-
-  {% include "core/_dashboard_panels.html" %}
+  {% comment %} La pestana activa vive fuera del bloque que se autorefresca:
+     asi el refresco no devuelve a nadie a "Entregas" a mitad de trabajo. {% endcomment %}
+  <div x-data="{ pestana: 'entregas' }">
+    {% include "core/_dashboard_panels.html" %}
+  </div>
 {% endblock %}

@@ -40,52 +40,62 @@ ICON_WARNING = "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.
 ICON_TAG = "M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.57 3zM6 6h.008v.008H6V6z"  # noqa: E501
 ICON_CAR = "M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-9.026 0A1.106 1.106 0 003.25 6.615v9.017m11-8.06H2.25"  # noqa: E501
 
+ICON_PIN = "M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"  # noqa: E501
+ICON_PLUS_CIRCLE = "M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+ICON_PERCENT = "M9 15l6-6M9.75 9.75h.008v.008H9.75V9.75zm4.5 4.5h.008v.008h-.008v-.008zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"  # noqa: E501
+ICON_USER_CIRCLE = "M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"  # noqa: E501
+ICON_DOC = "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"  # noqa: E501
+
 MAIN_NAV: list[NavSection] = [
     NavSection(
         label=_("General"),
         items=[
             NavItem(label=_("Inicio"), url_name="core:home", icon=ICON_HOME),
-            NavItem(label=_("Componentes"), url_name="core:ui_kit", icon=ICON_SWATCH),
         ],
     ),
     NavSection(
-        label=_("Maestros"),
+        label=_("Operativa"),
         items=[
             NavItem(
-                label=_("Oficinas"),
-                url_name="offices:office_list",
-                icon=ICON_BUILDING,
-                permission="offices.view_office",
+                label=_("Reservas"),
+                url_name="reservations:list",
+                icon=ICON_CALENDAR,
+                permission="reservations.view_reservation",
             ),
             NavItem(
-                label=_("Grupos de oficinas"),
-                url_name="offices:pool_list",
-                icon=ICON_MAP,
-                permission="offices.view_officepool",
+                label=_("Clientes"),
+                url_name="customers:customer_list",
+                icon=ICON_USER_CIRCLE,
+                permission="customers.view_customer",
             ),
             NavItem(
-                label=_("Categorias"),
-                url_name="fleet:category_list",
-                icon=ICON_CAR,
-                permission="fleet.view_vehiclecategory",
+                label=_("Arqueo de caja"),
+                url_name="billing:cash_register",
+                icon=ICON_CASH,
+                permission="billing.view_billing",
             ),
+        ],
+    ),
+    NavSection(
+        label=_("Flota"),
+        items=[
             NavItem(
-                label=_("Vehiculos"),
+                label=_("Vehículos"),
                 url_name="fleet:vehicle_list",
-                icon=ICON_KEY,
+                icon=ICON_CAR,
                 permission="fleet.view_vehicle",
+            ),
+            NavItem(
+                label=_("Categorías"),
+                url_name="fleet:category_list",
+                icon=ICON_TAG,
+                permission="fleet.view_vehiclecategory",
             ),
             NavItem(
                 label=_("Bloqueos"),
                 url_name="fleet:block_list",
                 icon=ICON_LOCK,
                 permission="fleet.view_vehicleblock",
-            ),
-            NavItem(
-                label=_("Clientes"),
-                url_name="customers:customer_list",
-                icon=ICON_USERS,
-                permission="customers.view_customer",
             ),
         ],
     ),
@@ -95,7 +105,7 @@ MAIN_NAV: list[NavSection] = [
             NavItem(
                 label=_("Tarifas"),
                 url_name="pricing:rate_list",
-                icon=ICON_TAG,
+                icon=ICON_DOC,
                 permission="pricing.view_rate",
             ),
             NavItem(
@@ -107,13 +117,13 @@ MAIN_NAV: list[NavSection] = [
             NavItem(
                 label=_("Extras"),
                 url_name="pricing:extra_list",
-                icon=ICON_SWATCH,
+                icon=ICON_PLUS_CIRCLE,
                 permission="pricing.view_extra",
             ),
             NavItem(
                 label=_("Suplementos"),
                 url_name="pricing:supplement_list",
-                icon=ICON_TAG,
+                icon=ICON_PERCENT,
                 permission="pricing.view_supplement",
             ),
             NavItem(
@@ -137,36 +147,38 @@ MAIN_NAV: list[NavSection] = [
         ],
     ),
     NavSection(
-        label=_("Operativa"),
+        label=_("Administración"),
         items=[
             NavItem(
-                label=_("Reservas"),
-                url_name="reservations:list",
-                icon=ICON_KEY,
-                permission="reservations.view_reservation",
+                label=_("Oficinas"),
+                url_name="offices:office_list",
+                icon=ICON_PIN,
+                permission="offices.view_office",
             ),
             NavItem(
-                label=_("Arqueo de caja"),
-                url_name="billing:cash_register",
-                icon=ICON_CASH,
-                permission="billing.view_billing",
-            ),
-        ],
-    ),
-    NavSection(
-        label=_("Administracion"),
-        items=[
-            NavItem(
-                label=_("Configuracion"),
-                url_name="settings_app:settings",
-                icon=ICON_COG,
-                permission="settings_app.access_settings",
+                label=_("Grupos de oficinas"),
+                url_name="offices:pool_list",
+                icon=ICON_MAP,
+                permission="offices.view_officepool",
             ),
             NavItem(
                 label=_("Usuarios"),
                 url_name="accounts:user_list",
                 icon=ICON_USERS,
                 permission="accounts.manage_users",
+            ),
+            NavItem(
+                label=_("Configuración"),
+                url_name="settings_app:settings",
+                icon=ICON_COG,
+                permission="settings_app.access_settings",
+            ),
+            # Referencia del sistema de interfaz: solo para quien administra.
+            NavItem(
+                label=_("Componentes"),
+                url_name="core:ui_kit",
+                icon=ICON_SWATCH,
+                permission="settings_app.access_settings",
             ),
         ],
     ),

@@ -39,7 +39,7 @@ def test_con_sesion_la_misma_url_ensena_el_panel(client, agente_palma):
     contenido = client.get(reverse("core:home")).content.decode()
 
     assert "El mostrador entero" not in contenido
-    assert "Entregas de hoy" in contenido
+    assert "Reservas activas" in contenido
 
 
 # ---------------------------------------------------------------------------

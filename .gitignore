@@ -38,3 +38,4 @@ node_modules/
 .DS_Store
 /static/js/alpine-focus.min.js
 /static/fonts/inter-latin.woff2
+/static/fonts/caveat-latin.woff2

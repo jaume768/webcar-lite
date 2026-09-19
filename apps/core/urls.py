@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("demo/", views.demo_login, name="demo_login"),
     path("oficina-activa/", views.set_active_office, name="set_active_office"),
+    path("avisos/", views.alerts_menu, name="alerts_menu"),
     # Demostracion de componentes. Fuera cuando haya pantallas reales.
     path("ui-kit/", views.ui_kit, name="ui_kit"),
     path("ui-kit/vehiculos/", views.ui_kit_vehicle_search, name="ui_kit_vehicle_search"),

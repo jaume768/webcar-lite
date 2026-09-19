@@ -14,7 +14,7 @@ from apps.billing.services import register_payment
 from apps.customers.tests.factories import CustomerFactory
 from apps.fleet.models import VehicleStatus
 from apps.fleet.tests.factories import VehicleFactory
-from apps.operations.dashboard import build_dashboard
+from apps.operations.dashboard import PERIODS, build_dashboard, period_for
 from apps.reservations.models import ReservationStatus
 from apps.reservations.services import create_quick_reservation
 from apps.reservations.tests.factories import ReservationFactory
@@ -431,10 +431,14 @@ def test_el_panel_no_hace_una_consulta_por_fila(
     """Test obligatorio: el numero de consultas no depende de los datos."""
     _llenar(economico, palma, reservas=120, vehiculos=15)
 
-    # Nueve consultas: oficinas, entregas, devoluciones, ITV, retrasos, sin
-    # cobrar, activas, flota por estado y pendiente total.
-    with django_assert_max_num_queries(9):
+    # Once consultas: oficinas, entregas, devoluciones, ITV, retrasos, sin
+    # cobrar, fianzas retenidas, activas, flota por estado, pendiente total y
+    # prevision de ocupacion. Con la caja, una mas.
+    with django_assert_max_num_queries(11):
         build_dashboard(user=de_palma)
+
+    with django_assert_max_num_queries(12):
+        build_dashboard(user=de_palma, include_cash=True)
 
 
 def test_el_numero_de_consultas_no_crece_con_los_datos(economico, palma, de_palma, coche):
@@ -487,3 +491,241 @@ def test_el_panel_carga_rapido_con_un_ano_de_datos(economico, palma, de_palma, c
 
     assert panel.stats.active_reservations > 0
     assert tardanza < 500, f"el panel tardo {tardanza:.0f} ms"
+
+
+# ---------------------------------------------------------------------------
+# Periodo
+# ---------------------------------------------------------------------------
+
+
+def test_manana_ensena_las_entregas_de_manana_y_no_las_de_hoy(economico, palma, de_palma, coche):
+    hoy = _reserva_de_hoy(economico, palma, vehiculo=coche)
+    manana = _reserva_de_hoy(economico, palma, hora=11)
+    manana.pickup_at += timedelta(days=1)
+    manana.return_at += timedelta(days=1)
+    manana.save(update_fields=["pickup_at", "return_at"])
+
+    panel = build_dashboard(user=de_palma, period=PERIODS["manana"])
+
+    assert [reserva.number for reserva in panel.pickups] == [manana.number]
+    assert hoy.number not in [reserva.number for reserva in panel.pickups]
+
+
+def test_la_semana_cuenta_devoluciones_que_aun_no_han_salido(economico, palma, de_palma, coche):
+    """Mirando hacia delante, una confirmada que vuelve esta semana tambien cuenta."""
+    confirmada = _reserva_de_hoy(economico, palma, vehiculo=coche)
+
+    hoy = build_dashboard(user=de_palma)
+    semana = build_dashboard(user=de_palma, period=PERIODS["semana"])
+
+    assert hoy.returns == []
+    assert [reserva.number for reserva in semana.returns] == [confirmada.number]
+
+
+def test_un_periodo_desconocido_cae_en_hoy():
+    assert period_for("pasado") is PERIODS["hoy"]
+    assert period_for(None) is PERIODS["hoy"]
+
+
+def test_las_entregas_ya_hechas_salen_pero_no_cuentan_como_pendientes(
+    economico, palma, de_palma, coche
+):
+    hecha = _reserva_de_hoy(economico, palma, vehiculo=coche, status=ReservationStatus.IN_PROGRESS)
+    _reserva_de_hoy(economico, palma, hora=12)
+
+    panel = build_dashboard(user=de_palma)
+
+    assert hecha.number in [reserva.number for reserva in panel.pickups]
+    assert panel.stats.pickups_today == 1
+    assert panel.stats.pickups_done == 1
+    assert panel.stats.pickups_total == 2
+
+
+def test_cuenta_las_reservas_creadas_hoy(economico, palma, de_palma, coche):
+    _reserva_de_hoy(economico, palma, vehiculo=coche)
+    _reserva_de_hoy(economico, palma, hora=12, status=ReservationStatus.DRAFT)
+
+    panel = build_dashboard(user=de_palma)
+
+    # El borrador no es una reserva todavia.
+    assert panel.stats.created_today == 1
+
+
+def test_la_agenda_junta_entregas_y_devoluciones_por_hora(economico, palma, de_palma, coche):
+    entrega = _reserva_de_hoy(economico, palma, hora=12)
+    devolucion = ReservationFactory(
+        category=economico,
+        pickup_office=palma,
+        return_office=palma,
+        customer=CustomerFactory(),
+        vehicle=coche,
+        pickup_at=_hoy_a_las(9) - timedelta(days=2),
+        return_at=_hoy_a_las(9),
+        status=ReservationStatus.IN_PROGRESS,
+    )
+
+    panel = build_dashboard(user=de_palma)
+
+    assert [linea.url for linea in panel.agenda] == [
+        reverse("reservations:detail", args=[devolucion.pk]),
+        reverse("reservations:detail", args=[entrega.pk]),
+    ]
+    assert panel.agenda[1].state == "sin_coche"
+
+
+# ---------------------------------------------------------------------------
+# Prevision de ocupacion
+# ---------------------------------------------------------------------------
+
+
+def test_la_prevision_cuenta_las_reservas_que_pisan_cada_dia(economico, palma, de_palma, coche):
+    VehicleFactory(plate="7001PRE", category=economico, current_office=palma)
+    # Dos coches; una reserva de hoy a dentro de tres dias.
+    _reserva_de_hoy(economico, palma, vehiculo=coche)
+
+    panel = build_dashboard(user=de_palma)
+    dias = panel.forecast.days
+
+    assert len(dias) == 14
+    assert [dia.percent for dia in dias[:4]] == [50, 50, 50, 50]
+    assert dias[4].percent == 0
+    assert panel.forecast.peak.percent == 50
+
+
+def test_la_prevision_no_mira_otras_oficinas(economico, palma, aeropuerto, de_palma, coche):
+    _reserva_de_hoy(economico, aeropuerto)
+
+    panel = build_dashboard(user=de_palma)
+
+    assert all(dia.reservations == 0 for dia in panel.forecast.days)
+
+
+def test_la_prevision_sin_flota_no_revienta(palma, de_palma):
+    panel = build_dashboard(user=de_palma)
+
+    assert all(dia.percent == 0 for dia in panel.forecast.days)
+    assert panel.forecast.line
+
+
+# ---------------------------------------------------------------------------
+# Caja del dia y fianzas
+# ---------------------------------------------------------------------------
+
+
+def _cobrar(reserva, importe, metodo, actor, tipo=PaymentType.PAYMENT):
+    return register_payment(
+        reservation=reserva,
+        amount=Decimal(importe),
+        method=metodo,
+        payment_type=tipo,
+        actor=actor,
+        allow_overpayment=True,
+    )
+
+
+def test_la_caja_solo_se_calcula_si_se_pide(economico, palma, de_palma, coche):
+    panel = build_dashboard(user=de_palma)
+
+    assert panel.cash is None
+
+
+def test_la_caja_suma_lo_cobrado_hoy_por_medio_de_pago(economico, palma, de_palma, coche):
+    reserva = _reserva_de_hoy(economico, palma, vehiculo=coche)
+    _cobrar(reserva, "60.00", PaymentMethod.CARD, de_palma)
+    _cobrar(reserva, "40.00", PaymentMethod.CASH, de_palma)
+    # La fianza no es un ingreso: no suma en la caja, va aparte.
+    _cobrar(reserva, "300.00", PaymentMethod.CARD, de_palma, tipo=PaymentType.DEPOSIT)
+
+    caja = build_dashboard(user=de_palma, include_cash=True).cash
+
+    assert caja.collected == Decimal("100.00")
+    assert caja.deposits_held == Decimal("300.00")
+    assert [(medio.label, medio.amount, medio.percent) for medio in caja.by_method] == [
+        ("Efectivo", Decimal("40.00"), 40),
+        ("Tarjeta", Decimal("60.00"), 60),
+    ]
+
+
+def test_la_caja_no_suma_cobros_de_otra_oficina(economico, palma, aeropuerto, de_palma, coche):
+    ajena = _reserva_de_hoy(economico, aeropuerto)
+    _cobrar(ajena, "80.00", PaymentMethod.CARD, de_palma)
+
+    caja = build_dashboard(user=de_palma, include_cash=True).cash
+
+    assert caja.collected == Decimal("0.00")
+    assert caja.by_method == []
+
+
+def test_avisa_de_fianzas_retenidas_en_reservas_cerradas(economico, palma, de_palma, coche):
+    cerrada = ReservationFactory(
+        category=economico,
+        pickup_office=palma,
+        return_office=palma,
+        customer=CustomerFactory(),
+        pickup_at=timezone.now() - timedelta(days=10),
+        return_at=timezone.now() - timedelta(days=7),
+        status=ReservationStatus.FINISHED,
+        total=Decimal("0.00"),
+    )
+    _cobrar(cerrada, "300.00", PaymentMethod.CARD, de_palma, tipo=PaymentType.DEPOSIT)
+    # Una fianza de una reserva aun abierta es normal: no avisa.
+    abierta = _reserva_de_hoy(economico, palma, vehiculo=coche)
+    _cobrar(abierta, "200.00", PaymentMethod.CARD, de_palma, tipo=PaymentType.DEPOSIT)
+
+    alerta = _alerta(build_dashboard(user=de_palma), "fianzas")
+
+    assert alerta.count == 1
+    assert cerrada.number in alerta.detail
+    assert "300" in alerta.label
+
+
+@pytest.fixture
+def gestor_con_caja(db, palma):
+    rol = RoleFactory(
+        code="gestor-caja",
+        name="Gestor",
+        permissions=["reservations.view_reservation", "billing.view_billing"],
+    )
+    return UserFactory(email="caja@ejemplo.es", role=rol, offices=[palma])
+
+
+def test_la_pantalla_solo_ensena_la_caja_a_quien_ve_cobros(client, de_palma, gestor_con_caja):
+    client.force_login(de_palma)
+    sin_permiso = client.get(reverse("core:home"))
+
+    client.force_login(gestor_con_caja)
+    con_permiso = client.get(reverse("core:home"))
+
+    assert sin_permiso.context["panel"].cash is None
+    assert "Caja de hoy" not in sin_permiso.content.decode()
+    assert con_permiso.context["panel"].cash is not None
+    assert "Caja de hoy" in con_permiso.content.decode()
+
+
+# ---------------------------------------------------------------------------
+# Campana de avisos
+# ---------------------------------------------------------------------------
+
+
+def test_la_campana_trae_los_avisos_del_usuario(client, economico, palma, de_palma, coche):
+    _reserva_de_hoy(economico, palma)
+    client.force_login(de_palma)
+
+    respuesta = client.get(reverse("core:alerts_menu"))
+
+    assert respuesta.status_code == 200
+    assert "sin coche asignado" in respuesta.content.decode()
+
+
+def test_la_campana_sin_avisos_lo_dice(client, palma, de_palma):
+    client.force_login(de_palma)
+
+    contenido = client.get(reverse("core:alerts_menu")).content.decode()
+
+    assert "Nada que avisar" in contenido
+
+
+def test_la_campana_pide_sesion(client):
+    respuesta = client.get(reverse("core:alerts_menu"))
+
+    assert respuesta.status_code == 302

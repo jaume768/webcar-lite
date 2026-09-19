@@ -9,7 +9,9 @@ from django.core.exceptions import PermissionDenied
 from django.db import connection
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
+from django.templatetags.static import static
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
@@ -65,131 +67,37 @@ def health(request):
 
 
 #: Lo que se cuenta en la portada. Vive aqui y no en la plantilla para que el
-#: texto de venta se pueda revisar sin abrir HTML.
+#: texto de venta se pueda revisar sin abrir HTML. Poco y al grano: la portada
+#: se lee en un movil y el detalle se descubre entrando en la demo.
 MODULOS_LANDING = [
-    (
-        _("Reservas"),
-        _(
-            "Alta rapida de mostrador, ficha completa con pestanas y una maquina de "
-            "estados que no deja saltarse pasos: nadie finaliza una reserva que no "
-            "ha entregado."
-        ),
-    ),
-    (
-        _("Disponibilidad"),
-        _(
-            "Capacidad por categoria dentro de un grupo de oficinas, con bloqueos de "
-            "taller, tiempo de limpieza entre alquileres y one-way resuelto."
-        ),
-    ),
-    (
-        _("Tarifas"),
-        _(
-            "Tramos por dias, temporadas, canales, suplementos y descuentos. Un unico "
-            "motor calcula el precio y guarda el desglose entero."
-        ),
-    ),
-    (
-        _("Flota"),
-        _(
-            "Categorias y vehiculos con ITV, seguro, kilometros y estado. Los bloqueos "
-            "de taller restan disponibilidad de verdad."
-        ),
-    ),
-    (
-        _("Clientes"),
-        _(
-            "Busqueda por documento, telefono o apellidos, conductores adicionales con "
-            "el carnet validado y documentos escaneados en almacen privado."
-        ),
-    ),
-    (
-        _("Cobros y caja"),
-        _(
-            "Anticipos, pagos, fianzas y reembolsos. La fianza no cuenta como cobrado, "
-            "y el arqueo del dia cuadra por oficina y medio de pago."
-        ),
-    ),
-    (
-        _("Entregas y devoluciones"),
-        _(
-            "Kilometros, combustible y parte de danos con croquis. Los cargos por "
-            "kilometros, gasolina y retraso se calculan solos."
-        ),
-    ),
-    (
-        _("Contratos"),
-        _(
-            "Contrato en PDF con las condiciones generales versionadas: se sabe "
-            "siempre que texto firmo cada cliente."
-        ),
-    ),
-    (
-        _("Usuarios y permisos"),
-        _(
-            "Roles con permisos por operacion y aislamiento por oficina: quien lleva "
-            "Palma no ve nada de Alcudia, ni escribiendo la URL."
-        ),
-    ),
+    _("Reservas"),
+    _("Disponibilidad"),
+    _("Tarifas"),
+    _("Flota"),
+    _("Clientes"),
+    _("Cobros y caja"),
+    _("Entregas y devoluciones"),
+    _("Contratos"),
+    _("Usuarios y permisos"),
 ]
 
+#: (icono, titulo, texto). El icono es el nombre de un bloque SVG de la plantilla.
 PASOS_LANDING = [
-    (
-        _("Se reserva"),
-        _(
-            "Categoria, fechas y cliente. La pantalla ensena si hay coche y cuanto "
-            "cuesta antes de guardar."
-        ),
-    ),
-    (
-        _("Se entrega"),
-        _(
-            "Kilometros, combustible y documentos comprobados. El coche pasa a "
-            "alquilado y la reserva a en curso."
-        ),
-    ),
-    (
-        _("Se devuelve"),
-        _("Se anotan danos nuevos y el sistema calcula gasolina, kilometros de mas y retraso."),
-    ),
-    (
-        _("Se cobra"),
-        _("Lo pendiente queda a la vista hasta que se cobra, y la fianza se devuelve aparte."),
-    ),
+    ("calendario", _("Se reserva"), _("En mostrador o por teléfono, con precio al momento.")),
+    ("coche", _("Se entrega"), _("Check-in rápido con toda la información.")),
+    ("vuelta", _("Se devuelve"), _("Inspección y cierre en segundos.")),
+    ("tarjeta", _("Se cobra"), _("Tarjeta, efectivo o transferencia, con la fianza aparte.")),
 ]
 
-TECNICO_LANDING = [
-    (
-        _("PostgreSQL de verdad"),
-        _(
-            "Rangos de tiempo y constraints de exclusion: la base impide fisicamente "
-            "que un coche se alquile dos veces a la vez."
-        ),
-    ),
-    (
-        _("Nada se borra"),
-        _(
-            "Vehiculos, clientes y tarifas se desactivan. Una reserva de hace dos anos "
-            "se sigue leyendo tal como se vendio."
-        ),
-    ),
-    (
-        _("Precios congelados"),
-        _("Cambiar un extra en el catalogo no mueve ni un euro de lo ya vendido."),
-    ),
-    (
-        _("Todo queda escrito"),
-        _("Cambios de estado, de precio y accesos quedan registrados con quien y por que."),
-    ),
-    (
-        _("Multi-oficina"),
-        _("Cada consulta de datos operativos pasa por el filtro de oficina del usuario."),
-    ),
-    (
-        _("Sin sorpresas de concurrencia"),
-        _("Las reservas se cuentan y se crean dentro de la misma transaccion, con cerrojo."),
-    ),
-]
+#: Fotos de la portada, en static/. Los originales estan en fotos/ (PNG); aqui
+#: van convertidas a WebP, que pesan diez veces menos.
+FOTOS_LANDING = {
+    "hero": "img/landing/hero.webp",
+    "flota": "img/landing/flota.webp",
+    "clientes": "img/landing/clientes.webp",
+    "cobros": "img/landing/cobros.webp",
+    "islas": "img/landing/islas.webp",
+}
 
 
 @login_not_required
@@ -211,7 +119,9 @@ def home(request):
             {
                 "modulos": MODULOS_LANDING,
                 "pasos": PASOS_LANDING,
-                "tecnico": TECNICO_LANDING,
+                # Se resuelven en cada peticion y no al importar: en produccion
+                # `static()` consulta el manifiesto de collectstatic.
+                "fotos": {clave: static(ruta) for clave, ruta in FOTOS_LANDING.items()},
                 "demo_activa": settings.DEMO_MODE,
                 "demo_email": settings.DEMO_EMAIL,
                 "demo_password": settings.DEMO_PASSWORD,
@@ -219,25 +129,51 @@ def home(request):
         )
 
     from apps.offices.selectors import offices_for_user
-    from apps.operations.dashboard import build_dashboard
+    from apps.operations.dashboard import PERIODS, build_dashboard, period_for
 
     oficina = None
     elegida = request.GET.get("office")
     if elegida:
         oficina = offices_for_user(request.user).filter(pk=elegida).first()
 
-    panel = build_dashboard(user=request.user, office=oficina)
+    panel = build_dashboard(
+        user=request.user,
+        office=oficina,
+        period=period_for(request.GET.get("periodo")),
+        # La caja se consulta solo para quien puede ver cobros: no basta con no
+        # pintarla.
+        include_cash=request.user.has_perm("billing.view_billing"),
+    )
 
     contexto = {
         "page_title": _("Mostrador"),
         "panel": panel,
+        "saludo": _saludo(timezone.localtime(panel.generated_at).hour),
+        "periods": PERIODS.items(),
         "refresh_seconds": settings.DASHBOARD_REFRESH_SECONDS,
     }
 
-    if request.htmx:
-        # Solo los datos: el filtro se queda quieto y no se pierde el foco.
+    if request.htmx and not request.htmx.boosted:
+        # Solo los datos: la cabecera se queda quieta y no se pierde el foco.
         return render(request, "core/_dashboard_panels.html", contexto)
     return render(request, "core/home.html", contexto)
+
+
+def _saludo(hora: int) -> str:
+    if 6 <= hora < 14:
+        return _("Buenos días")
+    if 14 <= hora < 21:
+        return _("Buenas tardes")
+    return _("Buenas noches")
+
+
+@require_GET
+def alerts_menu(request):
+    """Avisos de la campana. Se piden al abrirla: ninguna pagina paga por ellos."""
+    from apps.operations.dashboard import build_dashboard
+
+    panel = build_dashboard(user=request.user)
+    return render(request, "shell/_alerts_menu.html", {"alerts": panel.alerts})
 
 
 @require_POST

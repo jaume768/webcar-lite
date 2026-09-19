@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{% translate "CRM Rent a Car" %}{% endblock %}</title>
+  <title>{% block title %}Illes CRM{% endblock %}</title>
   <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
@@ -27,17 +27,17 @@
       {% comment %} Ancho maximo y margenes generosos: en un monitor de
          mostrador, el contenido pegado a los bordes se lee peor. {% endcomment %}
       <main id="contenido" tabindex="-1"
-            class="mx-auto w-full max-w-[1600px] flex-1 px-5 py-7 focus:outline-none
-                   sm:px-8 lg:px-10 xl:px-12">
+            class="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 focus:outline-none
+                   sm:px-6 lg:px-8 lg:py-8">
         {% block breadcrumb %}
           {% include "shell/_breadcrumb.html" %}
         {% endblock %}
 
         {% block page_header %}
           {% if page_title %}
-            <header class="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h1 class="text-xl font-semibold text-slate-900">{{ page_title }}</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-brand-950 sm:text-3xl">{{ page_title }}</h1>
                 {% if page_subtitle %}
                   <p class="mt-1 text-sm text-slate-500">{{ page_subtitle }}</p>
                 {% endif %}

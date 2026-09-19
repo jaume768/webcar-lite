@@ -1,161 +1,281 @@
 {% load i18n %}
-{% comment %} Solo los datos. El filtro de oficina se queda fuera de este
-   bloque a proposito: al refrescarse cada dos minutos, lo que este enfocado o
-   a medio escribir no se toca. {% endcomment %}
-<div id="panel-mostrador"
-     hx-get="{% url 'core:home' %}{% if panel.office %}?office={{ panel.office.pk }}{% endif %}"
+{% comment %} Solo los datos. La cabecera (oficina y periodo) se queda fuera de
+   este bloque a proposito: al refrescarse cada pocos minutos, lo que este
+   enfocado o a medio elegir no se toca. {% endcomment %}
+<div id="panel-mostrador" class="space-y-6"
+     hx-get="{% url 'core:home' %}?periodo={{ panel.period.code }}{% if panel.office %}&office={{ panel.office.pk }}{% endif %}"
      hx-trigger="every {{ refresh_seconds }}s"
      hx-swap="outerHTML"
      hx-sync="this:replace">
 
-  {# --- indicadores --- #}
-  {% comment %} Cada indicador con su color: de un vistazo se distingue lo que
-     esta bien de lo que hay que mirar, sin leer las etiquetas. {% endcomment %}
-  <div class="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-    <div class="card border-l-4 border-l-slate-400 p-4">
-      <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">
-        {% translate "Reservas activas" %}
-      </p>
-      <p class="mt-1 text-2xl font-semibold tabular text-slate-900">
-        {{ panel.stats.active_reservations }}
-      </p>
-    </div>
-
-    <div class="card border-l-4 border-l-brand-500 bg-brand-50/40 p-4">
-      <p class="text-xs font-medium tracking-wide text-brand-700 uppercase">
-        {% translate "Entregas hoy" %}
-      </p>
-      <p class="mt-1 text-2xl font-semibold tabular text-brand-800">
-        {{ panel.stats.pickups_today }}
-      </p>
-    </div>
-
-    <div class="card border-l-4 border-l-violet-500 bg-violet-50/40 p-4">
-      <p class="text-xs font-medium tracking-wide text-violet-700 uppercase">
-        {% translate "Devoluciones hoy" %}
-      </p>
-      <p class="mt-1 text-2xl font-semibold tabular text-violet-800">
-        {{ panel.stats.returns_today }}
-      </p>
-    </div>
-
-    <div class="card p-4
-                {% if panel.stats.pending_amount %}border-l-4 border-l-rose-500 bg-rose-50/40{% else %}border-l-4 border-l-emerald-500 bg-emerald-50/40{% endif %}">
-      <p class="text-xs font-medium tracking-wide uppercase
-                {% if panel.stats.pending_amount %}text-rose-700{% else %}text-emerald-700{% endif %}">
-        {% translate "Pendiente de cobro" %}
-      </p>
-      <p class="mt-1 text-2xl font-semibold tabular
-                {% if panel.stats.pending_amount %}text-rose-800{% else %}text-emerald-800{% endif %}">
-        {{ panel.stats.pending_amount }} €
-      </p>
-    </div>
-
-    <div class="card border-l-4 border-l-amber-500 bg-amber-50/40 p-4">
-      <p class="text-xs font-medium tracking-wide text-amber-700 uppercase">
-        {% translate "Ocupacion de flota" %}
-      </p>
-      <p class="mt-1 text-2xl font-semibold tabular text-amber-900">
-        {{ panel.stats.occupancy }}%
-      </p>
-      <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-amber-100">
-        <div class="h-full rounded-full bg-amber-500" style="width: {{ panel.stats.occupancy }}%"></div>
+  {# ------------------------------------------------------------ indicadores #}
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <div class="card flex items-center gap-4 p-5">
+      <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+        <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+      </span>
+      <div class="min-w-0">
+        <p class="text-3xl font-bold tabular text-brand-950">{{ panel.stats.active_reservations }}</p>
+        <p class="text-sm text-slate-600">{% translate "Reservas activas" %}</p>
+        {% if panel.stats.created_today %}
+          <p class="mt-0.5 flex items-center gap-1 text-xs font-medium text-emerald-600">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+            {% blocktranslate count total=panel.stats.created_today %}+{{ total }} creada hoy{% plural %}+{{ total }} creadas hoy{% endblocktranslate %}
+          </p>
+        {% else %}
+          <p class="mt-0.5 text-xs text-slate-400">{% translate "Ninguna nueva hoy" %}</p>
+        {% endif %}
       </div>
-      <p class="mt-1 text-xs text-amber-800/80">
-        {% blocktranslate with fuera=panel.stats.rented total=panel.stats.fleet_total %}
-          {{ fuera }} de {{ total }} fuera
-        {% endblocktranslate %}
-      </p>
+    </div>
+
+    <div class="card flex items-center gap-4 p-5">
+      <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+        <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11m-14 0h14m-14 0a2 2 0 00-2 2v3h18v-3a2 2 0 00-2-2M6 16v2m12-2v2M7 13.5h.01M17 13.5h.01"/></svg>
+      </span>
+      <div class="min-w-0">
+        <p class="text-3xl font-bold tabular text-brand-950">{{ panel.stats.pickups_today }}</p>
+        <p class="text-sm text-slate-600">{% translate "Entregas" %} {{ panel.period.suffix }}</p>
+        <p class="mt-0.5 text-xs text-slate-400">
+          {% blocktranslate with total=panel.stats.pickups_total %}por hacer, de {{ total }}{% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+
+    <div class="card flex items-center gap-4 p-5">
+      <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+        <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
+      </span>
+      <div class="min-w-0">
+        <p class="text-3xl font-bold tabular text-brand-950">{{ panel.stats.returns_today }}</p>
+        <p class="text-sm text-slate-600">{% translate "Devoluciones" %} {{ panel.period.suffix }}</p>
+      </div>
+    </div>
+
+    <div class="card flex items-center gap-4 p-5">
+      <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+        <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+      </span>
+      <div class="min-w-0">
+        <p class="truncate text-3xl font-bold tabular {% if panel.stats.pending_amount %}text-brand-950{% else %}text-emerald-700{% endif %}">
+          {{ panel.stats.pending_amount|floatformat:"-2g" }} €
+        </p>
+        <p class="text-sm text-slate-600">{% translate "Pendiente de cobro" %}</p>
+        <p class="mt-0.5 text-xs text-slate-400">
+          {% blocktranslate count total=panel.stats.pending_reservations %}en {{ total }} reserva{% plural %}en {{ total }} reservas{% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+
+    <div class="card flex items-center gap-4 p-5 sm:col-span-2 xl:col-span-1">
+      <svg class="size-16 shrink-0 -rotate-90" viewBox="0 0 42 42" aria-hidden="true">
+        <circle cx="21" cy="21" r="15.915" fill="none" class="stroke-emerald-100" stroke-width="5"/>
+        <circle cx="21" cy="21" r="15.915" fill="none" class="stroke-emerald-500" stroke-width="5"
+                stroke-linecap="round" stroke-dasharray="{{ panel.stats.occupancy_ring }}"/>
+      </svg>
+      <div class="min-w-0">
+        <p class="text-3xl font-bold tabular text-brand-950">{{ panel.stats.occupancy }}%</p>
+        <p class="text-sm text-slate-600">{% translate "Ocupación de flota" %}</p>
+        <p class="mt-0.5 text-xs text-slate-400">
+          {% blocktranslate with fuera=panel.stats.rented total=panel.stats.fleet_total %}{{ fuera }} de {{ total }} fuera{% endblocktranslate %}
+        </p>
+      </div>
     </div>
   </div>
 
-  {# --- alertas --- #}
-  {% if panel.alerts %}
-    <div class="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {% for alerta in panel.alerts %}
-        <div class="card border-l-4 p-3 {{ alerta.style.card }}">
-          <p class="flex items-baseline gap-2">
-            <span class="text-xl font-bold tabular {{ alerta.style.count }}">{{ alerta.count }}</span>
-            <span class="text-sm font-medium {{ alerta.style.label }}">{{ alerta.label }}</span>
-          </p>
-          {% if alerta.detail %}
-            <p class="mt-1 truncate text-xs {{ alerta.style.detail }}">{{ alerta.detail }}</p>
-          {% endif %}
+  <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+
+    {# ------------------------------------------------ entregas y devoluciones #}
+    <section class="card min-w-0">
+      <div class="card-header">
+        <div class="flex flex-wrap items-center gap-4">
+          <h2 class="card-title text-lg">
+            <span x-show="pestana === 'entregas'">{% translate "Entregas" %} {{ panel.period.suffix }}</span>
+            <span x-show="pestana === 'devoluciones'" x-cloak>{% translate "Devoluciones" %} {{ panel.period.suffix }}</span>
+          </h2>
+          <div class="inline-flex rounded-xl bg-slate-100 p-1" role="tablist">
+            <button type="button" role="tab" @click="pestana = 'entregas'"
+                    :aria-selected="pestana === 'entregas'"
+                    :class="pestana === 'entregas' ? 'bg-surface text-brand-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="rounded-lg px-4 py-1.5 text-sm font-medium transition">
+              {% translate "Entregas" %}
+              <span class="ml-1 tabular text-xs text-slate-400">{{ panel.pickups|length }}</span>
+            </button>
+            <button type="button" role="tab" @click="pestana = 'devoluciones'"
+                    :aria-selected="pestana === 'devoluciones'"
+                    :class="pestana === 'devoluciones' ? 'bg-surface text-brand-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="rounded-lg px-4 py-1.5 text-sm font-medium transition">
+              {% translate "Devoluciones" %}
+              <span class="ml-1 tabular text-xs text-slate-400">{{ panel.returns|length }}</span>
+            </button>
+          </div>
         </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  <div class="grid gap-6 xl:grid-cols-2">
-
-    {# --- entregas de hoy --- #}
-    <section class="card">
-      <div class="card-header border-b-2 border-b-brand-500/60 bg-brand-50/40">
-        <h2 class="card-title flex items-center gap-2">
-          <span class="size-2 rounded-full bg-brand-500" aria-hidden="true"></span>
-          {% translate "Entregas de hoy" %}
-        </h2>
-        <span class="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white">
-          {{ panel.pickups|length }}
-        </span>
+        {% if perms.reservations.view_reservation %}
+          <a class="card-link" href="{% url 'reservations:list' %}">
+            {% translate "Ver todas" %}
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+          </a>
+        {% endif %}
       </div>
-      <div class="overflow-x-auto">
+
+      {# --- entregas --- #}
+      <div x-show="pestana === 'entregas'" class="overflow-x-auto" role="tabpanel">
         <table class="data-table">
-          <caption class="sr-only">{% translate "Reservas que salen hoy" %}</caption>
+          <caption class="sr-only">{% translate "Reservas que salen en el periodo" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Hora" %}</th>
               <th scope="col">{% translate "Reserva" %}</th>
               <th scope="col">{% translate "Cliente" %}</th>
-              <th scope="col">{% translate "Categoria / coche" %}</th>
+              <th scope="col">{% translate "Categoría / coche" %}</th>
+              <th scope="col">{% translate "Matrícula" %}</th>
               <th scope="col">{% translate "Estado" %}</th>
-              <th scope="col" class="text-right">{% translate "Pendiente" %}</th>
-              <th scope="col" class="text-right">{% translate "Accion" %}</th>
+              <th scope="col" class="text-right">{% translate "Importe" %}</th>
+              <th scope="col"><span class="sr-only">{% translate "Acción" %}</span></th>
             </tr>
           </thead>
           <tbody>
             {% for reserva in panel.pickups %}
-              <tr class="{% if not reserva.vehicle %}bg-amber-50/60{% endif %}">
-                <td class="tabular font-medium">{{ reserva.pickup_at|date:"H:i" }}</td>
-                <td>
-                  <a class="font-mono text-brand-700 hover:underline"
-                     href="{% url 'reservations:detail' reserva.pk %}">{{ reserva.number }}</a>
-                  <span class="block text-xs text-slate-500">{{ reserva.pickup_office.name }}</span>
+              <tr class="{% if not reserva.vehicle and reserva.status != 'in_progress' %}bg-amber-50/50{% endif %}">
+                <td class="tabular whitespace-nowrap font-medium text-slate-900">
+                  {% if not panel.period.is_today %}<span class="block text-xs font-normal text-slate-500">{{ reserva.pickup_at|date:"D j" }}</span>{% endif %}
+                  {{ reserva.pickup_at|date:"H:i" }}
                 </td>
-                <td class="font-medium text-slate-900">{{ reserva.customer.full_name|default:"—" }}</td>
                 <td>
-                  {{ reserva.category.name }}
+                  <a class="font-mono text-sm text-slate-700 hover:text-brand-700 hover:underline"
+                     href="{% url 'reservations:detail' reserva.pk %}">{{ reserva.number }}</a>
+                  {% if not panel.office and panel.offices|length > 1 %}
+                    <span class="block text-xs text-slate-400">{{ reserva.pickup_office.name }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="flex items-center gap-2.5">
+                    <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700" aria-hidden="true">
+                      {{ reserva.customer.first_name|slice:":1"|upper }}{{ reserva.customer.last_name|slice:":1"|upper }}
+                    </span>
+                    <span class="font-medium whitespace-nowrap text-slate-900">{{ reserva.customer.full_name|default:"—" }}</span>
+                  </span>
+                </td>
+                <td>
                   {% if reserva.vehicle %}
-                    <span class="block font-mono text-xs text-slate-500">{{ reserva.vehicle.plate }}</span>
+                    <span class="block whitespace-nowrap text-slate-900">{{ reserva.vehicle.brand }} {{ reserva.vehicle.model }}</span>
+                    <span class="block text-xs text-slate-500">{{ reserva.category.name }}</span>
                   {% else %}
-                    <span class="block text-xs font-medium text-amber-700">
-                      {% translate "sin coche" %}
+                    <span class="block text-slate-900">{{ reserva.category.name }}</span>
+                    <span class="block text-xs font-medium text-amber-700">{% translate "sin coche" %}</span>
+                  {% endif %}
+                </td>
+                <td class="font-mono text-sm whitespace-nowrap">{{ reserva.vehicle.plate|default:"—" }}</td>
+                <td>{% include "ui/_badge.html" with status=reserva.status label=reserva.get_status_display only %}</td>
+                <td class="text-right tabular whitespace-nowrap">
+                  <span class="text-slate-900">{{ reserva.grand_total|floatformat:"-2g" }} €</span>
+                  {% if reserva.pendiente %}
+                    <span class="block text-xs text-rose-600">
+                      {% blocktranslate with importe=reserva.pendiente|floatformat:"-2g" %}debe {{ importe }} €{% endblocktranslate %}
                     </span>
                   {% endif %}
                 </td>
+                <td class="text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1">
+                    {% if reserva.status == "in_progress" %}
+                      <a class="btn-secondary rounded-lg px-3 py-1.5 text-xs" href="{% url 'reservations:detail' reserva.pk %}">
+                        {% translate "Ver" %}
+                      </a>
+                    {% elif reserva.vehicle and perms.reservations.change_reservation %}
+                      <button type="button" class="btn-secondary rounded-lg px-3 py-1.5 text-xs text-brand-700"
+                              hx-get="{% url 'operations:check_in' reserva.pk %}"
+                              hx-target="#modal-host" hx-swap="innerHTML">
+                        {% translate "Entregar" %}
+                      </button>
+                    {% else %}
+                      <a class="btn-secondary rounded-lg px-3 py-1.5 text-xs text-brand-700"
+                         href="{% url 'reservations:detail' reserva.pk %}">
+                        {% translate "Asignar coche" %}
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8" class="py-12 text-center text-sm text-slate-500">
+                  {% translate "No sale ningún coche en este periodo." %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {# --- devoluciones --- #}
+      <div x-show="pestana === 'devoluciones'" x-cloak class="overflow-x-auto" role="tabpanel">
+        <table class="data-table">
+          <caption class="sr-only">{% translate "Reservas que vuelven en el periodo" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Hora" %}</th>
+              <th scope="col">{% translate "Reserva" %}</th>
+              <th scope="col">{% translate "Cliente" %}</th>
+              <th scope="col">{% translate "Coche" %}</th>
+              <th scope="col">{% translate "Matrícula" %}</th>
+              <th scope="col">{% translate "Estado" %}</th>
+              <th scope="col" class="text-right">{% translate "Pendiente" %}</th>
+              <th scope="col"><span class="sr-only">{% translate "Acción" %}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reserva in panel.returns %}
+              <tr class="{% if reserva.status == 'in_progress' and reserva.return_at < panel.generated_at %}bg-rose-50/50{% endif %}">
+                <td class="tabular whitespace-nowrap font-medium text-slate-900">
+                  {% if not panel.period.is_today %}<span class="block text-xs font-normal text-slate-500">{{ reserva.return_at|date:"D j" }}</span>{% endif %}
+                  {{ reserva.return_at|date:"H:i" }}
+                  {% if reserva.status == 'in_progress' and reserva.return_at < panel.generated_at %}
+                    <span class="block text-xs font-medium text-rose-600">{% translate "con retraso" %}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a class="font-mono text-sm text-slate-700 hover:text-brand-700 hover:underline"
+                     href="{% url 'reservations:detail' reserva.pk %}">{{ reserva.number }}</a>
+                  {% if not panel.office and panel.offices|length > 1 %}
+                    <span class="block text-xs text-slate-400">{{ reserva.return_office.name }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="flex items-center gap-2.5">
+                    <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-semibold text-violet-700" aria-hidden="true">
+                      {{ reserva.customer.first_name|slice:":1"|upper }}{{ reserva.customer.last_name|slice:":1"|upper }}
+                    </span>
+                    <span class="font-medium whitespace-nowrap text-slate-900">{{ reserva.customer.full_name|default:reserva.number }}</span>
+                  </span>
+                </td>
+                <td>
+                  {% if reserva.vehicle %}
+                    <span class="block whitespace-nowrap text-slate-900">{{ reserva.vehicle.brand }} {{ reserva.vehicle.model }}</span>
+                  {% endif %}
+                  <span class="block text-xs text-slate-500">{{ reserva.category.name }}</span>
+                </td>
+                <td class="font-mono text-sm whitespace-nowrap">{{ reserva.vehicle.plate|default:"—" }}</td>
                 <td>{% include "ui/_badge.html" with status=reserva.status label=reserva.get_status_display only %}</td>
-                <td class="text-right tabular {% if reserva.pendiente %}text-rose-700{% endif %}">
-                  {{ reserva.pendiente }} €
+                <td class="text-right tabular whitespace-nowrap {% if reserva.pendiente %}text-rose-600{% else %}text-slate-400{% endif %}">
+                  {{ reserva.pendiente|floatformat:"-2g" }} €
                 </td>
                 <td class="text-right whitespace-nowrap">
-                  {% if reserva.vehicle and perms.reservations.change_reservation %}
-                    <button type="button" class="btn-primary px-2 py-1 text-xs"
-                            hx-get="{% url 'operations:check_in' reserva.pk %}"
+                  {% if reserva.status == "in_progress" and perms.reservations.change_reservation %}
+                    <button type="button" class="btn-secondary rounded-lg px-3 py-1.5 text-xs text-brand-700"
+                            hx-get="{% url 'operations:check_out' reserva.pk %}"
                             hx-target="#modal-host" hx-swap="innerHTML">
-                      {% translate "Hacer entrega" %}
+                      {% translate "Recibir" %}
                     </button>
                   {% else %}
-                    <a class="btn-secondary px-2 py-1 text-xs"
-                       href="{% url 'reservations:detail' reserva.pk %}">
-                      {% translate "Asignar coche" %}
+                    <a class="btn-secondary rounded-lg px-3 py-1.5 text-xs" href="{% url 'reservations:detail' reserva.pk %}">
+                      {% translate "Ver" %}
                     </a>
                   {% endif %}
                 </td>
               </tr>
             {% empty %}
               <tr>
-                <td colspan="7" class="py-8 text-center text-sm text-slate-500">
-                  {% translate "Hoy no sale ningun coche." %}
+                <td colspan="8" class="py-12 text-center text-sm text-slate-500">
+                  {% translate "No vuelve ningún coche en este periodo." %}
                 </td>
               </tr>
             {% endfor %}
@@ -164,97 +284,221 @@
       </div>
     </section>
 
-    {# --- devoluciones de hoy --- #}
-    <section class="card">
-      <div class="card-header border-b-2 border-b-violet-500/60 bg-violet-50/40">
-        <h2 class="card-title flex items-center gap-2">
-          <span class="size-2 rounded-full bg-violet-500" aria-hidden="true"></span>
-          {% translate "Devoluciones de hoy" %}
-        </h2>
-        <span class="rounded-full bg-violet-600 px-2 py-0.5 text-xs font-semibold text-white">
-          {{ panel.returns|length }}
-        </span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="data-table">
-          <caption class="sr-only">{% translate "Reservas que vuelven hoy" %}</caption>
-          <thead>
-            <tr>
-              <th scope="col">{% translate "Hora" %}</th>
-              <th scope="col">{% translate "Cliente" %}</th>
-              <th scope="col">{% translate "Vehiculo" %}</th>
-              <th scope="col">{% translate "Oficina" %}</th>
-              <th scope="col">{% translate "Estado" %}</th>
-              <th scope="col" class="text-right">{% translate "Accion" %}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for reserva in panel.returns %}
-              <tr class="{% if reserva.return_at < panel.generated_at %}bg-rose-50/60{% endif %}">
-                <td class="tabular font-medium">
-                  {{ reserva.return_at|date:"H:i" }}
-                  {% if reserva.return_at < panel.generated_at %}
-                    <span class="block text-xs font-medium text-rose-700">
-                      {% translate "con retraso" %}
-                    </span>
-                  {% endif %}
-                </td>
-                <td class="font-medium text-slate-900">
-                  <a class="hover:underline" href="{% url 'reservations:detail' reserva.pk %}">
-                    {{ reserva.customer.full_name|default:reserva.number }}
-                  </a>
-                  <span class="block font-mono text-xs text-slate-500">{{ reserva.number }}</span>
-                </td>
-                <td class="font-mono">{{ reserva.vehicle.plate|default:"—" }}</td>
-                <td class="text-slate-600">{{ reserva.return_office.name }}</td>
-                <td>{% include "ui/_badge.html" with status=reserva.status label=reserva.get_status_display only %}</td>
-                <td class="text-right">
-                  {% if perms.reservations.change_reservation %}
-                    <button type="button" class="btn-primary px-2 py-1 text-xs"
-                            hx-get="{% url 'operations:check_out' reserva.pk %}"
-                            hx-target="#modal-host" hx-swap="innerHTML">
-                      {% translate "Hacer devolucion" %}
-                    </button>
-                  {% endif %}
-                </td>
-              </tr>
-            {% empty %}
-              <tr>
-                <td colspan="6" class="py-8 text-center text-sm text-slate-500">
-                  {% translate "Hoy no vuelve ningun coche." %}
-                </td>
-              </tr>
+    <div class="grid min-w-0 content-start gap-6 md:grid-cols-2 xl:grid-cols-1">
+      {# ----------------------------------------------------------- agenda #}
+      <section class="card">
+        <div class="card-header border-b-0 pb-2">
+          <h2 class="card-title text-lg">{% translate "Agenda" %} {{ panel.period.suffix }}</h2>
+          {% if perms.reservations.view_reservation %}
+            <a class="card-link" href="{% url 'reservations:list' %}">
+              {% translate "Ver todo" %}
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </a>
+          {% endif %}
+        </div>
+        {% if panel.agenda %}
+          <ol class="relative px-5 pb-5">
+            {% for linea in panel.agenda|slice:":6" %}
+              <li class="relative flex gap-3 pb-4 last:pb-0">
+                <span class="w-12 shrink-0 pt-0.5 text-right text-sm font-medium tabular text-slate-700">
+                  {% if not panel.period.is_today %}<span class="block text-[11px] font-normal text-slate-400">{{ linea.at|date:"D j" }}</span>{% endif %}
+                  {{ linea.at|date:"H:i" }}
+                </span>
+                <span class="relative flex w-3 shrink-0 justify-center" aria-hidden="true">
+                  {% if not forloop.last %}<span class="absolute top-3 -bottom-4 w-px bg-brand-100"></span>{% endif %}
+                  <span class="relative mt-1.5 size-2.5 rounded-full bg-brand-600 ring-4 ring-brand-50"></span>
+                </span>
+                <a href="{{ linea.url }}" class="group min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium text-slate-900 group-hover:text-brand-700">{{ linea.title }}</span>
+                  <span class="block truncate text-xs text-slate-500">{{ linea.detail }}</span>
+                </a>
+                <span class="h-fit shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ linea.state_style }}">
+                  {{ linea.state_label }}
+                </span>
+              </li>
             {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
+          </ol>
+          {% if panel.agenda|length > 6 %}
+            <p class="border-t border-line px-5 py-2.5 text-xs text-slate-500">
+              {% blocktranslate with resto=panel.agenda|length|add:"-6" %}y {{ resto }} más en el periodo{% endblocktranslate %}
+            </p>
+          {% endif %}
+        {% else %}
+          <p class="px-5 pb-6 text-sm text-slate-500">{% translate "Sin entregas ni devoluciones en este periodo." %}</p>
+        {% endif %}
+      </section>
+
+      {# ----------------------------------------------------------- avisos #}
+      <section class="card" id="avisos">
+        <div class="card-header border-b-0 pb-2">
+          <h2 class="card-title text-lg">{% translate "Avisos" %}</h2>
+          <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular text-slate-600">{{ panel.alerts|length }}</span>
+        </div>
+        {% if panel.alerts %}
+          <div class="space-y-0.5 px-3 pb-3">
+            {% for alerta in panel.alerts %}
+              {% include "shell/_alert_row.html" %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="flex items-center gap-2 px-5 pb-6 text-sm text-slate-500">
+            <span class="size-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+            {% translate "Nada que avisar. Todo en marcha." %}
+          </p>
+        {% endif %}
+      </section>
+    </div>
   </div>
 
-  {# --- flota por estado --- #}
-  <section class="card mt-6">
-    <div class="card-header">
-      <h2 class="card-title">{% translate "Flota por estado" %}</h2>
-      <span class="text-xs text-slate-500">
-        {% blocktranslate with total=panel.stats.fleet_total %}{{ total }} vehiculos{% endblocktranslate %}
-      </span>
-    </div>
-    <ul class="grid gap-px bg-line sm:grid-cols-3 lg:grid-cols-7">
-      {% for etiqueta, total, estilo in panel.stats.fleet_rows %}
-        <li class="border-t-2 bg-surface px-4 py-3 {% if total %}{{ estilo.top }}{% else %}border-t-transparent{% endif %}">
-          <p class="flex items-center gap-1.5 text-xs text-slate-500">
-            <span class="size-1.5 rounded-full {{ estilo.dot }}" aria-hidden="true"></span>
-            {{ etiqueta }}
-          </p>
-          <p class="mt-0.5 text-lg font-semibold tabular {% if total %}{{ estilo.text }}{% else %}text-slate-300{% endif %}">
-            {{ total }}
-          </p>
-        </li>
-      {% endfor %}
-    </ul>
-  </section>
+  <div class="grid gap-6 lg:grid-cols-2 {% if panel.cash %}2xl:grid-cols-[1fr_1.3fr_1.1fr]{% endif %}">
 
-  <p class="mt-3 text-right text-xs text-slate-400">
+    {# ------------------------------------------------------ flota por estado #}
+    <section class="card">
+      <div class="card-header border-b-0 pb-2">
+        <h2 class="card-title text-lg">{% translate "Flota por estado" %}</h2>
+        {% if perms.fleet.view_vehicle %}
+          <a class="card-link" href="{% url 'fleet:vehicle_list' %}">
+            {% translate "Ver flota" %}
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+          </a>
+        {% endif %}
+      </div>
+      <div class="px-5 pb-5">
+        <div class="flex h-4 w-full gap-0.5 overflow-hidden rounded-full bg-slate-100" role="img"
+             aria-label="{% blocktranslate with total=panel.stats.fleet_total %}{{ total }} vehículos por estado{% endblocktranslate %}">
+          {% for etiqueta, total, estilo, porcentaje in panel.stats.fleet_rows %}
+            {% if total %}<span class="h-full {{ estilo.dot }}" style="width: {{ porcentaje }}%" title="{{ etiqueta }}: {{ total }}"></span>{% endif %}
+          {% endfor %}
+        </div>
+        <ul class="mt-4 space-y-2">
+          {% for etiqueta, total, estilo, porcentaje in panel.stats.fleet_rows %}
+            <li class="flex items-center gap-3 text-sm">
+              <span class="size-3 rounded-full {{ estilo.dot }}" aria-hidden="true"></span>
+              <span class="flex-1 text-slate-700">{{ etiqueta }}</span>
+              <span class="font-semibold tabular {% if total %}text-slate-900{% else %}text-slate-300{% endif %}">{{ total }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+
+    {# ------------------------------------------------ prevision de ocupacion #}
+    <section class="card min-w-0">
+      <div class="card-header border-b-0 pb-2">
+        <h2 class="card-title text-lg">{% translate "Ocupación próximos 14 días" %}</h2>
+        {% if perms.reservations.view_reservation %}
+          <a class="card-link" href="{% url 'reservations:list' %}">
+            {% translate "Ver reservas" %}
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+          </a>
+        {% endif %}
+      </div>
+      <div class="px-5 pb-5">
+        <p class="flex items-center gap-4 text-xs text-slate-500">
+          <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-brand-600" aria-hidden="true"></span>{% translate "Ocupación" %}</span>
+          <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-amber-400" aria-hidden="true"></span>{% translate "Fin de semana" %}</span>
+          {% if panel.forecast.peak and panel.forecast.peak.percent %}
+            <span class="ml-auto">{% blocktranslate with dia=panel.forecast.peak.day|date:"j M" pico=panel.forecast.peak.percent %}Pico: {{ pico }}% el {{ dia }}{% endblocktranslate %}</span>
+          {% endif %}
+        </p>
+        {% with f=panel.forecast %}
+          <svg class="mt-3 w-full" viewBox="-34 -8 {{ f.width|add:44 }} {{ f.height|add:36 }}" role="img"
+               aria-label="{% translate 'Ocupación prevista de la flota para los próximos 14 días' %}">
+            <defs>
+              <linearGradient id="relleno-ocupacion" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--color-brand-500)" stop-opacity=".25"/>
+                <stop offset="1" stop-color="var(--color-brand-500)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            {% for banda in f.weekend_bands %}
+              <rect x="{{ banda.x }}" y="0" width="{{ banda.width }}" height="{{ f.height }}" class="fill-amber-100/70"/>
+            {% endfor %}
+            {% for linea in f.gridlines %}
+              <line x1="0" x2="{{ f.width }}" y1="{{ linea.y }}" y2="{{ linea.y }}" class="stroke-slate-200" stroke-dasharray="3 4"/>
+              <text x="-8" y="{{ linea.y }}" dy="3.5" text-anchor="end" class="fill-slate-400 text-[10px]">{{ linea.value }}%</text>
+            {% endfor %}
+            {% if f.area %}
+              <path d="{{ f.area }}" fill="url(#relleno-ocupacion)"/>
+              <polyline points="{{ f.line }}" fill="none" class="stroke-brand-600" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            {% endif %}
+            {% for punto in f.points %}
+              <circle cx="{{ punto.x }}" cy="{{ punto.y }}" r="4" stroke-width="2"
+                      class="fill-white {% if punto.day.is_weekend %}stroke-amber-500{% else %}stroke-brand-600{% endif %}">
+                <title>{{ punto.day.day|date:"l j M" }}: {{ punto.day.percent }}% ({{ punto.day.reservations }})</title>
+              </circle>
+            {% endfor %}
+            {% for punto in f.labels %}
+              <text x="{{ punto.x }}" y="{{ f.height|add:20 }}" text-anchor="middle" class="fill-slate-400 text-[10px]">{{ punto.day.day|date:"j M" }}</text>
+            {% endfor %}
+          </svg>
+        {% endwith %}
+      </div>
+    </section>
+
+    {# ----------------------------------------------------------- caja #}
+    {% if panel.cash %}
+      <section class="card lg:col-span-2 2xl:col-span-1">
+        <div class="card-header border-b-0 pb-2">
+          <h2 class="card-title text-lg">{% translate "Caja de hoy" %}</h2>
+          <a class="card-link" href="{% url 'billing:cash_register' %}">
+            {% translate "Ver arqueo" %}
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+          </a>
+        </div>
+        <div class="px-5 pb-5">
+          <div class="grid grid-cols-3 gap-2">
+            <div class="rounded-xl bg-emerald-50 p-3">
+              <p class="flex items-center gap-1.5 text-xs text-slate-600"><span class="size-2 rounded-full bg-emerald-500" aria-hidden="true"></span>{% translate "Cobrado" %}</p>
+              <p class="mt-1 truncate text-lg font-bold tabular text-brand-950 sm:text-xl">{{ panel.cash.collected|floatformat:"-2g" }} €</p>
+            </div>
+            <div class="rounded-xl bg-amber-50 p-3">
+              <p class="flex items-center gap-1.5 text-xs text-slate-600"><span class="size-2 rounded-full bg-amber-500" aria-hidden="true"></span>{% translate "Pendiente" %}</p>
+              <p class="mt-1 truncate text-lg font-bold tabular text-brand-950 sm:text-xl">{{ panel.cash.pending|floatformat:"-2g" }} €</p>
+            </div>
+            <div class="rounded-xl bg-slate-100 p-3">
+              <p class="flex items-center gap-1.5 text-xs text-slate-600"><span class="size-2 rounded-full bg-slate-400" aria-hidden="true"></span>{% translate "Fianzas retenidas" %}</p>
+              <p class="mt-1 truncate text-lg font-bold tabular text-brand-950 sm:text-xl">{{ panel.cash.deposits_held|floatformat:"-2g" }} €</p>
+            </div>
+          </div>
+
+          <p class="mt-5 text-sm font-semibold text-brand-950">{% translate "Cobros por método de pago" %}</p>
+          {% if panel.cash.by_method %}
+            <div class="mt-3 flex items-center gap-6">
+              <div class="relative size-32 shrink-0">
+                <svg class="size-full" viewBox="0 0 42 42" aria-hidden="true">
+                  <circle cx="21" cy="21" r="15.915" fill="none" class="stroke-slate-100" stroke-width="6"/>
+                  {% for medio in panel.cash.by_method %}
+                    <circle cx="21" cy="21" r="15.915" fill="none" class="{{ medio.style.stroke }}" stroke-width="6"
+                            stroke-dasharray="{{ medio.dasharray }}" stroke-dashoffset="{{ medio.offset }}"/>
+                  {% endfor %}
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="text-base font-bold tabular text-brand-950">{{ panel.cash.collected|floatformat:"0g" }} €</span>
+                  <span class="text-xs text-slate-500">{% translate "hoy" %}</span>
+                </div>
+              </div>
+              <ul class="min-w-0 flex-1 space-y-2.5">
+                {% for medio in panel.cash.by_method %}
+                  <li class="flex items-center gap-2 text-sm">
+                    <span class="size-3 shrink-0 rounded-full {{ medio.style.dot }}" aria-hidden="true"></span>
+                    <span class="flex-1 truncate text-slate-700">{{ medio.label }}</span>
+                    <span class="font-semibold tabular whitespace-nowrap text-slate-900">{{ medio.amount|floatformat:"-2g" }} €</span>
+                    <span class="w-12 text-right tabular text-xs text-slate-500">{{ medio.percent }}%</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% else %}
+            <p class="mt-3 rounded-xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+              {% translate "Aún no hay cobros hoy." %}
+            </p>
+          {% endif %}
+        </div>
+      </section>
+    {% endif %}
+  </div>
+
+  <p class="text-right text-xs text-slate-400">
     {% blocktranslate with hora=panel.generated_at|date:"H:i:s" %}Actualizado a las {{ hora }}{% endblocktranslate %}
   </p>
 </div>
