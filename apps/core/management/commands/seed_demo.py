@@ -143,16 +143,16 @@ class Command(BaseCommand):
         from apps.settings_app.models import CompanySettings
 
         empresa = CompanySettings.load()
-        empresa.legal_name = "Illes Rent a Car, S.L."
-        empresa.trade_name = "Illes Rent a Car"
+        empresa.legal_name = "Autos Demo Rent a Car, S.L."
+        empresa.trade_name = "Autos Demo"
         empresa.tax_id = "B07456123"
-        empresa.address = "Carrer de la Mar, 24"
-        empresa.city = "Palma"
-        empresa.province = "Illes Balears"
-        empresa.postal_code = "07012"
-        empresa.phone = "971 45 67 89"
-        empresa.email = "reservas@illesrentacar.example"
-        empresa.website = "https://illesrentacar.example"
+        empresa.address = "Avenida del Puerto, 24"
+        empresa.city = "Valencia"
+        empresa.province = "Valencia"
+        empresa.postal_code = "46021"
+        empresa.phone = "960 45 67 89"
+        empresa.email = "reservas@autosdemo.example"
+        empresa.website = "https://autosdemo.example"
         empresa.save()
         return empresa
 
@@ -171,12 +171,27 @@ class Command(BaseCommand):
         from apps.offices.models import Office, OfficePool
 
         pool, _ = OfficePool.objects.get_or_create(
-            code="baleares", defaults={"name": "Baleares", "description": "Flota compartida"}
+            code="principal",
+            defaults={"name": "Flota principal", "description": "Flota compartida"},
         )
         datos = [
-            ("palma", "Palma Centro", "Carrer de la Mar, 24", "Palma", "07012", "971 45 67 89"),
-            ("pmi", "Aeropuerto PMI", "Terminal de llegadas", "Palma", "07611", "971 45 67 90"),
-            ("alcudia", "Alcudia Puerto", "Passeig Maritim, 8", "Alcudia", "07400", "971 45 67 91"),
+            (
+                "centro",
+                "Oficina Centro",
+                "Avenida del Puerto, 24",
+                "Valencia",
+                "46021",
+                "960 45 67 89",
+            ),
+            (
+                "aeropuerto",
+                "Aeropuerto",
+                "Terminal de llegadas",
+                "Manises",
+                "46940",
+                "960 45 67 90",
+            ),
+            ("norte", "Oficina Norte", "Calle Mayor, 8", "Sagunto", "46500", "960 45 67 91"),
         ]
         oficinas = {}
         for code, name, direccion, ciudad, cp, telefono in datos:
@@ -186,10 +201,10 @@ class Command(BaseCommand):
                     "name": name,
                     "address": direccion,
                     "city": ciudad,
-                    "province": "Illes Balears",
+                    "province": "Valencia",
                     "postal_code": cp,
                     "phone": telefono,
-                    "email": f"{code}@illesrentacar.example",
+                    "email": f"{code}@autosdemo.example",
                 },
             )
             if oficina.pool_id is None:
@@ -310,7 +325,7 @@ class Command(BaseCommand):
                     "licence_number": f"B{indice:06d}",
                     "licence_expiry": (self.ahora + timedelta(days=900)).date(),
                     "office": list(oficinas.values())[indice % len(oficinas)],
-                    "city": "Palma",
+                    "city": "Valencia",
                 },
             )
             clientes.append(cliente)
@@ -327,7 +342,7 @@ class Command(BaseCommand):
         cuentas = [
             (settings.DEMO_EMAIL, settings.DEMO_PASSWORD, "Demo", "Mostrador", "mostrador", None),
             (
-                "responsable@illesrentacar.example",
+                "responsable@autosdemo.example",
                 "demo-webcar-2026",
                 "Nuria",
                 "Responsable",
@@ -335,7 +350,7 @@ class Command(BaseCommand):
                 None,
             ),
             (
-                "direccion@illesrentacar.example",
+                "direccion@autosdemo.example",
                 "demo-webcar-2026",
                 "Jordi",
                 "Direccion",

@@ -27,8 +27,8 @@ def datos_cliente(**cambios):
         "phone": "600112233",
         "phone_alt": "",
         "address": "Carrer Major 1",
-        "city": "Palma",
-        "province": "Illes Balears",
+        "city": "Valencia",
+        "province": "Valencia",
         "postal_code": "07001",
         "country": "ES",
         "licence_number": "B-123456",
@@ -96,18 +96,18 @@ def test_no_se_repite_el_mismo_documento(client, gestor_maestros):
     assert "Ya hay un cliente con ese documento." in respuesta.content.decode()
 
 
-def test_el_alta_guarda_la_oficina_activa(client, gestor_maestros, palma):
+def test_el_alta_guarda_la_oficina_activa(client, gestor_maestros, centro):
     """Trazabilidad: quien lo capto. No recorta quien puede atenderle."""
     client.force_login(gestor_maestros)
 
     client.post(reverse("customers:customer_create"), datos_cliente(), headers=HTMX)
 
-    assert Customer.objects.get(document_number="12345678Z").office == palma
+    assert Customer.objects.get(document_number="12345678Z").office == centro
 
 
-def test_un_cliente_de_otra_oficina_se_puede_atender(client, gestor_maestros, alcudia):
+def test_un_cliente_de_otra_oficina_se_puede_atender(client, gestor_maestros, norte):
     """El cliente es de la empresa: en agosto alquila en otra oficina y punto."""
-    ajeno = CustomerFactory(last_name="Deotraoficina", office=alcudia)
+    ajeno = CustomerFactory(last_name="Deotraoficina", office=norte)
     client.force_login(gestor_maestros)
 
     contenido = client.get(reverse("customers:customer_list")).content.decode()
@@ -263,14 +263,14 @@ def test_un_documento_no_tiene_url_publica(settings):
     assert str(settings.MEDIA_ROOT) not in documento.file.path
 
 
-def test_la_descarga_exige_sesion_y_permiso(client, agente_palma):
+def test_la_descarga_exige_sesion_y_permiso(client, agente_centro):
     documento = CustomerDocument.objects.create(
         customer=CustomerFactory(), kind="id_front", file=fichero_de_prueba()
     )
     url = reverse("customers:document_download", args=[documento.pk])
 
     sin_sesion = client.get(url)
-    client.force_login(agente_palma)
+    client.force_login(agente_centro)
     sin_permiso = client.get(url)
 
     assert sin_sesion.status_code == 302
@@ -346,9 +346,9 @@ ENDPOINTS = [
 
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objeto"), ENDPOINTS)
-def test_sin_permiso_403(client, agente_palma, vista, metodo, con_objeto):
+def test_sin_permiso_403(client, agente_centro, vista, metodo, con_objeto):
     cliente = CustomerFactory()
-    client.force_login(agente_palma)
+    client.force_login(agente_centro)
 
     url = reverse(vista, args=[cliente.pk] if con_objeto else [])
 

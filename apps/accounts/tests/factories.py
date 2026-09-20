@@ -17,8 +17,8 @@ class OfficeFactory(factory.django.DjangoModelFactory):
 
     code = factory.Sequence(lambda n: f"oficina-{n}")
     name = factory.Sequence(lambda n: f"Oficina {n}")
-    city = "Palma"
-    province = "Illes Balears"
+    city = "Valencia"
+    province = "Valencia"
     postal_code = "07001"
 
 

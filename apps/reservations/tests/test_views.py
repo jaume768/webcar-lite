@@ -11,11 +11,11 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def reserva(economico, palma, cliente):
+def reserva(economico, centro, cliente):
     return ReservationFactory(
         category=economico,
-        pickup_office=palma,
-        return_office=palma,
+        pickup_office=centro,
+        return_office=centro,
         customer=cliente,
         status=ReservationStatus.PENDING,
     )
@@ -42,13 +42,13 @@ def test_sin_sesion_no_se_entra(client, reserva, vista, metodo, con_objeto):
     assert reverse("accounts:login") in respuesta.headers["Location"]
 
 
-def test_el_listado_pide_permiso_de_lectura(client, reserva, palma):
+def test_el_listado_pide_permiso_de_lectura(client, reserva, centro):
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
     sin_nada = UserFactory(
         email="pelado@ejemplo.es",
         role=RoleFactory(code="pelado", name="Sin permisos"),
-        offices=[palma],
+        offices=[centro],
     )
     client.force_login(sin_nada)
 
@@ -79,7 +79,7 @@ def test_no_se_ve_una_reserva_de_otra_oficina(client, economico, aeropuerto, cli
     """Fuera del scope, la reserva ni siquiera existe."""
     from apps.offices.tests.factories import OfficeFactory
 
-    lejos = OfficeFactory(code="vlc", name="Valencia", pool=None)
+    lejos = OfficeFactory(code="lejana", name="Oficina Lejana", pool=None)
     ajena = ReservationFactory(
         category=economico, pickup_office=lejos, return_office=lejos, customer=cliente
     )
@@ -143,7 +143,7 @@ def test_la_ficha_no_ofrece_lo_que_el_usuario_no_puede(client, reserva, agente):
 # --- alta rapida ------------------------------------------------------------
 
 
-def test_el_formulario_se_pinta(client, agente, economico, palma, tarifa):
+def test_el_formulario_se_pinta(client, agente, economico, centro, tarifa):
     client.force_login(agente)
 
     respuesta = client.get(reverse("reservations:quick"))
@@ -155,7 +155,7 @@ def test_el_formulario_se_pinta(client, agente, economico, palma, tarifa):
 
 
 def test_el_panel_calcula_precio_y_disponibilidad(
-    client, agente, economico, palma, cliente, coche, tarifa
+    client, agente, economico, centro, cliente, coche, tarifa
 ):
     client.force_login(agente)
 
@@ -164,7 +164,7 @@ def test_el_panel_calcula_precio_y_disponibilidad(
         {
             "customer": cliente.pk,
             "category": economico.pk,
-            "pickup_office": palma.pk,
+            "pickup_office": centro.pk,
             "pickup_at": en(1).strftime("%Y-%m-%dT%H:%M"),
             "days": 3,
             "fuel_policy": "full_full",
@@ -188,7 +188,7 @@ def test_el_panel_con_el_formulario_a_medias_no_se_queja(client, agente):
 
 
 def test_el_alta_crea_y_redirige_a_la_ficha(
-    client, agente, economico, palma, cliente, coche, tarifa
+    client, agente, economico, centro, cliente, coche, tarifa
 ):
     client.force_login(agente)
 
@@ -197,7 +197,7 @@ def test_el_alta_crea_y_redirige_a_la_ficha(
         {
             "customer": cliente.pk,
             "category": economico.pk,
-            "pickup_office": palma.pk,
+            "pickup_office": centro.pk,
             "pickup_at": en(1).strftime("%Y-%m-%dT%H:%M"),
             "days": 3,
             "fuel_policy": "full_full",
@@ -214,14 +214,14 @@ def test_el_alta_crea_y_redirige_a_la_ficha(
 
 
 def test_el_alta_sin_disponibilidad_se_queda_en_el_formulario(
-    client, agente, economico, palma, cliente, coche, tarifa
+    client, agente, economico, centro, cliente, coche, tarifa
 ):
     """Nada escrito en base de datos y el motivo en pantalla."""
     from apps.reservations.services import create_quick_reservation
 
     create_quick_reservation(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         customer=cliente,
         pickup_at=en(1),
         return_at=en(4),
@@ -234,7 +234,7 @@ def test_el_alta_sin_disponibilidad_se_queda_en_el_formulario(
         {
             "customer": cliente.pk,
             "category": economico.pk,
-            "pickup_office": palma.pk,
+            "pickup_office": centro.pk,
             "pickup_at": en(1).strftime("%Y-%m-%dT%H:%M"),
             "days": 3,
             "fuel_policy": "full_full",
@@ -247,7 +247,7 @@ def test_el_alta_sin_disponibilidad_se_queda_en_el_formulario(
     assert "No queda disponibilidad" in respuesta.content.decode()
 
 
-def test_alta_rapida_de_cliente(client, agente, palma):
+def test_alta_rapida_de_cliente(client, agente, centro):
     from apps.accounts.tests.factories import RoleFactory, UserFactory
     from apps.customers.models import Customer
 
@@ -258,7 +258,7 @@ def test_alta_rapida_de_cliente(client, agente, palma):
             name="Alta",
             permissions=["reservations.add_reservation", "customers.add_customer"],
         ),
-        offices=[palma],
+        offices=[centro],
     )
     client.force_login(usuario)
 
@@ -293,7 +293,7 @@ def test_el_buscador_de_clientes_responde(client, agente, cliente):
 # ---------------------------------------------------------------------------
 
 
-def test_el_desplegable_se_abre_con_todos_los_clientes(client, agente, palma):
+def test_el_desplegable_se_abre_con_todos_los_clientes(client, agente, centro):
     """Al pinchar en el campo, sin escribir nada, salen los clientes."""
     from apps.customers.tests.factories import CustomerFactory
 
@@ -377,7 +377,7 @@ def test_una_pagina_vacia_no_dice_sin_coincidencias(client, agente):
 
 
 @pytest.fixture
-def usuario_con_alta(db, palma):
+def usuario_con_alta(db, centro):
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
     return UserFactory(
@@ -387,7 +387,7 @@ def usuario_con_alta(db, palma):
             name="Alta",
             permissions=["reservations.add_reservation", "customers.add_customer"],
         ),
-        offices=[palma],
+        offices=[centro],
     )
 
 

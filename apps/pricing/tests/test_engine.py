@@ -81,15 +81,15 @@ TABLA_PLANA = [
 
 
 @pytest.mark.parametrize(("dias", "esperado"), TABLA_PLANA)
-def test_la_tabla_de_tramos_plana(categoria, palma, tarifa, dias, esperado):
+def test_la_tabla_de_tramos_plana(categoria, centro, tarifa, dias, esperado):
     """Tramos 1/2-3/4-7/8-14/15+ a 50/45/40/35/30, modo plano."""
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=dias))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=dias))
 
     assert resultado.rental_days == dias
     assert resultado.base_amount == Decimal(esperado)
 
 
-def test_el_escalon_de_siete_a_ocho_dias_baja_el_precio(categoria, palma, tarifa):
+def test_el_escalon_de_siete_a_ocho_dias_baja_el_precio(categoria, centro, tarifa):
     """**Esto no es un error y no hay que "arreglarlo".**
 
     En modo plano, alargar de 7 a 8 dias mete el alquiler entero en un tramo mas
@@ -97,31 +97,31 @@ def test_el_escalon_de_siete_a_ocho_dias_baja_el_precio(categoria, palma, tarifa
     en adelante sale mas barato que la semana. Es el incentivo a alargar el
     alquiler, y es como funciona el sector.
     """
-    siete = calculate_reservation_price(consulta(categoria, palma, dias=7))
-    ocho = calculate_reservation_price(consulta(categoria, palma, dias=8))
-    nueve = calculate_reservation_price(consulta(categoria, palma, dias=9))
+    siete = calculate_reservation_price(consulta(categoria, centro, dias=7))
+    ocho = calculate_reservation_price(consulta(categoria, centro, dias=8))
+    nueve = calculate_reservation_price(consulta(categoria, centro, dias=9))
 
     assert siete.base_amount == ocho.base_amount == Decimal("280.00")
     assert nueve.base_amount == Decimal("315.00")
 
 
-def test_el_escalon_de_catorce_a_quince_dias_tambien_baja(categoria, palma, tarifa):
+def test_el_escalon_de_catorce_a_quince_dias_tambien_baja(categoria, centro, tarifa):
     """Mismo caso, y tambien intencionado: 14 x 35 = 490, 15 x 30 = 450."""
-    catorce = calculate_reservation_price(consulta(categoria, palma, dias=14))
-    quince = calculate_reservation_price(consulta(categoria, palma, dias=15))
+    catorce = calculate_reservation_price(consulta(categoria, centro, dias=14))
+    quince = calculate_reservation_price(consulta(categoria, centro, dias=15))
 
     assert catorce.base_amount == Decimal("490.00")
     assert quince.base_amount == Decimal("450.00")
     assert quince.base_amount < catorce.base_amount
 
 
-def test_cambiar_los_tramos_en_la_base_de_datos_cambia_el_precio(categoria, palma, tarifa):
+def test_cambiar_los_tramos_en_la_base_de_datos_cambia_el_precio(categoria, centro, tarifa):
     """Criterio de aceptacion: sin tocar codigo."""
-    antes = calculate_reservation_price(consulta(categoria, palma, dias=5)).base_amount
+    antes = calculate_reservation_price(consulta(categoria, centro, dias=5)).base_amount
 
     tarifa.tiers.filter(min_days=4).update(price_per_day=Decimal("60.00"))
 
-    despues = calculate_reservation_price(consulta(categoria, palma, dias=5)).base_amount
+    despues = calculate_reservation_price(consulta(categoria, centro, dias=5)).base_amount
     assert antes == Decimal("200.00")
     assert despues == Decimal("300.00")
 
@@ -131,7 +131,7 @@ def test_cambiar_los_tramos_en_la_base_de_datos_cambia_el_precio(categoria, palm
 # ---------------------------------------------------------------------------
 
 
-def test_modo_progresivo_cobra_cada_dia_a_su_tramo(categoria, palma):
+def test_modo_progresivo_cobra_cada_dia_a_su_tramo(categoria, centro):
     """8 dias = 1x50 + 2x45 + 4x40 + 1x35 = 335."""
     RateTierProgresiva = RateFactory(
         code="progresiva",
@@ -142,14 +142,14 @@ def test_modo_progresivo_cobra_cada_dia_a_su_tramo(categoria, palma):
     )
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=8, rate=RateTierProgresiva)
+        consulta(categoria, centro, dias=8, rate=RateTierProgresiva)
     )
 
     assert resultado.base_amount == Decimal("335.00")
     assert len(resultado.lines_of("rental")) == 4
 
 
-def test_en_progresivo_alargar_nunca_abarata(categoria, palma):
+def test_en_progresivo_alargar_nunca_abarata(categoria, centro):
     """La diferencia con el modo plano: aqui no hay escalon a la baja."""
     tarifa = RateFactory(
         code="progresiva",
@@ -159,7 +159,7 @@ def test_en_progresivo_alargar_nunca_abarata(categoria, palma):
     )
 
     totales = [
-        calculate_reservation_price(consulta(categoria, palma, dias=d, rate=tarifa)).base_amount
+        calculate_reservation_price(consulta(categoria, centro, dias=d, rate=tarifa)).base_amount
         for d in range(1, 20)
     ]
 
@@ -171,30 +171,28 @@ def test_en_progresivo_alargar_nunca_abarata(categoria, palma):
 # ---------------------------------------------------------------------------
 
 
-def test_sin_tarifa_aplicable_explota(categoria, palma):
+def test_sin_tarifa_aplicable_explota(categoria, centro):
     """Obligatorio: NoRateAvailable, nunca un precio 0."""
     with pytest.raises(NoRateAvailable):
-        calculate_reservation_price(consulta(categoria, palma, dias=3))
+        calculate_reservation_price(consulta(categoria, centro, dias=3))
 
 
-def test_una_tarifa_de_otra_categoria_no_vale(categoria, palma):
+def test_una_tarifa_de_otra_categoria_no_vale(categoria, centro):
     otra = VehicleCategoryFactory(code="suv")
     RateFactory(code="suv-only", categories=[otra], tiers=TRAMOS_ESTANDAR)
 
     with pytest.raises(NoRateAvailable):
-        calculate_reservation_price(consulta(categoria, palma, dias=3))
+        calculate_reservation_price(consulta(categoria, centro, dias=3))
 
 
-def test_una_tarifa_de_otra_oficina_no_vale(categoria, palma, alcudia):
-    RateFactory(
-        code="solo-alcudia", categories=[categoria], offices=[alcudia], tiers=TRAMOS_ESTANDAR
-    )
+def test_una_tarifa_de_otra_oficina_no_vale(categoria, centro, norte):
+    RateFactory(code="solo-norte", categories=[categoria], offices=[norte], tiers=TRAMOS_ESTANDAR)
 
     with pytest.raises(NoRateAvailable):
-        calculate_reservation_price(consulta(categoria, palma, dias=3))
+        calculate_reservation_price(consulta(categoria, centro, dias=3))
 
 
-def test_gana_la_de_mayor_prioridad(categoria, palma):
+def test_gana_la_de_mayor_prioridad(categoria, centro):
     RateFactory(code="general", categories=[categoria], tiers=TRAMOS_ESTANDAR, priority=0)
     RateFactory(
         code="promocion",
@@ -203,49 +201,49 @@ def test_gana_la_de_mayor_prioridad(categoria, palma):
         priority=10,
     )
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=3))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=3))
 
     assert resultado.applied_rate.code == "promocion"
     assert resultado.base_amount == Decimal("60.00")
 
 
-def test_a_igual_prioridad_gana_la_mas_especifica(categoria, palma):
+def test_a_igual_prioridad_gana_la_mas_especifica(categoria, centro):
     """La de oficina concreta gana a la de todas las oficinas."""
     RateFactory(code="todas", categories=[categoria], tiers=TRAMOS_ESTANDAR)
     RateFactory(
-        code="solo-palma",
+        code="solo-centro",
         categories=[categoria],
-        offices=[palma],
+        offices=[centro],
         tiers=[(1, None, "70.00")],
     )
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=2))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=2))
 
-    assert resultado.applied_rate.code == "solo-palma"
+    assert resultado.applied_rate.code == "solo-centro"
 
 
-def test_empate_total_es_un_error_explicito(categoria, palma):
+def test_empate_total_es_un_error_explicito(categoria, centro):
     """Obligatorio por diseno: nunca se elige a ciegas."""
     RateFactory(code="una", categories=[categoria], tiers=TRAMOS_ESTANDAR)
     RateFactory(code="otra", categories=[categoria], tiers=TRAMOS_ESTANDAR)
 
     with pytest.raises(AmbiguousRate) as error:
-        calculate_reservation_price(consulta(categoria, palma, dias=3))
+        calculate_reservation_price(consulta(categoria, centro, dias=3))
 
     assert "una" in str(error.value) and "otra" in str(error.value)
 
 
-def test_el_canal_separa_tarifas(categoria, palma):
+def test_el_canal_separa_tarifas(categoria, centro):
     RateFactory(code="web", categories=[categoria], tiers=[(1, None, "25.00")], channel="web")
 
     with pytest.raises(NoRateAvailable):
-        calculate_reservation_price(consulta(categoria, palma, dias=2))
+        calculate_reservation_price(consulta(categoria, centro, dias=2))
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=2, channel="web"))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=2, channel="web"))
     assert resultado.base_amount == Decimal("50.00")
 
 
-def test_los_dias_minimos_de_la_tarifa_se_respetan(categoria, palma):
+def test_los_dias_minimos_de_la_tarifa_se_respetan(categoria, centro):
     RateFactory(
         code="larga-duracion",
         categories=[categoria],
@@ -254,9 +252,9 @@ def test_los_dias_minimos_de_la_tarifa_se_respetan(categoria, palma):
     )
 
     with pytest.raises(NoRateAvailable):
-        calculate_reservation_price(consulta(categoria, palma, dias=3))
+        calculate_reservation_price(consulta(categoria, centro, dias=3))
 
-    assert calculate_reservation_price(consulta(categoria, palma, dias=10)).base_amount == Decimal(
+    assert calculate_reservation_price(consulta(categoria, centro, dias=10)).base_amount == Decimal(
         "200.00"
     )
 
@@ -266,7 +264,7 @@ def test_los_dias_minimos_de_la_tarifa_se_respetan(categoria, palma):
 # ---------------------------------------------------------------------------
 
 
-def test_una_reserva_que_cruza_temporada_se_cobra_a_la_de_recogida(categoria, palma):
+def test_una_reserva_que_cruza_temporada_se_cobra_a_la_de_recogida(categoria, centro):
     """Obligatorio: la regla es "manda la fecha de recogida", y queda avisada."""
     baja = SeasonFactory(
         code="baja", name="Baja", start_date=date(2026, 6, 1), end_date=date(2026, 6, 30)
@@ -279,7 +277,7 @@ def test_una_reserva_que_cruza_temporada_se_cobra_a_la_de_recogida(categoria, pa
 
     # Recoge el 28 de junio (baja) y devuelve el 3 de julio (alta): 5 dias.
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, pickup_at=cita(dia=28), devolucion=cita(dia=3, mes=7))
+        consulta(categoria, centro, pickup_at=cita(dia=28), devolucion=cita(dia=3, mes=7))
     )
 
     assert resultado.applied_season.code == "baja"
@@ -287,7 +285,7 @@ def test_una_reserva_que_cruza_temporada_se_cobra_a_la_de_recogida(categoria, pa
     assert any("cruza" in aviso for aviso in resultado.warnings)
 
 
-def test_gana_la_temporada_de_mas_prioridad(categoria, palma):
+def test_gana_la_temporada_de_mas_prioridad(categoria, centro):
     """Semana Santa por encima de temporada media, sin recortar la de debajo."""
     media = SeasonFactory(
         code="media", start_date=date(2026, 3, 1), end_date=date(2026, 6, 30), priority=0
@@ -300,16 +298,16 @@ def test_gana_la_temporada_de_mas_prioridad(categoria, palma):
         code="puente-rate", categories=[categoria], season=puente, tiers=[(1, None, "90.00")]
     )
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=2))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=2))
 
     assert resultado.applied_season.code == "puente"
     assert resultado.base_amount == Decimal("180.00")
 
 
-def test_una_tarifa_sin_temporada_vale_siempre(categoria, palma, tarifa):
+def test_una_tarifa_sin_temporada_vale_siempre(categoria, centro, tarifa):
     SeasonFactory(code="alta", start_date=date(2026, 6, 1), end_date=date(2026, 6, 30), priority=5)
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=2))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=2))
 
     assert resultado.applied_rate.code == "base"
     assert resultado.applied_season.code == "alta"
@@ -333,39 +331,39 @@ def crear_extra(**cambios):
     return Extra.objects.create(**valores)
 
 
-def test_un_extra_por_dia_con_tope(categoria, palma, tarifa):
+def test_un_extra_por_dia_con_tope(categoria, centro, tarifa):
     """Obligatorio: 10 dias x 5 EUR/dia con tope 30 EUR = 30 EUR."""
     silla = crear_extra(max_amount=Decimal("30.00"))
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=10, extras=(ExtraRequest(silla, 1),))
+        consulta(categoria, centro, dias=10, extras=(ExtraRequest(silla, 1),))
     )
 
     assert resultado.extras_total == Decimal("30.00")
 
 
-def test_un_extra_por_dia_sin_tope(categoria, palma, tarifa):
+def test_un_extra_por_dia_sin_tope(categoria, centro, tarifa):
     silla = crear_extra(max_amount=None)
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=10, extras=(ExtraRequest(silla, 1),))
+        consulta(categoria, centro, dias=10, extras=(ExtraRequest(silla, 1),))
     )
 
     assert resultado.extras_total == Decimal("50.00")
 
 
-def test_el_tope_es_por_unidad(categoria, palma, tarifa):
+def test_el_tope_es_por_unidad(categoria, centro, tarifa):
     """Dos sillas son dos topes: el cliente alquila dos sillas, no media."""
     silla = crear_extra(max_amount=Decimal("30.00"))
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=10, extras=(ExtraRequest(silla, 2),))
+        consulta(categoria, centro, dias=10, extras=(ExtraRequest(silla, 2),))
     )
 
     assert resultado.extras_total == Decimal("60.00")
 
 
-def test_un_extra_por_reserva_se_cobra_una_vez(categoria, palma, tarifa):
+def test_un_extra_por_reserva_se_cobra_una_vez(categoria, centro, tarifa):
     conductor = crear_extra(
         code="conductor2",
         name="Segundo conductor",
@@ -374,17 +372,17 @@ def test_un_extra_por_reserva_se_cobra_una_vez(categoria, palma, tarifa):
     )
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=7, extras=(ExtraRequest(conductor, 2),))
+        consulta(categoria, centro, dias=7, extras=(ExtraRequest(conductor, 2),))
     )
 
     assert resultado.extras_total == Decimal("25.00")
 
 
-def test_pasarse_de_la_cantidad_maxima_avisa_y_ajusta(categoria, palma, tarifa):
+def test_pasarse_de_la_cantidad_maxima_avisa_y_ajusta(categoria, centro, tarifa):
     silla = crear_extra(max_quantity=2, max_amount=None)
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=1, extras=(ExtraRequest(silla, 9),))
+        consulta(categoria, centro, dias=1, extras=(ExtraRequest(silla, 9),))
     )
 
     assert resultado.extras_total == Decimal("10.00")
@@ -400,8 +398,8 @@ def test_one_way_entre_pools_distintos_suma_suplemento(categoria, tarifa):
     """Obligatorio."""
     bahia = OfficePoolFactory(code="bahia")
     norte = OfficePoolFactory(code="norte")
-    salida = OfficeFactory(code="palma-pool", pool=bahia)
-    llegada = OfficeFactory(code="alcudia-pool", pool=norte)
+    salida = OfficeFactory(code="centro-pool", pool=bahia)
+    llegada = OfficeFactory(code="norte-pool", pool=norte)
     SupplementFactory(code="one-way", name="Devolucion en otra oficina", amount=Decimal("50.00"))
 
     resultado = calculate_reservation_price(
@@ -414,7 +412,7 @@ def test_one_way_entre_pools_distintos_suma_suplemento(categoria, tarifa):
 def test_dentro_del_mismo_pool_no_hay_one_way(categoria, tarifa):
     """Obligatorio: para eso existe el pool."""
     bahia = OfficePoolFactory(code="bahia")
-    salida = OfficeFactory(code="palma-pool", pool=bahia)
+    salida = OfficeFactory(code="centro-pool", pool=bahia)
     llegada = OfficeFactory(code="pmi-pool", pool=bahia)
     SupplementFactory(code="one-way", amount=Decimal("50.00"))
 
@@ -425,26 +423,26 @@ def test_dentro_del_mismo_pool_no_hay_one_way(categoria, tarifa):
     assert resultado.supplements_total == Decimal("0.00")
 
 
-def test_devolver_en_la_misma_oficina_nunca_es_one_way(categoria, palma, tarifa):
+def test_devolver_en_la_misma_oficina_nunca_es_one_way(categoria, centro, tarifa):
     SupplementFactory(code="one-way", amount=Decimal("50.00"))
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=3))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=3))
 
     assert resultado.supplements_total == Decimal("0.00")
 
 
-def test_dos_oficinas_sin_pool_son_sitios_distintos(categoria, palma, alcudia, tarifa):
+def test_dos_oficinas_sin_pool_son_sitios_distintos(categoria, centro, norte, tarifa):
     """`None == None` no significa "misma flota"."""
     SupplementFactory(code="one-way", amount=Decimal("50.00"))
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=3, return_office=alcudia)
+        consulta(categoria, centro, dias=3, return_office=norte)
     )
 
     assert resultado.supplements_total == Decimal("50.00")
 
 
-def test_conductor_de_21_anos_paga_suplemento_joven(categoria, palma, tarifa):
+def test_conductor_de_21_anos_paga_suplemento_joven(categoria, centro, tarifa):
     """Obligatorio."""
     SupplementFactory(
         code="joven",
@@ -455,12 +453,12 @@ def test_conductor_de_21_anos_paga_suplemento_joven(categoria, palma, tarifa):
         max_age=24,
     )
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=3, customer_age=21))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=3, customer_age=21))
 
     assert resultado.supplements_total == Decimal("15.00")
 
 
-def test_conductor_de_30_anos_no_paga_suplemento_joven(categoria, palma, tarifa):
+def test_conductor_de_30_anos_no_paga_suplemento_joven(categoria, centro, tarifa):
     """Obligatorio."""
     SupplementFactory(
         code="joven",
@@ -470,12 +468,12 @@ def test_conductor_de_30_anos_no_paga_suplemento_joven(categoria, palma, tarifa)
         max_age=24,
     )
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=3, customer_age=30))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=3, customer_age=30))
 
     assert resultado.supplements_total == Decimal("0.00")
 
 
-def test_sin_edad_conocida_no_se_cobra_el_joven(categoria, palma, tarifa):
+def test_sin_edad_conocida_no_se_cobra_el_joven(categoria, centro, tarifa):
     """Ante la duda no se cobra: cobrar de mas es peor que preguntar."""
     SupplementFactory(
         code="joven",
@@ -484,12 +482,12 @@ def test_sin_edad_conocida_no_se_cobra_el_joven(categoria, palma, tarifa):
         max_age=24,
     )
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=3))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=3))
 
     assert resultado.supplements_total == Decimal("0.00")
 
 
-def test_el_suplemento_porcentual_va_sobre_la_base(categoria, palma, tarifa):
+def test_el_suplemento_porcentual_va_sobre_la_base(categoria, centro, tarifa):
     """Es como se modela un cargo por dia: la base ya es proporcional."""
     SupplementFactory(
         code="joven",
@@ -499,13 +497,13 @@ def test_el_suplemento_porcentual_va_sobre_la_base(categoria, palma, tarifa):
         max_age=24,
     )
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=3, customer_age=20))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=3, customer_age=20))
 
     assert resultado.base_amount == Decimal("135.00")
     assert resultado.supplements_total == Decimal("13.50")
 
 
-def test_suplemento_de_aeropuerto(categoria, palma, tarifa):
+def test_suplemento_de_aeropuerto(categoria, centro, tarifa):
     aeropuerto = OfficeFactory(code="pmi-aero")
     SupplementFactory(
         code="aeropuerto",
@@ -515,13 +513,13 @@ def test_suplemento_de_aeropuerto(categoria, palma, tarifa):
     )
 
     con = calculate_reservation_price(consulta(categoria, aeropuerto, dias=2))
-    sin = calculate_reservation_price(consulta(categoria, palma, dias=2))
+    sin = calculate_reservation_price(consulta(categoria, centro, dias=2))
 
     assert con.supplements_total == Decimal("22.00")
     assert sin.supplements_total == Decimal("0.00")
 
 
-def test_suplemento_fuera_de_horario(categoria, palma, tarifa):
+def test_suplemento_fuera_de_horario(categoria, centro, tarifa):
     from datetime import time
 
     SupplementFactory(
@@ -533,10 +531,10 @@ def test_suplemento_fuera_de_horario(categoria, palma, tarifa):
     )
 
     de_noche = calculate_reservation_price(
-        consulta(categoria, palma, pickup_at=cita(hora=23), devolucion=cita(dia=3, hora=12))
+        consulta(categoria, centro, pickup_at=cita(hora=23), devolucion=cita(dia=3, hora=12))
     )
     de_dia = calculate_reservation_price(
-        consulta(categoria, palma, pickup_at=cita(hora=10), devolucion=cita(dia=3, hora=12))
+        consulta(categoria, centro, pickup_at=cita(hora=10), devolucion=cita(dia=3, hora=12))
     )
 
     assert de_noche.supplements_total == Decimal("35.00")
@@ -548,42 +546,42 @@ def test_suplemento_fuera_de_horario(categoria, palma, tarifa):
 # ---------------------------------------------------------------------------
 
 
-def test_un_descuento_automatico_se_aplica_solo(categoria, palma, tarifa):
+def test_un_descuento_automatico_se_aplica_solo(categoria, centro, tarifa):
     DiscountFactory(name="Larga duracion", amount=Decimal("10.00"), min_days=7)
 
-    corta = calculate_reservation_price(consulta(categoria, palma, dias=3))
-    larga = calculate_reservation_price(consulta(categoria, palma, dias=10))
+    corta = calculate_reservation_price(consulta(categoria, centro, dias=3))
+    larga = calculate_reservation_price(consulta(categoria, centro, dias=10))
 
     assert corta.discounts_total == Decimal("0.00")
     assert larga.base_amount == Decimal("350.00")
     assert larga.discounts_total == Decimal("35.00")
 
 
-def test_un_descuento_con_codigo_necesita_el_codigo(categoria, palma, tarifa):
+def test_un_descuento_con_codigo_necesita_el_codigo(categoria, centro, tarifa):
     DiscountFactory(code="verano26", name="Verano", amount=Decimal("20.00"))
 
-    sin_codigo = calculate_reservation_price(consulta(categoria, palma, dias=2))
+    sin_codigo = calculate_reservation_price(consulta(categoria, centro, dias=2))
     con_codigo = calculate_reservation_price(
-        consulta(categoria, palma, dias=2, discount_code="VERANO26")
+        consulta(categoria, centro, dias=2, discount_code="VERANO26")
     )
 
     assert sin_codigo.discounts_total == Decimal("0.00")
     assert con_codigo.discounts_total == Decimal("18.00")  # 20% de 90
 
 
-def test_un_codigo_que_no_vale_avisa_pero_no_rompe(categoria, palma, tarifa):
+def test_un_codigo_que_no_vale_avisa_pero_no_rompe(categoria, centro, tarifa):
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=2, discount_code="no-existe")
+        consulta(categoria, centro, dias=2, discount_code="no-existe")
     )
 
     assert resultado.total > Decimal("0.00")
     assert any("no es valido" in aviso for aviso in resultado.warnings)
 
 
-def test_un_descuento_fijo_no_deja_la_base_en_negativo(categoria, palma, tarifa):
+def test_un_descuento_fijo_no_deja_la_base_en_negativo(categoria, centro, tarifa):
     DiscountFactory(name="Bono", amount_type=AmountType.FIXED, amount=Decimal("500.00"))
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=1))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=1))
 
     assert resultado.discounts_total == Decimal("50.00")
     assert resultado.taxable_base == Decimal("0.00")
@@ -594,9 +592,9 @@ def test_un_descuento_fijo_no_deja_la_base_en_negativo(categoria, palma, tarifa)
 # ---------------------------------------------------------------------------
 
 
-def test_el_precio_manual_manda_y_queda_avisado(categoria, palma, tarifa):
+def test_el_precio_manual_manda_y_queda_avisado(categoria, centro, tarifa):
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=4, manual_override=Decimal("33.00"))
+        consulta(categoria, centro, dias=4, manual_override=Decimal("33.00"))
     )
 
     assert resultado.base_amount == Decimal("132.00")
@@ -608,12 +606,12 @@ def test_el_precio_manual_manda_y_queda_avisado(categoria, palma, tarifa):
 # ---------------------------------------------------------------------------
 
 
-def test_la_base_mas_el_iva_es_el_total(categoria, palma, tarifa):
+def test_la_base_mas_el_iva_es_el_total(categoria, centro, tarifa):
     silla = crear_extra(max_amount=None)
     SupplementFactory(code="one-way", amount=Decimal("50.00"))
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=3, extras=(ExtraRequest(silla, 1),))
+        consulta(categoria, centro, dias=3, extras=(ExtraRequest(silla, 1),))
     )
 
     assert resultado.taxable_base + resultado.tax_total == resultado.total
@@ -621,11 +619,11 @@ def test_la_base_mas_el_iva_es_el_total(categoria, palma, tarifa):
     assert resultado.tax_total == sum(linea.tax_amount for linea in resultado.lines)
 
 
-def test_cada_linea_cuadra_por_dentro(categoria, palma, tarifa):
+def test_cada_linea_cuadra_por_dentro(categoria, centro, tarifa):
     silla = crear_extra(max_amount=None)
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=5, extras=(ExtraRequest(silla, 1),))
+        consulta(categoria, centro, dias=5, extras=(ExtraRequest(silla, 1),))
     )
 
     for linea in resultado.lines:
@@ -633,10 +631,10 @@ def test_cada_linea_cuadra_por_dentro(categoria, palma, tarifa):
         assert linea.base == linea.base.quantize(Decimal("0.01"))
 
 
-def test_el_iva_es_configurable(categoria, palma, tarifa, settings):
+def test_el_iva_es_configurable(categoria, centro, tarifa, settings):
     settings.DEFAULT_TAX_RATE = Decimal("10.00")
 
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=2))
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=2))
 
     assert resultado.taxable_base == Decimal("90.00")
     assert resultado.tax_total == Decimal("9.00")
@@ -647,14 +645,14 @@ def test_el_iva_es_configurable(categoria, palma, tarifa, settings):
 # ---------------------------------------------------------------------------
 
 
-def test_el_desglose_es_serializable(categoria, palma, tarifa):
+def test_el_desglose_es_serializable(categoria, centro, tarifa):
     """Criterio de aceptacion: se puede ensenar tal cual en la ficha."""
     silla = crear_extra(max_amount=Decimal("30.00"))
     SupplementFactory(code="one-way", amount=Decimal("50.00"))
     DiscountFactory(name="Promo", amount=Decimal("5.00"))
 
     resultado = calculate_reservation_price(
-        consulta(categoria, palma, dias=6, extras=(ExtraRequest(silla, 1),))
+        consulta(categoria, centro, dias=6, extras=(ExtraRequest(silla, 1),))
     )
     como_json = json.dumps(resultado.to_dict())
     vuelta = json.loads(como_json)
@@ -666,8 +664,8 @@ def test_el_desglose_es_serializable(categoria, palma, tarifa):
     assert all(isinstance(linea["base"], str) for linea in vuelta["lines"])
 
 
-def test_el_desglose_trae_los_objetos_para_la_pantalla(categoria, palma, tarifa):
-    resultado = calculate_reservation_price(consulta(categoria, palma, dias=5))
+def test_el_desglose_trae_los_objetos_para_la_pantalla(categoria, centro, tarifa):
+    resultado = calculate_reservation_price(consulta(categoria, centro, dias=5))
 
     assert resultado.applied_rate.name == "Tarifa base"
     assert resultado.applied_tier.price_per_day == Decimal("40.00")

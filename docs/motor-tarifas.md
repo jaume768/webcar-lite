@@ -9,8 +9,8 @@ from apps.pricing.services import calculate_reservation_price
 precio = calculate_reservation_price(
     PriceQuoteInput(
         category=categoria,
-        pickup_office=palma,
-        return_office=alcudia,
+        pickup_office=centro,
+        return_office=norte,
         pickup_at=salida,
         return_at=devolucion,
         extras=(ExtraRequest(silla, 1),),

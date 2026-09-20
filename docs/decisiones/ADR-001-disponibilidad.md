@@ -18,7 +18,7 @@ Dos hechos del dominio condicionan el diseño:
 
 1. Una reserva puede existir **contra una categoría, sin vehículo asignado**. La
    disponibilidad no puede resolverse mirando coches concretos.
-2. La flota se mueve entre oficinas de un mismo **grupo** (`OfficePool`). Un one-way de Palma
+2. La flota se mueve entre oficinas de un mismo **grupo** (`OfficePool`). Un one-way del centro
    al aeropuerto no cambia la capacidad del grupo.
 
 ## Decisión 1 · La capacidad se cuenta por categoría dentro de un grupo de oficinas

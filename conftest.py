@@ -46,13 +46,13 @@ def contrasena():
 
 
 @pytest.fixture
-def palma(db):
-    return OfficeFactory(code="palma", name="Palma Centro")
+def centro(db):
+    return OfficeFactory(code="centro", name="Oficina Centro")
 
 
 @pytest.fixture
-def alcudia(db):
-    return OfficeFactory(code="alcudia", name="Alcudia Puerto")
+def norte(db):
+    return OfficeFactory(code="norte", name="Oficina Norte")
 
 
 @pytest.fixture
@@ -68,18 +68,18 @@ def rol_mostrador(db):
 
 
 @pytest.fixture
-def gestor_palma(db, palma, rol_gestor):
-    return UserFactory(email="gestor@palma.es", role=rol_gestor, offices=[palma])
+def gestor_centro(db, centro, rol_gestor):
+    return UserFactory(email="gestor@centro.es", role=rol_gestor, offices=[centro])
 
 
 @pytest.fixture
-def agente_palma(db, palma, rol_mostrador):
-    return UserFactory(email="agente@palma.es", role=rol_mostrador, offices=[palma])
+def agente_centro(db, centro, rol_mostrador):
+    return UserFactory(email="agente@centro.es", role=rol_mostrador, offices=[centro])
 
 
 @pytest.fixture
-def agente_alcudia(db, alcudia, rol_mostrador):
-    return UserFactory(email="agente@alcudia.es", role=rol_mostrador, offices=[alcudia])
+def agente_norte(db, norte, rol_mostrador):
+    return UserFactory(email="agente@norte.es", role=rol_mostrador, offices=[norte])
 
 
 #: Permisos de quien mantiene los maestros: oficinas, grupos y categorias.
@@ -115,9 +115,9 @@ def rol_maestros(db):
 
 
 @pytest.fixture
-def gestor_maestros(db, palma, rol_maestros):
+def gestor_maestros(db, centro, rol_maestros):
     """Usuario que puede mantener oficinas y categorias."""
-    return UserFactory(email="maestros@ejemplo.es", role=rol_maestros, offices=[palma])
+    return UserFactory(email="maestros@ejemplo.es", role=rol_maestros, offices=[centro])
 
 
 #: Quien mantiene el catalogo de precios.
@@ -141,10 +141,10 @@ PERMISOS_TARIFAS = [
 
 
 @pytest.fixture
-def gestor_tarifas(db, palma):
+def gestor_tarifas(db, centro):
     """Usuario que puede configurar tarifas, temporadas y suplementos."""
     rol = RoleFactory(code="tarifas", name="Tarifas", permissions=PERMISOS_TARIFAS)
-    return UserFactory(email="tarifas@ejemplo.es", role=rol, offices=[palma])
+    return UserFactory(email="tarifas@ejemplo.es", role=rol, offices=[centro])
 
 
 @pytest.fixture
@@ -153,9 +153,9 @@ def superusuario(db):
 
 
 @pytest.fixture
-def usuario(agente_palma):
+def usuario(agente_centro):
     """Un usuario cualquiera con sesion iniciable, para pantallas sin permisos."""
-    return agente_palma
+    return agente_centro
 
 
 @pytest.fixture

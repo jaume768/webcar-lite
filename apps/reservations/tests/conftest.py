@@ -22,17 +22,17 @@ def _reloj_estable():
 
 @pytest.fixture
 def pool(db):
-    return OfficePoolFactory(code="baleares", name="Baleares")
+    return OfficePoolFactory(code="ciudad", name="Ciudad")
 
 
 @pytest.fixture
-def palma(db, pool):
-    return OfficeFactory(code="palma", name="Palma Centro", pool=pool)
+def centro(db, pool):
+    return OfficeFactory(code="centro", name="Oficina Centro", pool=pool)
 
 
 @pytest.fixture
 def aeropuerto(db, pool):
-    return OfficeFactory(code="pmi", name="Aeropuerto PMI", pool=pool)
+    return OfficeFactory(code="aeropuerto", name="Aeropuerto", pool=pool)
 
 
 @pytest.fixture
@@ -41,18 +41,18 @@ def economico(db):
 
 
 @pytest.fixture
-def coche(db, economico, palma):
-    return VehicleFactory(plate="1234ABC", category=economico, current_office=palma)
+def coche(db, economico, centro):
+    return VehicleFactory(plate="1234ABC", category=economico, current_office=centro)
 
 
 @pytest.fixture
-def tarifa(db, economico, palma):
+def tarifa(db, economico, centro):
     """Tarifa de mostrador con los tramos estandar."""
     return RateFactory(
         code="mostrador",
         name="Mostrador",
         categories=[economico],
-        offices=[palma],
+        offices=[centro],
         tiers=TRAMOS_ESTANDAR,
     )
 
@@ -66,7 +66,7 @@ def cliente(db):
 
 
 @pytest.fixture
-def agente(db, palma):
+def agente(db, centro):
     """Mostrador: crea y edita reservas, pero no cancela."""
     rol = RoleFactory(
         code="mostrador-res",
@@ -77,11 +77,11 @@ def agente(db, palma):
             "reservations.change_reservation",
         ],
     )
-    return UserFactory(email="agente@ejemplo.es", role=rol, offices=[palma])
+    return UserFactory(email="agente@ejemplo.es", role=rol, offices=[centro])
 
 
 @pytest.fixture
-def responsable(db, palma):
+def responsable(db, centro):
     """Responsable: ademas puede cancelar."""
     rol = RoleFactory(
         code="responsable-res",
@@ -93,13 +93,13 @@ def responsable(db, palma):
             "reservations.cancel_reservation",
         ],
     )
-    return UserFactory(email="responsable@ejemplo.es", role=rol, offices=[palma])
+    return UserFactory(email="responsable@ejemplo.es", role=rol, offices=[centro])
 
 
 @pytest.fixture
-def solo_lectura(db, palma):
+def solo_lectura(db, centro):
     """Solo lectura: no puede tocar nada."""
     rol = RoleFactory(
         code="consulta-res", name="Consulta", permissions=["reservations.view_reservation"]
     )
-    return UserFactory(email="consulta@ejemplo.es", role=rol, offices=[palma])
+    return UserFactory(email="consulta@ejemplo.es", role=rol, offices=[centro])

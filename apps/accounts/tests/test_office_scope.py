@@ -15,45 +15,45 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def widget_palma(palma):
-    return ScopedWidget.objects.create(name="de Palma", office=palma)
+def widget_centro(centro):
+    return ScopedWidget.objects.create(name="del centro", office=centro)
 
 
 @pytest.fixture
-def widget_alcudia(alcudia):
-    return ScopedWidget.objects.create(name="de Alcudia", office=alcudia)
+def widget_norte(norte):
+    return ScopedWidget.objects.create(name="del norte", office=norte)
 
 
 # --- queryset ---------------------------------------------------------------
 
 
 def test_for_user_solo_devuelve_las_oficinas_del_usuario(
-    agente_palma, widget_palma, widget_alcudia
+    agente_centro, widget_centro, widget_norte
 ):
-    visibles = ScopedWidget.objects.for_user(agente_palma)
+    visibles = ScopedWidget.objects.for_user(agente_centro)
 
-    assert list(visibles) == [widget_palma]
+    assert list(visibles) == [widget_centro]
 
 
-def test_for_user_de_un_superusuario_lo_ve_todo(superusuario, widget_palma, widget_alcudia):
+def test_for_user_de_un_superusuario_lo_ve_todo(superusuario, widget_centro, widget_norte):
     assert ScopedWidget.objects.for_user(superusuario).count() == 2
 
 
-def test_for_user_sin_usuario_no_devuelve_nada(widget_palma):
+def test_for_user_sin_usuario_no_devuelve_nada(widget_centro):
     from django.contrib.auth.models import AnonymousUser
 
     assert ScopedWidget.objects.for_user(None).count() == 0
     assert ScopedWidget.objects.for_user(AnonymousUser()).count() == 0
 
 
-def test_for_user_de_un_usuario_desactivado_no_devuelve_nada(agente_palma, widget_palma):
-    agente_palma.is_active = False
-    agente_palma.save(update_fields=["is_active"])
+def test_for_user_de_un_usuario_desactivado_no_devuelve_nada(agente_centro, widget_centro):
+    agente_centro.is_active = False
+    agente_centro.save(update_fields=["is_active"])
 
-    assert ScopedWidget.objects.for_user(agente_palma).count() == 0
+    assert ScopedWidget.objects.for_user(agente_centro).count() == 0
 
 
-def test_un_usuario_sin_oficinas_no_ve_nada(widget_palma, rol_mostrador):
+def test_un_usuario_sin_oficinas_no_ve_nada(widget_centro, rol_mostrador):
     huerfano = UserFactory(email="sinoficina@ejemplo.es", role=rol_mostrador)
 
     assert ScopedWidget.objects.for_user(huerfano).count() == 0
@@ -72,41 +72,41 @@ def _pedir_detalle(usuario, widget):
     return WidgetDetailView.as_view()(peticion, pk=widget.pk)
 
 
-def test_pedir_por_url_algo_de_otra_oficina_da_404(agente_palma, widget_alcudia):
+def test_pedir_por_url_algo_de_otra_oficina_da_404(agente_centro, widget_norte):
     """404 y no 403: un 403 confirmaria que el registro existe."""
     with pytest.raises(Http404):
-        _pedir_detalle(agente_palma, widget_alcudia)
+        _pedir_detalle(agente_centro, widget_norte)
 
 
-def test_lo_propio_si_se_ve(agente_palma, widget_palma):
-    respuesta = _pedir_detalle(agente_palma, widget_palma)
+def test_lo_propio_si_se_ve(agente_centro, widget_centro):
+    respuesta = _pedir_detalle(agente_centro, widget_centro)
 
     assert respuesta.status_code == 200
 
 
-def test_cross_office_por_url_en_un_endpoint_real(client, gestor_palma, agente_alcudia):
+def test_cross_office_por_url_en_un_endpoint_real(client, gestor_centro, agente_norte):
     """Editar un usuario de otra oficina: 404, no 403."""
-    client.force_login(gestor_palma)
+    client.force_login(gestor_centro)
 
-    respuesta = client.get(reverse("accounts:user_update", args=[agente_alcudia.pk]))
+    respuesta = client.get(reverse("accounts:user_update", args=[agente_norte.pk]))
 
     assert respuesta.status_code == 404
 
 
-def test_desactivar_por_post_a_alguien_de_otra_oficina_da_404(client, gestor_palma, agente_alcudia):
-    client.force_login(gestor_palma)
+def test_desactivar_por_post_a_alguien_de_otra_oficina_da_404(client, gestor_centro, agente_norte):
+    client.force_login(gestor_centro)
 
-    respuesta = client.post(reverse("accounts:user_deactivate", args=[agente_alcudia.pk]))
+    respuesta = client.post(reverse("accounts:user_deactivate", args=[agente_norte.pk]))
 
-    agente_alcudia.refresh_from_db()
+    agente_norte.refresh_from_db()
     assert respuesta.status_code == 404
-    assert agente_alcudia.is_active is True
+    assert agente_norte.is_active is True
 
 
 # --- formulario -------------------------------------------------------------
 
 
-def test_el_formulario_rechaza_una_oficina_ajena(gestor_palma, alcudia, palma):
+def test_el_formulario_rechaza_una_oficina_ajena(gestor_centro, norte, centro):
     """El POST manipulado no pasa la validacion, no solo no se ve el checkbox."""
     from apps.accounts.forms import UserForm
 
@@ -117,16 +117,16 @@ def test_el_formulario_rechaza_una_oficina_ajena(gestor_palma, alcudia, palma):
             "last_name": "Usuario",
             "phone": "",
             "role": "",
-            "offices": [alcudia.pk],
+            "offices": [norte.pk],
         },
-        user=gestor_palma,
+        user=gestor_centro,
     )
 
     assert not form.is_valid()
     assert "offices" in form.errors
 
 
-def test_el_formulario_acepta_la_oficina_propia(gestor_palma, palma):
+def test_el_formulario_acepta_la_oficina_propia(gestor_centro, centro):
     from apps.accounts.forms import UserForm
 
     form = UserForm(
@@ -136,18 +136,18 @@ def test_el_formulario_acepta_la_oficina_propia(gestor_palma, palma):
             "last_name": "Usuario",
             "phone": "",
             "role": "",
-            "offices": [palma.pk],
+            "offices": [centro.pk],
         },
-        user=gestor_palma,
+        user=gestor_centro,
     )
 
     assert form.is_valid(), form.errors
 
 
-def test_crear_usuario_con_oficina_ajena_por_post_no_cuela(client, gestor_palma, alcudia):
+def test_crear_usuario_con_oficina_ajena_por_post_no_cuela(client, gestor_centro, norte):
     from apps.accounts.models import User
 
-    client.force_login(gestor_palma)
+    client.force_login(gestor_centro)
 
     respuesta = client.post(
         reverse("accounts:user_create"),
@@ -157,7 +157,7 @@ def test_crear_usuario_con_oficina_ajena_por_post_no_cuela(client, gestor_palma,
             "last_name": "Por POST",
             "phone": "",
             "role": "",
-            "offices": [alcudia.pk],
+            "offices": [norte.pk],
         },
     )
 

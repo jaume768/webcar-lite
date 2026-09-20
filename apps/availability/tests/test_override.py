@@ -14,37 +14,37 @@ from .factories import en
 
 pytestmark = pytest.mark.django_db
 
-MOTIVO = "Cliente VIP; entra un coche de Alcudia esa manana."
+MOTIVO = "Cliente VIP; entra un coche de la oficina norte esa manana."
 
 
 @pytest.fixture
-def responsable(db, palma):
+def responsable(db, centro):
     rol = RoleFactory(
         code="responsable-test",
         name="Responsable",
         permissions=["availability.override_availability"],
     )
-    return UserFactory(email="responsable@ejemplo.es", role=rol, offices=[palma])
+    return UserFactory(email="responsable@ejemplo.es", role=rol, offices=[centro])
 
 
 @pytest.fixture
-def agente(db, palma):
+def agente(db, centro):
     rol = RoleFactory(code="mostrador-test", name="Mostrador")
-    return UserFactory(email="agente@ejemplo.es", role=rol, offices=[palma])
+    return UserFactory(email="agente@ejemplo.es", role=rol, offices=[centro])
 
 
 @pytest.fixture
-def sin_hueco(economico, palma, un_coche):
+def sin_hueco(economico, centro, un_coche):
     """La categoria queda al limite: el siguiente que pida, no cabe."""
-    reserve_capacity(category=economico, pickup_office=palma, start=en(1), end=en(3))
+    reserve_capacity(category=economico, pickup_office=centro, start=en(1), end=en(3))
     return economico
 
 
-def test_sin_permiso_no_se_puede_forzar(sin_hueco, palma, agente):
+def test_sin_permiso_no_se_puede_forzar(sin_hueco, centro, agente):
     with pytest.raises(AvailabilityError) as fallo:
         reserve_capacity(
             category=sin_hueco,
-            pickup_office=palma,
+            pickup_office=centro,
             start=en(1),
             end=en(3),
             override=Override(user=agente, reason=MOTIVO),
@@ -53,13 +53,13 @@ def test_sin_permiso_no_se_puede_forzar(sin_hueco, palma, agente):
     assert "no puede forzar" in str(fallo.value)
 
 
-def test_con_permiso_pero_sin_motivo_tampoco(sin_hueco, palma, responsable):
+def test_con_permiso_pero_sin_motivo_tampoco(sin_hueco, centro, responsable):
     """El motivo no es un adorno: es lo que explica la decision manana."""
     for motivo in ("", "   "):
         with pytest.raises(AvailabilityError) as fallo:
             reserve_capacity(
                 category=sin_hueco,
-                pickup_office=palma,
+                pickup_office=centro,
                 start=en(1),
                 end=en(3),
                 override=Override(user=responsable, reason=motivo),
@@ -67,10 +67,10 @@ def test_con_permiso_pero_sin_motivo_tampoco(sin_hueco, palma, responsable):
         assert "motivo" in str(fallo.value)
 
 
-def test_con_permiso_y_motivo_se_acepta_y_queda_registrado(sin_hueco, palma, responsable):
+def test_con_permiso_y_motivo_se_acepta_y_queda_registrado(sin_hueco, centro, responsable):
     reserva = reserve_capacity(
         category=sin_hueco,
-        pickup_office=palma,
+        pickup_office=centro,
         start=en(1),
         end=en(3),
         override=Override(user=responsable, reason=MOTIVO),
@@ -82,13 +82,13 @@ def test_con_permiso_y_motivo_se_acepta_y_queda_registrado(sin_hueco, palma, res
     assert reserva.override_by == responsable
 
 
-def test_sin_override_la_misma_reserva_se_rechaza(sin_hueco, palma):
+def test_sin_override_la_misma_reserva_se_rechaza(sin_hueco, centro):
     with pytest.raises(NoAvailabilityError):
-        reserve_capacity(category=sin_hueco, pickup_office=palma, start=en(1), end=en(3))
+        reserve_capacity(category=sin_hueco, pickup_office=centro, start=en(1), end=en(3))
 
 
-def test_una_reserva_normal_no_queda_marcada(economico, palma, un_coche):
-    reserva = reserve_capacity(category=economico, pickup_office=palma, start=en(1), end=en(3))
+def test_una_reserva_normal_no_queda_marcada(economico, centro, un_coche):
+    reserva = reserve_capacity(category=economico, pickup_office=centro, start=en(1), end=en(3))
 
     assert not reserva.overbooked
     assert reserva.override_reason == ""
@@ -96,7 +96,7 @@ def test_una_reserva_normal_no_queda_marcada(economico, palma, un_coche):
 
 
 def test_el_overbooking_no_desactiva_la_constraint_del_vehiculo(
-    sin_hueco, palma, un_coche, responsable
+    sin_hueco, centro, un_coche, responsable
 ):
     """Se puede vender de mas, pero no dar el mismo coche a dos clientes."""
     from apps.availability.services import VehicleNotAvailableError, assign_vehicle
@@ -106,7 +106,7 @@ def test_el_overbooking_no_desactiva_la_constraint_del_vehiculo(
 
     forzada = reserve_capacity(
         category=sin_hueco,
-        pickup_office=palma,
+        pickup_office=centro,
         start=en(1),
         end=en(3),
         override=Override(user=responsable, reason=MOTIVO),

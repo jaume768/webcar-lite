@@ -15,7 +15,7 @@ validar_codigo_postal = RegexValidator(
 class OfficePool(TimeStampedModel, ActivableModel):
     """Grupo de oficinas entre las que la flota se mueve libremente.
 
-    Es lo que permite resolver el one-way: un coche recogido en Palma y
+    Es lo que permite resolver el one-way: un coche recogido en el centro y
     devuelto en el aeropuerto no sale de la capacidad del grupo, asi que la
     disponibilidad se calcula sobre el pool y no sobre cada oficina por
     separado. Una oficina sin pool responde solo de su propia flota.

@@ -20,7 +20,7 @@ def datos_oficina(**cambios):
         "pool": "",
         "address": "Carrer Major 1",
         "city": "Manacor",
-        "province": "Illes Balears",
+        "province": "Valencia",
         "postal_code": "07500",
         "country": "ES",
         "phone": "971000000",
@@ -201,27 +201,27 @@ def test_desactivar_y_reactivar(client, gestor_maestros):
     assert oficina.is_active is True
 
 
-def test_no_se_desactiva_una_oficina_con_usuarios_activos(client, gestor_maestros, palma):
+def test_no_se_desactiva_una_oficina_con_usuarios_activos(client, gestor_maestros, centro):
     """El servicio se niega y el usuario lee por que, sin 500 de por medio."""
     client.force_login(gestor_maestros)
 
-    respuesta = client.post(reverse("offices:office_deactivate", args=[palma.pk]), headers=HTMX)
-    palma.refresh_from_db()
+    respuesta = client.post(reverse("offices:office_deactivate", args=[centro.pk]), headers=HTMX)
+    centro.refresh_from_db()
 
     assert respuesta.status_code == 200
     assert "usuarios activos" in respuesta.headers["HX-Trigger"]
     assert "crud:guardado" not in respuesta.headers["HX-Trigger"]
-    assert palma.is_active is True
+    assert centro.is_active is True
 
 
-def test_una_oficina_desactivada_no_esta_en_el_alcance_del_usuario(client, gestor_maestros, palma):
+def test_una_oficina_desactivada_no_esta_en_el_alcance_del_usuario(client, gestor_maestros, centro):
     """Baja logica no es borrado: la fila sigue, pero deja de operar."""
     from apps.offices.selectors import offices_for_user
 
-    palma.deactivate()
+    centro.deactivate()
 
-    assert Office.objects.filter(pk=palma.pk).exists()
-    assert palma not in offices_for_user(gestor_maestros)
+    assert Office.objects.filter(pk=centro.pk).exists()
+    assert centro not in offices_for_user(gestor_maestros)
 
 
 def test_borrar_de_verdad_esta_prohibido():
@@ -256,9 +256,9 @@ ENDPOINTS = [
 
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objeto"), ENDPOINTS)
-def test_sin_permiso_403(client, agente_palma, vista, metodo, con_objeto):
+def test_sin_permiso_403(client, agente_centro, vista, metodo, con_objeto):
     oficina = OfficeFactory(code="manacor", name="Manacor")
-    client.force_login(agente_palma)
+    client.force_login(agente_centro)
 
     url = reverse(vista, args=[oficina.pk] if con_objeto else [])
     respuesta = getattr(client, metodo)(url, {})
@@ -277,14 +277,14 @@ def test_con_permiso_no_da_403(client, gestor_maestros, vista, metodo, con_objet
     assert respuesta.status_code != 403
 
 
-def test_el_boton_de_alta_no_se_ensena_sin_permiso(client, palma, rol_mostrador):
+def test_el_boton_de_alta_no_se_ensena_sin_permiso(client, centro, rol_mostrador):
     """Esconderlo no es la validacion, pero tampoco se ensenan puertas cerradas."""
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
     solo_lectura = UserFactory(
         email="lectura@ejemplo.es",
         role=RoleFactory(code="solo-ver", permissions=["offices.view_office"]),
-        offices=[palma],
+        offices=[centro],
     )
     client.force_login(solo_lectura)
 

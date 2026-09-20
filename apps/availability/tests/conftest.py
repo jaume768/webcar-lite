@@ -18,40 +18,40 @@ def _reloj_estable():
 
 
 @pytest.fixture
-def pool_baleares(db):
-    return OfficePoolFactory(code="baleares", name="Baleares")
+def pool_ciudad(db):
+    return OfficePoolFactory(code="ciudad", name="Ciudad")
 
 
 @pytest.fixture
-def pool_peninsula(db):
-    return OfficePoolFactory(code="peninsula", name="Peninsula")
+def pool_lejano(db):
+    return OfficePoolFactory(code="otra-zona", name="Otra zona")
 
 
 @pytest.fixture
-def palma(db, pool_baleares):
-    return OfficeFactory(code="palma", name="Palma Centro", pool=pool_baleares)
+def centro(db, pool_ciudad):
+    return OfficeFactory(code="centro", name="Oficina Centro", pool=pool_ciudad)
 
 
 @pytest.fixture
-def aeropuerto(db, pool_baleares):
-    """Misma isla, mismo grupo: la flota se mueve entre las dos sin friccion."""
-    return OfficeFactory(code="pmi", name="Aeropuerto PMI", pool=pool_baleares)
+def aeropuerto(db, pool_ciudad):
+    """Misma zona, mismo grupo: la flota se mueve entre las dos sin friccion."""
+    return OfficeFactory(code="aeropuerto", name="Aeropuerto", pool=pool_ciudad)
 
 
 @pytest.fixture
-def valencia(db, pool_peninsula):
-    """Otro grupo: un coche que acaba aqui no vuelve solo a Baleares."""
-    return OfficeFactory(code="vlc", name="Valencia", pool=pool_peninsula)
+def lejana(db, pool_lejano):
+    """Otro grupo: un coche que acaba aqui no vuelve solo a la ciudad."""
+    return OfficeFactory(code="lejana", name="Oficina Lejana", pool=pool_lejano)
 
 
 @pytest.fixture
 def suelta(db):
     """Oficina sin grupo: responde solo de su propia flota."""
-    return OfficeFactory(code="ibiza", name="Ibiza", pool=None)
+    return OfficeFactory(code="suelta", name="Oficina Suelta", pool=None)
 
 
 @pytest.fixture
-def responsable(db, palma):
+def responsable(db, centro):
     """Usuario con permiso para cancelar reservas."""
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
@@ -60,7 +60,7 @@ def responsable(db, palma):
         name="Responsable",
         permissions=["reservations.cancel_reservation"],
     )
-    return UserFactory(email="responsable@disponibilidad.es", role=rol, offices=[palma])
+    return UserFactory(email="responsable@disponibilidad.es", role=rol, offices=[centro])
 
 
 @pytest.fixture
@@ -74,13 +74,13 @@ def premium(db):
 
 
 @pytest.fixture
-def tres_coches(db, economico, palma):
+def tres_coches(db, economico, centro):
     return [
-        VehicleFactory(plate=f"100{i}AAA", category=economico, current_office=palma)
+        VehicleFactory(plate=f"100{i}AAA", category=economico, current_office=centro)
         for i in range(3)
     ]
 
 
 @pytest.fixture
-def un_coche(db, economico, palma):
-    return VehicleFactory(plate="9999ZZZ", category=economico, current_office=palma)
+def un_coche(db, economico, centro):
+    return VehicleFactory(plate="9999ZZZ", category=economico, current_office=centro)

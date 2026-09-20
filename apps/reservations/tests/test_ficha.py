@@ -22,12 +22,12 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def reserva(economico, palma, cliente, coche, tarifa, agente):
+def reserva(economico, centro, cliente, coche, tarifa, agente):
     from apps.reservations.services import create_quick_reservation
 
     return create_quick_reservation(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         customer=cliente,
         pickup_at=en(1),
         return_at=en(4),
@@ -114,7 +114,7 @@ def test_una_ficha_de_otra_oficina_no_existe(client, economico, cliente, agente)
 
     from .factories import ReservationFactory
 
-    lejos = OfficeFactory(code="vlc", name="Valencia", pool=None)
+    lejos = OfficeFactory(code="lejana", name="Oficina Lejana", pool=None)
     ajena = ReservationFactory(
         category=economico, pickup_office=lejos, return_office=lejos, customer=cliente
     )
@@ -168,7 +168,7 @@ def test_cambiar_fechas_no_cuenta_la_reserva_a_si_misma(reserva, agente):
 
 
 def test_el_conflicto_de_vehiculo_nombra_la_reserva_que_estorba(
-    reserva, economico, palma, cliente, coche, tarifa, agente
+    reserva, economico, centro, cliente, coche, tarifa, agente
 ):
     """Criterio de aceptacion: el error dice cual es la reserva en conflicto."""
     from apps.availability.services import assign_vehicle
@@ -176,7 +176,7 @@ def test_el_conflicto_de_vehiculo_nombra_la_reserva_que_estorba(
     assign_vehicle(reservation=reserva, vehicle=coche, actor=agente)
     siguiente = reserve_capacity(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         start=en(6),
         end=en(8),
         vehicle=coche,
@@ -194,16 +194,16 @@ def test_el_conflicto_de_vehiculo_nombra_la_reserva_que_estorba(
     assert reserva.return_at == en(4), "no se ha guardado nada"
 
 
-def test_liberando_el_vehiculo_el_cambio_sale(reserva, economico, palma, coche, tarifa, agente):
+def test_liberando_el_vehiculo_el_cambio_sale(reserva, economico, centro, coche, tarifa, agente):
     """La salida que ofrece el mostrador: soltar el coche y seguir."""
     from apps.availability.services import assign_vehicle
     from apps.fleet.tests.factories import VehicleFactory
 
-    VehicleFactory(plate="2222BBB", category=economico, current_office=palma)
+    VehicleFactory(plate="2222BBB", category=economico, current_office=centro)
     assign_vehicle(reservation=reserva, vehicle=coche, actor=agente)
     reserve_capacity(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         start=en(6),
         end=en(8),
         vehicle=coche,
@@ -220,14 +220,14 @@ def test_liberando_el_vehiculo_el_cambio_sale(reserva, economico, palma, coche, 
 
 
 def test_el_preview_avisa_del_conflicto_antes_de_confirmar(
-    reserva, economico, palma, coche, agente
+    reserva, economico, centro, coche, agente
 ):
     from apps.availability.services import assign_vehicle
 
     assign_vehicle(reservation=reserva, vehicle=coche, actor=agente)
     otra = reserve_capacity(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         start=en(6),
         end=en(8),
         vehicle=coche,
@@ -245,17 +245,17 @@ def test_el_preview_avisa_del_conflicto_antes_de_confirmar(
 
 
 @pytest.fixture
-def premium(db, palma, tarifa):
+def premium(db, centro, tarifa):
     from apps.fleet.tests.factories import VehicleCategoryFactory, VehicleFactory
     from apps.pricing.tests.factories import TRAMOS_ESTANDAR, RateFactory
 
     categoria = VehicleCategoryFactory(code="premium", name="Premium")
-    VehicleFactory(plate="7777PRE", category=categoria, current_office=palma)
+    VehicleFactory(plate="7777PRE", category=categoria, current_office=centro)
     RateFactory(
         code="premium",
         name="Premium",
         categories=[categoria],
-        offices=[palma],
+        offices=[centro],
         tiers=TRAMOS_ESTANDAR,
     )
     return categoria
@@ -301,7 +301,7 @@ def test_una_reserva_facturada_se_bloquea(reserva, agente, monkeypatch):
     assert reserva.return_at == en(4)
 
 
-def test_con_permiso_si_se_puede_tocar_lo_facturado(reserva, monkeypatch, palma):
+def test_con_permiso_si_se_puede_tocar_lo_facturado(reserva, monkeypatch, centro):
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
     monkeypatch.setattr("apps.reservations.services.has_issued_invoice", lambda r: True)
@@ -315,7 +315,7 @@ def test_con_permiso_si_se_puede_tocar_lo_facturado(reserva, monkeypatch, palma)
                 "reservations.change_invoiced_reservation",
             ],
         ),
-        offices=[palma],
+        offices=[centro],
     )
 
     cambiada = apply_change(reservation=reserva, return_at=en(6), actor=administracion)
@@ -338,17 +338,17 @@ def test_el_preview_avisa_de_la_factura_en_vez_de_reventar(reserva, agente, monk
 
 
 def test_las_opciones_dicen_por_que_se_descarta_cada_coche(
-    reserva, economico, palma, coche, agente
+    reserva, economico, centro, coche, agente
 ):
     from apps.availability.services import vehicle_options
     from apps.fleet.tests.factories import VehicleBlockFactory, VehicleFactory
 
-    en_taller = VehicleFactory(plate="3333TAL", category=economico, current_office=palma)
+    en_taller = VehicleFactory(plate="3333TAL", category=economico, current_office=centro)
     VehicleBlockFactory(vehicle=en_taller, start_at=en(0.5), end_at=en(5))
-    ocupado = VehicleFactory(plate="4444OCU", category=economico, current_office=palma)
+    ocupado = VehicleFactory(plate="4444OCU", category=economico, current_office=centro)
     otra = reserve_capacity(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         start=en(1),
         end=en(4),
         vehicle=ocupado,
@@ -358,7 +358,7 @@ def test_las_opciones_dicen_por_que_se_descarta_cada_coche(
     opciones = {
         opcion.plate: opcion
         for opcion in vehicle_options(
-            economico, palma, reserva.pickup_at, reserva.return_at, exclude_reservation=reserva
+            economico, centro, reserva.pickup_at, reserva.return_at, exclude_reservation=reserva
         )
     }
 
@@ -495,7 +495,7 @@ def test_la_pestana_de_historial_los_pinta(client, reserva, agente):
 
 
 def test_el_modal_ofrece_liberar_el_vehiculo_en_conflicto(
-    client, reserva, economico, palma, coche, agente
+    client, reserva, economico, centro, coche, agente
 ):
     """Criterio de aceptacion, visto desde la pantalla.
 
@@ -507,7 +507,7 @@ def test_el_modal_ofrece_liberar_el_vehiculo_en_conflicto(
     assign_vehicle(reservation=reserva, vehicle=coche, actor=agente)
     estorba = reserve_capacity(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         start=en(6),
         end=en(8),
         vehicle=coche,
@@ -535,16 +535,16 @@ def test_el_modal_ofrece_liberar_el_vehiculo_en_conflicto(
 
 
 def test_al_liberar_desde_el_modal_el_cambio_se_aplica(
-    client, reserva, economico, palma, coche, tarifa, agente
+    client, reserva, economico, centro, coche, tarifa, agente
 ):
     from apps.availability.services import assign_vehicle
     from apps.fleet.tests.factories import VehicleFactory
 
-    VehicleFactory(plate="5555LIB", category=economico, current_office=palma)
+    VehicleFactory(plate="5555LIB", category=economico, current_office=centro)
     assign_vehicle(reservation=reserva, vehicle=coche, actor=agente)
     reserve_capacity(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         start=en(6),
         end=en(8),
         vehicle=coche,

@@ -36,7 +36,7 @@ MODELOS = {
     "F": ["BMW Serie 3", "Audi A4", "Volvo XC40"],
 }
 
-OFICINAS = ["Palma", "Alcudia", "Manacor", "Aeropuerto"]
+OFICINAS = ["Centro", "Norte", "Sur", "Aeropuerto"]
 
 ESTADOS = [
     ("disponible", "Disponible", "success"),

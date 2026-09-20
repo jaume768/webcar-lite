@@ -15,47 +15,47 @@ def _entrar(client, email, contrasena):
     return client.post(reverse(LOGIN), {"username": email, "password": contrasena})
 
 
-def test_se_entra_con_el_correo(client, agente_palma, contrasena):
-    respuesta = _entrar(client, agente_palma.email, contrasena)
+def test_se_entra_con_el_correo(client, agente_centro, contrasena):
+    respuesta = _entrar(client, agente_centro.email, contrasena)
 
     assert respuesta.status_code == 302
     assert respuesta.wsgi_request.user.is_authenticated
 
 
-def test_el_correo_no_distingue_mayusculas(client, agente_palma, contrasena):
-    respuesta = _entrar(client, agente_palma.email.upper(), contrasena)
+def test_el_correo_no_distingue_mayusculas(client, agente_centro, contrasena):
+    respuesta = _entrar(client, agente_centro.email.upper(), contrasena)
 
     assert respuesta.status_code == 302
 
 
-def test_un_usuario_desactivado_no_entra_aunque_acierte(client, agente_palma, contrasena):
+def test_un_usuario_desactivado_no_entra_aunque_acierte(client, agente_centro, contrasena):
     """La contrasena es correcta: lo que corta es is_active."""
-    agente_palma.is_active = False
-    agente_palma.save(update_fields=["is_active"])
+    agente_centro.is_active = False
+    agente_centro.save(update_fields=["is_active"])
 
-    respuesta = _entrar(client, agente_palma.email, contrasena)
+    respuesta = _entrar(client, agente_centro.email, contrasena)
 
     assert respuesta.status_code == 200  # se queda en el formulario
     assert not respuesta.wsgi_request.user.is_authenticated
 
 
-def test_contrasena_incorrecta(client, agente_palma):
-    respuesta = _entrar(client, agente_palma.email, "no-es-esta")
+def test_contrasena_incorrecta(client, agente_centro):
+    respuesta = _entrar(client, agente_centro.email, "no-es-esta")
 
     assert respuesta.status_code == 200
     assert not respuesta.wsgi_request.user.is_authenticated
 
 
-def test_el_error_no_dice_si_el_correo_existe(client, agente_palma):
+def test_el_error_no_dice_si_el_correo_existe(client, agente_centro):
     """Mismo mensaje para correo inexistente y contrasena mala."""
     inexistente = _entrar(client, "nadie@ejemplo.es", "loquesea")
-    mala = _entrar(client, agente_palma.email, "loquesea")
+    mala = _entrar(client, agente_centro.email, "loquesea")
 
     assert inexistente.context["form"].errors == mala.context["form"].errors
 
 
-def test_salir_solo_por_post(client, agente_palma):
-    client.force_login(agente_palma)
+def test_salir_solo_por_post(client, agente_centro):
+    client.force_login(agente_centro)
 
     assert client.get(reverse("accounts:logout")).status_code == 405
 
@@ -103,21 +103,21 @@ def test_ninguna_url_del_proyecto_se_llama_registro():
 # --- recuperacion de contrasena ---------------------------------------------
 
 
-def test_el_reseteo_envia_correo_a_una_cuenta_activa(client, agente_palma):
-    respuesta = client.post(reverse("accounts:password_reset"), {"email": agente_palma.email})
+def test_el_reseteo_envia_correo_a_una_cuenta_activa(client, agente_centro):
+    respuesta = client.post(reverse("accounts:password_reset"), {"email": agente_centro.email})
 
     assert respuesta.status_code == 302
     assert len(mail.outbox) == 1
-    assert agente_palma.email in mail.outbox[0].to
+    assert agente_centro.email in mail.outbox[0].to
     assert "contrasena/nueva/" in mail.outbox[0].body
 
 
-def test_el_reseteo_calla_con_una_cuenta_desactivada(client, agente_palma):
+def test_el_reseteo_calla_con_una_cuenta_desactivada(client, agente_centro):
     """No se envia nada, pero la respuesta es la misma: no se filtra quien existe."""
-    agente_palma.is_active = False
-    agente_palma.save(update_fields=["is_active"])
+    agente_centro.is_active = False
+    agente_centro.save(update_fields=["is_active"])
 
-    respuesta = client.post(reverse("accounts:password_reset"), {"email": agente_palma.email})
+    respuesta = client.post(reverse("accounts:password_reset"), {"email": agente_centro.email})
 
     assert respuesta.status_code == 302
     assert len(mail.outbox) == 0
@@ -137,8 +137,8 @@ def test_cambiar_contrasena_requiere_sesion(client):
     assert reverse(LOGIN) in respuesta.headers["Location"]
 
 
-def test_cambiar_contrasena_con_sesion(client, agente_palma, contrasena):
-    client.force_login(agente_palma)
+def test_cambiar_contrasena_con_sesion(client, agente_centro, contrasena):
+    client.force_login(agente_centro)
 
     respuesta = client.post(
         reverse("accounts:password_change"),
@@ -149,9 +149,9 @@ def test_cambiar_contrasena_con_sesion(client, agente_palma, contrasena):
         },
     )
 
-    agente_palma.refresh_from_db()
+    agente_centro.refresh_from_db()
     assert respuesta.status_code == 302
-    assert agente_palma.check_password("otra-contrasena-larga-99")
+    assert agente_centro.check_password("otra-contrasena-larga-99")
 
 
 # --- bloqueo por intentos fallidos ------------------------------------------
@@ -199,7 +199,7 @@ def test_por_debajo_del_limite_todavia_se_entra(client, settings, contrasena):
 # ---------------------------------------------------------------------------
 
 
-def test_doble_envio_del_login_no_acaba_en_403(agente_palma, contrasena):
+def test_doble_envio_del_login_no_acaba_en_403(agente_centro, contrasena):
     """Regresion: el primer envio entra y rota el token CSRF; el segundo (doble
     clic, Enter repetido) llega con el token viejo. Quien ya ha entrado no
     tiene por que ver un 403: se le lleva a su panel."""
@@ -209,7 +209,7 @@ def test_doble_envio_del_login_no_acaba_en_403(agente_palma, contrasena):
     client.get(reverse(LOGIN))
     token_viejo = client.cookies["csrftoken"].value
     datos = {
-        "username": agente_palma.email,
+        "username": agente_centro.email,
         "password": contrasena,
         "csrfmiddlewaretoken": token_viejo,
     }
@@ -224,7 +224,7 @@ def test_doble_envio_del_login_no_acaba_en_403(agente_palma, contrasena):
     assert segunda.headers["Location"] == reverse("core:home")
 
 
-def test_un_csrf_invalido_sin_sesion_sigue_siendo_403(agente_palma, contrasena):
+def test_un_csrf_invalido_sin_sesion_sigue_siendo_403(agente_centro, contrasena):
     """La excepcion es solo para quien ya esta dentro: sin sesion no hay atajo."""
     from django.test import Client
 
@@ -233,19 +233,19 @@ def test_un_csrf_invalido_sin_sesion_sigue_siendo_403(agente_palma, contrasena):
 
     respuesta = client.post(
         reverse(LOGIN),
-        {"username": agente_palma.email, "password": contrasena, "csrfmiddlewaretoken": "x" * 64},
+        {"username": agente_centro.email, "password": contrasena, "csrfmiddlewaretoken": "x" * 64},
     )
 
     assert respuesta.status_code == 403
     assert not respuesta.wsgi_request.user.is_authenticated
 
 
-def test_un_csrf_invalido_fuera_del_login_sigue_siendo_403(client, agente_palma):
+def test_un_csrf_invalido_fuera_del_login_sigue_siendo_403(client, agente_centro):
     """Con sesion, cualquier otro POST con token malo se rechaza como siempre."""
     from django.test import Client
 
     client = Client(enforce_csrf_checks=True)
-    client.force_login(agente_palma)
+    client.force_login(agente_centro)
 
     respuesta = client.post(reverse("accounts:logout"), {"csrfmiddlewaretoken": "x" * 64})
 

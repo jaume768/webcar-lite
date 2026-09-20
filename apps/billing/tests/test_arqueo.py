@@ -24,69 +24,69 @@ def _cobrar(reserva, importe, actor, metodo=PaymentMethod.CASH, **kwargs):
 # ---------------------------------------------------------------------------
 
 
-def test_el_arqueo_suma_solo_el_efectivo(reserva, cajero, palma):
+def test_el_arqueo_suma_solo_el_efectivo(reserva, cajero, centro):
     _cobrar(reserva, Decimal("50.00"), cajero, PaymentMethod.CASH)
     _cobrar(reserva, Decimal("60.00"), cajero, PaymentMethod.CARD)
     _cobrar(reserva, Decimal("20.00"), cajero, PaymentMethod.CASH)
 
-    arqueo = cash_register(office=palma, day=timezone.localdate())
+    arqueo = cash_register(office=centro, day=timezone.localdate())
 
     assert arqueo.count == 2
     assert arqueo.cash_in == Decimal("70.00")
     assert arqueo.cash_balance == Decimal("70.00")
 
 
-def test_el_arqueo_separa_entradas_de_salidas(reserva, cajero, palma):
+def test_el_arqueo_separa_entradas_de_salidas(reserva, cajero, centro):
     cobro = _cobrar(reserva, Decimal("100.00"), cajero, PaymentMethod.CASH)
     from apps.billing.services import refund
 
     refund(payment=cobro, amount=Decimal("40.00"), actor=cajero)
 
-    arqueo = cash_register(office=palma, day=timezone.localdate())
+    arqueo = cash_register(office=centro, day=timezone.localdate())
 
     assert arqueo.cash_in == Decimal("100.00")
     assert arqueo.cash_out == Decimal("-40.00")
     assert arqueo.cash_balance == Decimal("60.00")
 
 
-def test_el_arqueo_no_mezcla_oficinas(reserva, cajero, palma, alcudia):
-    _cobrar(reserva, Decimal("50.00"), cajero, PaymentMethod.CASH, office=palma)
-    _cobrar(reserva, Decimal("30.00"), cajero, PaymentMethod.CASH, office=alcudia)
+def test_el_arqueo_no_mezcla_oficinas(reserva, cajero, centro, norte):
+    _cobrar(reserva, Decimal("50.00"), cajero, PaymentMethod.CASH, office=centro)
+    _cobrar(reserva, Decimal("30.00"), cajero, PaymentMethod.CASH, office=norte)
 
-    assert cash_register(office=palma, day=timezone.localdate()).cash_in == Decimal("50.00")
-    assert cash_register(office=alcudia, day=timezone.localdate()).cash_in == Decimal("30.00")
+    assert cash_register(office=centro, day=timezone.localdate()).cash_in == Decimal("50.00")
+    assert cash_register(office=norte, day=timezone.localdate()).cash_in == Decimal("30.00")
 
 
-def test_el_arqueo_no_mezcla_dias(reserva, cajero, palma):
+def test_el_arqueo_no_mezcla_dias(reserva, cajero, centro):
     from datetime import timedelta
 
     ayer = timezone.now() - timedelta(days=1)
     _cobrar(reserva, Decimal("50.00"), cajero, PaymentMethod.CASH)
     _cobrar(reserva, Decimal("30.00"), cajero, PaymentMethod.CASH, paid_at=ayer)
 
-    hoy = cash_register(office=palma, day=timezone.localdate())
+    hoy = cash_register(office=centro, day=timezone.localdate())
 
     assert hoy.cash_in == Decimal("50.00")
-    assert cash_register(office=palma, day=ayer.date()).cash_in == Decimal("30.00")
+    assert cash_register(office=centro, day=ayer.date()).cash_in == Decimal("30.00")
 
 
-def test_la_fianza_en_efectivo_si_entra_en_caja(reserva, cajero, palma):
+def test_la_fianza_en_efectivo_si_entra_en_caja(reserva, cajero, centro):
     """No cuenta como cobro del alquiler, pero el billete esta en el cajon."""
     _cobrar(
         reserva, Decimal("150.00"), cajero, PaymentMethod.CASH, payment_type=PaymentType.DEPOSIT
     )
 
-    arqueo = cash_register(office=palma, day=timezone.localdate())
+    arqueo = cash_register(office=centro, day=timezone.localdate())
 
     assert arqueo.cash_in == Decimal("150.00")
 
 
-def test_los_totales_por_metodo_cuadran_con_el_datafono(reserva, cajero, palma):
+def test_los_totales_por_metodo_cuadran_con_el_datafono(reserva, cajero, centro):
     _cobrar(reserva, Decimal("50.00"), cajero, PaymentMethod.CASH)
     _cobrar(reserva, Decimal("60.00"), cajero, PaymentMethod.CARD)
     _cobrar(reserva, Decimal("20.00"), cajero, PaymentMethod.CARD)
 
-    totales = dict(cash_totals_by_method(office=palma, day=timezone.localdate()))
+    totales = dict(cash_totals_by_method(office=centro, day=timezone.localdate()))
 
     assert totales["Efectivo"] == Decimal("50.00")
     assert totales["Tarjeta"] == Decimal("80.00")
@@ -98,26 +98,26 @@ def test_los_totales_por_metodo_cuadran_con_el_datafono(reserva, cajero, palma):
 # ---------------------------------------------------------------------------
 
 
-def test_la_pantalla_de_arqueo_pide_permiso(client, reserva, palma, db):
+def test_la_pantalla_de_arqueo_pide_permiso(client, reserva, centro, db):
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
     pelado = UserFactory(
         email="pelado@ejemplo.es",
         role=RoleFactory(code="pelado-caja", name="Sin permisos"),
-        offices=[palma],
+        offices=[centro],
     )
     client.force_login(pelado)
 
     assert client.get(reverse("billing:cash_register")).status_code == 403
 
 
-def test_la_pantalla_de_arqueo_se_ve(client, reserva, cajero, palma):
+def test_la_pantalla_de_arqueo_se_ve(client, reserva, cajero, centro):
     _cobrar(reserva, Decimal("50.00"), cajero, PaymentMethod.CASH)
     client.force_login(cajero)
 
     respuesta = client.get(
         reverse("billing:cash_register"),
-        {"office": palma.pk, "day": timezone.localdate().isoformat()},
+        {"office": centro.pk, "day": timezone.localdate().isoformat()},
     )
     contenido = respuesta.content.decode()
 

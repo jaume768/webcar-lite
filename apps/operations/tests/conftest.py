@@ -20,17 +20,17 @@ def _reloj_estable():
 
 @pytest.fixture
 def pool(db):
-    return OfficePoolFactory(code="baleares", name="Baleares")
+    return OfficePoolFactory(code="ciudad", name="Ciudad")
 
 
 @pytest.fixture
-def palma(db, pool):
-    return OfficeFactory(code="palma", name="Palma Centro", pool=pool)
+def centro(db, pool):
+    return OfficeFactory(code="centro", name="Oficina Centro", pool=pool)
 
 
 @pytest.fixture
 def aeropuerto(db, pool):
-    return OfficeFactory(code="pmi", name="Aeropuerto PMI", pool=pool)
+    return OfficeFactory(code="aeropuerto", name="Aeropuerto", pool=pool)
 
 
 @pytest.fixture
@@ -39,25 +39,25 @@ def economico(db):
 
 
 @pytest.fixture
-def coche(db, economico, palma):
+def coche(db, economico, centro):
     return VehicleFactory(
-        plate="1234ABC", category=economico, current_office=palma, mileage=10000, tank_liters=50
+        plate="1234ABC", category=economico, current_office=centro, mileage=10000, tank_liters=50
     )
 
 
 @pytest.fixture
-def tarifa(db, economico, palma):
+def tarifa(db, economico, centro):
     return RateFactory(
         code="mostrador",
         name="Mostrador",
         categories=[economico],
-        offices=[palma],
+        offices=[centro],
         tiers=TRAMOS_ESTANDAR,
     )
 
 
 @pytest.fixture
-def empleado(db, palma):
+def empleado(db, centro):
     """Mostrador: entrega, devuelve y cobra."""
     return UserFactory(
         email="mostrador@ejemplo.es",
@@ -71,12 +71,12 @@ def empleado(db, palma):
                 "billing.add_payment",
             ],
         ),
-        offices=[palma],
+        offices=[centro],
     )
 
 
 @pytest.fixture
-def reserva(db, economico, palma, coche, tarifa, empleado):
+def reserva(db, economico, centro, coche, tarifa, empleado):
     """Confirmada, con coche asignado y lista para entregar."""
     from apps.availability.services import assign_vehicle
     from apps.reservations.models import ReservationStatus
@@ -85,7 +85,7 @@ def reserva(db, economico, palma, coche, tarifa, empleado):
 
     reserva = create_quick_reservation(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         customer=CustomerFactory(),
         pickup_at=en(1),
         return_at=en(4),

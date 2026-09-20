@@ -231,8 +231,8 @@ class DayOccupancy:
 
 
 # Medidas del grafico de prevision, en unidades del viewBox del SVG.
-ANCHO_GRAFICO = 600
-ALTO_GRAFICO = 160
+ANCHO_GRAFICO = 380
+ALTO_GRAFICO = 150
 
 
 @dataclass(frozen=True)
@@ -411,7 +411,7 @@ def _agenda(entregas, devoluciones, ahora) -> list[AgendaItem]:
         lineas.append(
             AgendaItem(
                 at=reserva.return_at,
-                title=str(_("Devolucion de %(coche)s") % {"coche": _coche(reserva)}),
+                title=str(_("Devolución de %(coche)s") % {"coche": _coche(reserva)}),
                 detail=" · ".join(
                     filter(None, [cliente, reserva.vehicle.plate if reserva.vehicle_id else ""])
                 ),

@@ -1,7 +1,7 @@
 """Clientes y conductores.
 
-El cliente es de la empresa, no de una oficina: quien alquila en Palma en mayo
-puede alquilar en Alcudia en agosto, y hacerle repetir el alta seria un
+El cliente es de la empresa, no de una oficina: quien alquila en una oficina en mayo
+puede alquilar en otra en agosto, y hacerle repetir el alta seria un
 disparate en mostrador. Se guarda la oficina de alta como dato (`office`), que
 sirve para filtrar y para saber quien lo capto, pero **no** recorta quien puede
 leerlo.

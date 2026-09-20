@@ -24,7 +24,7 @@ Uso real en mostrador, no demo. Multi-oficina.
    apareciendo en reservas históricas.
 4. **Los permisos se validan en backend siempre.** Ocultar un botón no es validar.
 5. **Toda query de datos operativos pasa por un queryset con scope de oficina.**
-   Si un usuario solo tiene Palma, no puede leer ni escribir nada de Alcúdia, ni por URL ni por form.
+   Si un usuario solo tiene una oficina, no puede leer ni escribir nada de otra, ni por URL ni por form.
 6. No crear apps nuevas sin justificarlo. Estructura fijada abajo.
 7. Nada de `TODO` ni funciones vacías. Si algo queda fuera de alcance, se dice en el resumen final.
 

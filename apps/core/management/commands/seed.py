@@ -35,20 +35,20 @@ class Command(BaseCommand):
         # Los roles del sistema son parte del arranque, no un dato de ejemplo.
         call_command("sync_roles")
 
-        # Palma y el aeropuerto comparten flota: un one-way entre ellas no
-        # descuenta capacidad. Alcudia responde de la suya.
-        bahia, _ = OfficePool.objects.get_or_create(
-            code="bahia-palma",
+        # El centro y el aeropuerto comparten flota: un one-way entre ellas no
+        # descuenta capacidad. La oficina norte responde de la suya.
+        ciudad, _ = OfficePool.objects.get_or_create(
+            code="ciudad",
             defaults={
-                "name": "Bahia de Palma",
-                "description": "Palma centro y aeropuerto: la flota se mueve entre las dos.",
+                "name": "Ciudad y aeropuerto",
+                "description": "Centro y aeropuerto: la flota se mueve entre las dos.",
             },
         )
 
         oficinas = [
-            ("palma", "Palma Centro", "Palma", "Illes Balears", "07001", bahia),
-            ("alcudia", "Alcudia Puerto", "Alcudia", "Illes Balears", "07400", None),
-            ("pmi", "Aeropuerto PMI", "Palma", "Illes Balears", "07611", bahia),
+            ("centro", "Oficina Centro", "Valencia", "Valencia", "46021", ciudad),
+            ("norte", "Oficina Norte", "Sagunto", "Valencia", "46500", None),
+            ("aeropuerto", "Aeropuerto", "Manises", "Valencia", "46940", ciudad),
         ]
         for code, name, city, province, cp, pool in oficinas:
             _, creada = Office.objects.get_or_create(
@@ -122,22 +122,22 @@ class Command(BaseCommand):
         from apps.fleet.models import Fuel, Transmission, Vehicle, VehicleCategory
         from apps.offices.models import Office
 
-        palma = Office.objects.get(code="palma")
-        pmi = Office.objects.get(code="pmi")
+        centro = Office.objects.get(code="centro")
+        aeropuerto = Office.objects.get(code="aeropuerto")
         flota = [
-            ("1234ABC", "Seat", "Ibiza", "eco", palma, Fuel.PETROL, Transmission.MANUAL),
-            ("2345BCD", "Renault", "Clio", "eco", palma, Fuel.PETROL, Transmission.MANUAL),
-            ("3456CDE", "Seat", "Leon", "compacto", pmi, Fuel.DIESEL, Transmission.MANUAL),
+            ("1234ABC", "Seat", "Ibiza", "eco", centro, Fuel.PETROL, Transmission.MANUAL),
+            ("2345BCD", "Renault", "Clio", "eco", centro, Fuel.PETROL, Transmission.MANUAL),
+            ("3456CDE", "Seat", "Leon", "compacto", aeropuerto, Fuel.DIESEL, Transmission.MANUAL),
             (
                 "4567DEF",
                 "Toyota",
                 "Corolla",
                 "compacto-aut",
-                pmi,
+                aeropuerto,
                 Fuel.HYBRID,
                 Transmission.AUTOMATIC,
             ),
-            ("5678EFG", "Nissan", "Qashqai", "suv", palma, Fuel.HYBRID, Transmission.AUTOMATIC),
+            ("5678EFG", "Nissan", "Qashqai", "suv", centro, Fuel.HYBRID, Transmission.AUTOMATIC),
         ]
         for matricula, marca, modelo, categoria, oficina, combustible, cambio in flota:
             _, creado = Vehicle.objects.get_or_create(
@@ -206,7 +206,7 @@ class Command(BaseCommand):
         from apps.customers.models import Customer, DocumentType
         from apps.offices.models import Office
 
-        palma = Office.objects.get(code="palma")
+        centro = Office.objects.get(code="centro")
         clientes = [
             ("Maria", "Gonzalez Perez", DocumentType.DNI, "12345678Z", date(1990, 5, 12)),
             ("John", "Smith", DocumentType.PASSPORT, "AB1234567", date(1985, 3, 2)),
@@ -220,7 +220,7 @@ class Command(BaseCommand):
                     "first_name": nombre,
                     "last_name": apellidos,
                     "birth_date": nacimiento,
-                    "office": palma,
+                    "office": centro,
                     "phone": "600000000",
                 },
             )
@@ -349,5 +349,5 @@ class Command(BaseCommand):
             )
             if creado:
                 if suplemento.supplement_type == SupplementType.AIRPORT:
-                    suplemento.offices.set(Office.objects.filter(code="pmi"))
+                    suplemento.offices.set(Office.objects.filter(code="aeropuerto"))
                 self.stdout.write(f"Suplemento creado: {suplemento.name}")

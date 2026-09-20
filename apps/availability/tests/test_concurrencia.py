@@ -59,17 +59,17 @@ def _reservar_en_paralelo(hilos, category, office, inicio, fin):
 
 @pytest.mark.django_db(transaction=True)
 def test_dos_a_la_vez_por_el_ultimo_coche_solo_uno_lo_consigue():
-    pool = OfficePoolFactory(code="baleares", name="Baleares")
-    palma = OfficeFactory(code="palma", name="Palma", pool=pool)
+    pool = OfficePoolFactory(code="ciudad", name="Ciudad")
+    centro = OfficeFactory(code="centro", name="Valencia", pool=pool)
     categoria = VehicleCategoryFactory(code="eco", name="Economico")
-    VehicleFactory(plate="0001AAA", category=categoria, current_office=palma)
+    VehicleFactory(plate="0001AAA", category=categoria, current_office=centro)
 
     inicio, fin = en(1), en(3)
 
     for intento in range(INTENTOS):
         Reservation.objects.all().delete()
 
-        resultados = _reservar_en_paralelo(2, categoria, palma, inicio, fin)
+        resultados = _reservar_en_paralelo(2, categoria, centro, inicio, fin)
 
         aceptadas = [r for r in resultados if r[0] == "aceptado"]
         rechazadas = [r for r in resultados if r[0] == "rechazado"]
@@ -85,18 +85,18 @@ def test_dos_a_la_vez_por_el_ultimo_coche_solo_uno_lo_consigue():
 @pytest.mark.django_db(transaction=True)
 def test_cinco_a_la_vez_con_dos_coches_entran_exactamente_dos():
     """La capacidad se respeta tambien cuando hay mas de un hueco en juego."""
-    pool = OfficePoolFactory(code="baleares", name="Baleares")
-    palma = OfficeFactory(code="palma", name="Palma", pool=pool)
+    pool = OfficePoolFactory(code="ciudad", name="Ciudad")
+    centro = OfficeFactory(code="centro", name="Valencia", pool=pool)
     categoria = VehicleCategoryFactory(code="eco", name="Economico")
     for i in range(2):
-        VehicleFactory(plate=f"200{i}BBB", category=categoria, current_office=palma)
+        VehicleFactory(plate=f"200{i}BBB", category=categoria, current_office=centro)
 
     inicio, fin = en(1), en(3)
 
     for intento in range(5):
         Reservation.objects.all().delete()
 
-        resultados = _reservar_en_paralelo(5, categoria, palma, inicio, fin)
+        resultados = _reservar_en_paralelo(5, categoria, centro, inicio, fin)
 
         aceptadas = [r for r in resultados if r[0] == "aceptado"]
         assert not [r for r in resultados if r[0] == "error"], resultados

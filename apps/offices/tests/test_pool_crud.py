@@ -17,21 +17,21 @@ def test_el_alta_crea_el_grupo(client, gestor_maestros):
 
     respuesta = client.post(
         reverse("offices:pool_create"),
-        {"code": "BAHIA", "name": "Bahia de Palma", "description": ""},
+        {"code": "CIUDAD", "name": "Ciudad y aeropuerto", "description": ""},
         headers=HTMX,
     )
 
     assert respuesta.status_code == 200
-    assert OfficePool.objects.filter(code="bahia").exists()
+    assert OfficePool.objects.filter(code="ciudad").exists()
 
 
 def test_dos_grupos_con_el_mismo_codigo_no_pasan(client, gestor_maestros):
-    OfficePoolFactory(code="bahia", name="Bahia")
+    OfficePoolFactory(code="ciudad", name="Ciudad")
     client.force_login(gestor_maestros)
 
     respuesta = client.post(
         reverse("offices:pool_create"),
-        {"code": "bahia", "name": "Bahia Bis", "description": ""},
+        {"code": "ciudad", "name": "Ciudad Bis", "description": ""},
         headers=HTMX,
     )
 
@@ -40,18 +40,18 @@ def test_dos_grupos_con_el_mismo_codigo_no_pasan(client, gestor_maestros):
 
 
 def test_una_oficina_pertenece_a_un_grupo(client, gestor_maestros):
-    grupo = OfficePoolFactory(code="bahia", name="Bahia")
+    grupo = OfficePoolFactory(code="ciudad", name="Ciudad")
     client.force_login(gestor_maestros)
 
     client.post(
         reverse("offices:office_create"),
         {
-            "code": "pmi",
+            "code": "aeropuerto",
             "name": "Aeropuerto",
             "pool": grupo.pk,
             "address": "",
-            "city": "Palma",
-            "province": "Illes Balears",
+            "city": "Valencia",
+            "province": "Valencia",
             "postal_code": "07611",
             "country": "ES",
             "phone": "",
@@ -60,14 +60,14 @@ def test_una_oficina_pertenece_a_un_grupo(client, gestor_maestros):
         headers=HTMX,
     )
 
-    assert Office.objects.get(code="pmi").pool == grupo
-    assert list(grupo.offices.all()) == [Office.objects.get(code="pmi")]
+    assert Office.objects.get(code="aeropuerto").pool == grupo
+    assert list(grupo.offices.all()) == [Office.objects.get(code="aeropuerto")]
 
 
 def test_un_grupo_con_oficinas_activas_no_se_desactiva(client, gestor_maestros):
     """Bajarlo dejaria la disponibilidad calculando sobre algo que ya no se ve."""
-    grupo = OfficePoolFactory(code="bahia", name="Bahia")
-    OfficeFactory(code="pmi", name="Aeropuerto", pool=grupo)
+    grupo = OfficePoolFactory(code="ciudad", name="Ciudad")
+    OfficeFactory(code="aeropuerto", name="Aeropuerto", pool=grupo)
     client.force_login(gestor_maestros)
 
     respuesta = client.post(reverse("offices:pool_deactivate", args=[grupo.pk]), headers=HTMX)
@@ -79,7 +79,7 @@ def test_un_grupo_con_oficinas_activas_no_se_desactiva(client, gestor_maestros):
 
 
 def test_un_grupo_vacio_si_se_desactiva(client, gestor_maestros):
-    grupo = OfficePoolFactory(code="bahia", name="Bahia")
+    grupo = OfficePoolFactory(code="ciudad", name="Ciudad")
     client.force_login(gestor_maestros)
 
     respuesta = client.post(reverse("offices:pool_deactivate", args=[grupo.pk]), headers=HTMX)
@@ -92,7 +92,7 @@ def test_un_grupo_vacio_si_se_desactiva(client, gestor_maestros):
 def test_un_grupo_desactivado_no_se_ofrece_al_editar_una_oficina(client, gestor_maestros):
     from apps.offices.forms import OfficeForm
 
-    activo = OfficePoolFactory(code="bahia", name="Bahia")
+    activo = OfficePoolFactory(code="ciudad", name="Ciudad")
     retirado = OfficePoolFactory(code="norte", name="Norte", is_active=False)
 
     disponibles = list(OfficeForm().fields["pool"].queryset)
@@ -106,7 +106,7 @@ def test_una_oficina_conserva_su_grupo_aunque_este_desactivado():
     from apps.offices.forms import OfficeForm
 
     retirado = OfficePoolFactory(code="norte", name="Norte", is_active=False)
-    oficina = OfficeFactory(code="alcudia", name="Alcudia", pool=retirado)
+    oficina = OfficeFactory(code="norte", name="Oficina Norte", pool=retirado)
 
     disponibles = list(OfficeForm(instance=oficina).fields["pool"].queryset)
 

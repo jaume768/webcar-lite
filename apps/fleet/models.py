@@ -159,8 +159,8 @@ class VehicleCategory(TimeStampedModel, ActivableModel):
 class VehicleQuerySet(ActivableQuerySet, OfficeScopedQuerySet):
     """Baja logica y scope de oficina en el mismo queryset.
 
-    Un vehiculo es dato operativo: quien solo tiene Palma no ve la flota de
-    Alcudia ni escribiendo la URL a mano.
+    Un vehiculo es dato operativo: quien solo tiene una oficina no ve la flota de
+    otra ni escribiendo la URL a mano.
     """
 
     def available(self):

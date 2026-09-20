@@ -210,14 +210,14 @@ def test_el_aviso_en_vivo_ignora_las_filas_vacias(client, gestor_tarifas):
 # ---------------------------------------------------------------------------
 
 
-def test_duplicar_copia_tramos_categorias_y_oficinas(client, gestor_tarifas, categoria, palma):
+def test_duplicar_copia_tramos_categorias_y_oficinas(client, gestor_tarifas, categoria, centro):
     """Es como se monta la temporada alta a partir de la baja."""
     baja = SeasonFactory(code="baja", start_date=date(2026, 1, 1), end_date=date(2026, 3, 31))
     original = RateFactory(
         code="eco-baja",
         name="Economico baja",
         categories=[categoria],
-        offices=[palma],
+        offices=[centro],
         season=baja,
         tiers=TRAMOS_ESTANDAR,
     )
@@ -229,7 +229,7 @@ def test_duplicar_copia_tramos_categorias_y_oficinas(client, gestor_tarifas, cat
     assert respuesta.status_code == 200
     assert copia.tiers.count() == original.tiers.count()
     assert list(copia.categories.all()) == [categoria]
-    assert list(copia.offices.all()) == [palma]
+    assert list(copia.offices.all()) == [centro]
     assert copia.season == baja
 
 
@@ -284,14 +284,14 @@ def datos_simulador(categoria, oficina, **cambios):
 
 
 def test_el_simulador_dice_que_tarifa_y_que_tramo_se_aplican(
-    client, gestor_tarifas, categoria, palma
+    client, gestor_tarifas, categoria, centro
 ):
     """Criterio de aceptacion: no solo el total."""
     RateFactory(code="base", name="Tarifa base", categories=[categoria], tiers=TRAMOS_ESTANDAR)
     client.force_login(gestor_tarifas)
 
     respuesta = client.post(
-        reverse("pricing:simulator"), datos_simulador(categoria, palma), headers=HTMX
+        reverse("pricing:simulator"), datos_simulador(categoria, centro), headers=HTMX
     )
     contenido = respuesta.content.decode()
 
@@ -302,7 +302,7 @@ def test_el_simulador_dice_que_tarifa_y_que_tramo_se_aplican(
     assert "200,00" in contenido or "200.00" in contenido  # 5 dias x 40
 
 
-def test_el_simulador_ensena_el_desglose_por_lineas(client, gestor_tarifas, categoria, palma):
+def test_el_simulador_ensena_el_desglose_por_lineas(client, gestor_tarifas, categoria, centro):
     from apps.pricing.models import CalculationType, Extra
 
     RateFactory(code="base", categories=[categoria], tiers=TRAMOS_ESTANDAR)
@@ -317,7 +317,7 @@ def test_el_simulador_ensena_el_desglose_por_lineas(client, gestor_tarifas, cate
 
     respuesta = client.post(
         reverse("pricing:simulator"),
-        datos_simulador(categoria, palma, extras=[silla.pk]),
+        datos_simulador(categoria, centro, extras=[silla.pk]),
         headers=HTMX,
     )
     contenido = respuesta.content.decode()
@@ -326,12 +326,12 @@ def test_el_simulador_ensena_el_desglose_por_lineas(client, gestor_tarifas, cate
     assert "Base imponible" in contenido
 
 
-def test_el_simulador_ensena_el_error_en_vez_de_reventar(client, gestor_tarifas, categoria, palma):
+def test_el_simulador_ensena_el_error_en_vez_de_reventar(client, gestor_tarifas, categoria, centro):
     """Sin tarifa configurada, el administrador tiene que ver justo eso."""
     client.force_login(gestor_tarifas)
 
     respuesta = client.post(
-        reverse("pricing:simulator"), datos_simulador(categoria, palma), headers=HTMX
+        reverse("pricing:simulator"), datos_simulador(categoria, centro), headers=HTMX
     )
     contenido = respuesta.content.decode()
 
@@ -340,13 +340,13 @@ def test_el_simulador_ensena_el_error_en_vez_de_reventar(client, gestor_tarifas,
     assert "No hay tarifa" in contenido
 
 
-def test_el_simulador_no_crea_nada(client, gestor_tarifas, categoria, palma):
+def test_el_simulador_no_crea_nada(client, gestor_tarifas, categoria, centro):
     from apps.customers.models import Customer
 
     RateFactory(code="base", categories=[categoria], tiers=TRAMOS_ESTANDAR)
     client.force_login(gestor_tarifas)
 
-    client.post(reverse("pricing:simulator"), datos_simulador(categoria, palma), headers=HTMX)
+    client.post(reverse("pricing:simulator"), datos_simulador(categoria, centro), headers=HTMX)
 
     assert Customer.objects.count() == 0
     assert Rate.objects.count() == 1
@@ -400,9 +400,9 @@ def test_distinta_temporada_no_es_conflicto(categoria):
     assert find_rate_conflicts() == []
 
 
-def test_oficinas_distintas_no_es_conflicto(categoria, palma, alcudia):
-    RateFactory(code="una", categories=[categoria], offices=[palma], tiers=TRAMOS_ESTANDAR)
-    RateFactory(code="otra", categories=[categoria], offices=[alcudia], tiers=TRAMOS_ESTANDAR)
+def test_oficinas_distintas_no_es_conflicto(categoria, centro, norte):
+    RateFactory(code="una", categories=[categoria], offices=[centro], tiers=TRAMOS_ESTANDAR)
+    RateFactory(code="otra", categories=[categoria], offices=[norte], tiers=TRAMOS_ESTANDAR)
 
     assert find_rate_conflicts() == []
 
@@ -445,23 +445,23 @@ ENDPOINTS = [
 
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objeto"), ENDPOINTS)
-def test_sin_permiso_403(client, agente_palma, categoria, vista, metodo, con_objeto):
+def test_sin_permiso_403(client, agente_centro, categoria, vista, metodo, con_objeto):
     tarifa = RateFactory(code="una", categories=[categoria], tiers=TRAMOS_ESTANDAR)
-    client.force_login(agente_palma)
+    client.force_login(agente_centro)
 
     url = reverse(vista, args=[tarifa.pk] if con_objeto else [])
 
     assert getattr(client, metodo)(url, {}).status_code == 403
 
 
-def test_el_responsable_ve_las_tarifas_pero_no_las_toca(client, palma, rol_mostrador):
+def test_el_responsable_ve_las_tarifas_pero_no_las_toca(client, centro, rol_mostrador):
     """Explicar un precio si; cambiarlo, no."""
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
     responsable = UserFactory(
         email="responsable@ejemplo.es",
         role=RoleFactory(code="resp-test", permissions=["pricing.view_rate"]),
-        offices=[palma],
+        offices=[centro],
     )
     client.force_login(responsable)
 
@@ -470,13 +470,13 @@ def test_el_responsable_ve_las_tarifas_pero_no_las_toca(client, palma, rol_mostr
     assert client.get(reverse("pricing:rate_create"), headers=HTMX).status_code == 403
 
 
-def test_el_boton_de_alta_no_aparece_sin_permiso(client, palma, categoria):
+def test_el_boton_de_alta_no_aparece_sin_permiso(client, centro, categoria):
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
     solo_lectura = UserFactory(
         email="lectura@ejemplo.es",
         role=RoleFactory(code="solo-ver-tarifas", permissions=["pricing.view_rate"]),
-        offices=[palma],
+        offices=[centro],
     )
     client.force_login(solo_lectura)
 

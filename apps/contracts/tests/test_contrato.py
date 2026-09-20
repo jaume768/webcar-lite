@@ -48,9 +48,9 @@ def test_el_pdf_lleva_datos_reales_y_no_marcadores(reserva, empresa, condiciones
     assert reserva.number in texto
     assert "Ana" in texto and "Garcia" in texto
     assert reserva.vehicle.plate in texto
-    assert "Baleares Rent" in texto
+    assert "Autos Demo" in texto
     assert "B07123456" in texto
-    assert "Palma Centro" in texto
+    assert "Oficina Centro" in texto
     # Los importes se imprimen con coma decimal, que es como se leen aqui.
     assert str(reserva.deposit_amount).replace(".", ",") in texto
     assert "Lleno - lleno" in texto
@@ -177,14 +177,14 @@ def test_sin_sesion_no_se_descarga(client, reserva, empresa, condiciones, emplea
 
 
 def test_sin_permiso_de_lectura_tampoco(
-    client, reserva, empresa, condiciones, empleado, palma, emitir
+    client, reserva, empresa, condiciones, empleado, centro, emitir
 ):
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
     pelado = UserFactory(
         email="pelado@ejemplo.es",
         role=RoleFactory(code="pelado-doc", name="Sin permisos"),
-        offices=[palma],
+        offices=[centro],
     )
     contrato = emitir(reserva, empleado)
     client.force_login(pelado)
@@ -195,7 +195,7 @@ def test_sin_permiso_de_lectura_tampoco(
 
 
 def test_un_contrato_de_otra_reserva_no_se_cuela(
-    client, reserva, empresa, condiciones, empleado, palma
+    client, reserva, empresa, condiciones, empleado, centro
 ):
     """La URL lleva reserva y contrato: tienen que casar."""
     from apps.customers.tests.factories import CustomerFactory
@@ -204,7 +204,7 @@ def test_un_contrato_de_otra_reserva_no_se_cuela(
 
     otra = create_quick_reservation(
         category=reserva.category,
-        pickup_office=palma,
+        pickup_office=centro,
         customer=CustomerFactory(),
         pickup_at=en(10),
         return_at=en(12),

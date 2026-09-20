@@ -52,26 +52,26 @@ def datos_vehiculo(categoria, oficina, **cambios):
 # ---------------------------------------------------------------------------
 
 
-def test_el_alta_crea_el_vehiculo(client, gestor_maestros, palma):
+def test_el_alta_crea_el_vehiculo(client, gestor_maestros, centro):
     categoria = VehicleCategoryFactory(code="eco", name="Economico")
     client.force_login(gestor_maestros)
 
     respuesta = client.post(
-        reverse("fleet:vehicle_create"), datos_vehiculo(categoria, palma), headers=HTMX
+        reverse("fleet:vehicle_create"), datos_vehiculo(categoria, centro), headers=HTMX
     )
 
     assert respuesta.status_code == 200
-    assert Vehicle.objects.get(plate="1234ABC").current_office == palma
+    assert Vehicle.objects.get(plate="1234ABC").current_office == centro
 
 
-def test_dos_vehiculos_no_comparten_matricula(client, gestor_maestros, palma):
+def test_dos_vehiculos_no_comparten_matricula(client, gestor_maestros, centro):
     """Criterio de aceptacion."""
     categoria = VehicleCategoryFactory(code="eco", name="Economico")
-    VehicleFactory(plate="1234ABC", category=categoria, current_office=palma)
+    VehicleFactory(plate="1234ABC", category=categoria, current_office=centro)
     client.force_login(gestor_maestros)
 
     respuesta = client.post(
-        reverse("fleet:vehicle_create"), datos_vehiculo(categoria, palma), headers=HTMX
+        reverse("fleet:vehicle_create"), datos_vehiculo(categoria, centro), headers=HTMX
     )
 
     assert respuesta.status_code == 422
@@ -79,9 +79,9 @@ def test_dos_vehiculos_no_comparten_matricula(client, gestor_maestros, palma):
     assert Vehicle.objects.filter(plate="1234ABC").count() == 1
 
 
-def test_la_matricula_es_unica_tambien_en_la_base_de_datos(palma):
+def test_la_matricula_es_unica_tambien_en_la_base_de_datos(centro):
     """El formulario no es la unica defensa: la columna es UNIQUE."""
-    VehicleFactory(plate="1234ABC", current_office=palma)
+    VehicleFactory(plate="1234ABC", current_office=centro)
 
     with pytest.raises(IntegrityError), transaction.atomic():
         Vehicle.objects.create(
@@ -89,20 +89,20 @@ def test_la_matricula_es_unica_tambien_en_la_base_de_datos(palma):
             brand="Otro",
             model="Coche",
             category=VehicleCategoryFactory(code="otra"),
-            current_office=palma,
+            current_office=centro,
             fuel="petrol",
             transmission="manual",
         )
 
 
-def test_la_matricula_se_normaliza(client, gestor_maestros, palma):
+def test_la_matricula_se_normaliza(client, gestor_maestros, centro):
     """'1234-abc' y '1234ABC' son el mismo coche."""
     categoria = VehicleCategoryFactory(code="eco")
     client.force_login(gestor_maestros)
 
     client.post(
         reverse("fleet:vehicle_create"),
-        datos_vehiculo(categoria, palma, plate="1234-abc"),
+        datos_vehiculo(categoria, centro, plate="1234-abc"),
         headers=HTMX,
     )
 
@@ -114,9 +114,9 @@ def test_la_matricula_se_normaliza(client, gestor_maestros, palma):
 # ---------------------------------------------------------------------------
 
 
-def test_solo_se_ve_la_flota_de_tus_oficinas(client, gestor_maestros, palma, alcudia):
-    VehicleFactory(plate="1111AAA", current_office=palma)
-    VehicleFactory(plate="2222BBB", current_office=alcudia)
+def test_solo_se_ve_la_flota_de_tus_oficinas(client, gestor_maestros, centro, norte):
+    VehicleFactory(plate="1111AAA", current_office=centro)
+    VehicleFactory(plate="2222BBB", current_office=norte)
     client.force_login(gestor_maestros)
 
     contenido = client.get(reverse("fleet:vehicle_list")).content.decode()
@@ -125,9 +125,9 @@ def test_solo_se_ve_la_flota_de_tus_oficinas(client, gestor_maestros, palma, alc
     assert "2222BBB" not in contenido
 
 
-def test_un_coche_de_otra_oficina_no_se_edita_ni_por_url(client, gestor_maestros, alcudia):
+def test_un_coche_de_otra_oficina_no_se_edita_ni_por_url(client, gestor_maestros, norte):
     """404 y no 403: un 403 confirmaria que ese coche existe."""
-    ajeno = VehicleFactory(plate="2222BBB", current_office=alcudia)
+    ajeno = VehicleFactory(plate="2222BBB", current_office=norte)
     client.force_login(gestor_maestros)
 
     respuesta = client.get(reverse("fleet:vehicle_update", args=[ajeno.pk]), headers=HTMX)
@@ -135,12 +135,12 @@ def test_un_coche_de_otra_oficina_no_se_edita_ni_por_url(client, gestor_maestros
     assert respuesta.status_code == 404
 
 
-def test_no_se_puede_aparcar_un_coche_en_una_oficina_ajena(client, gestor_maestros, alcudia):
+def test_no_se_puede_aparcar_un_coche_en_una_oficina_ajena(client, gestor_maestros, norte):
     from apps.fleet.forms import VehicleForm
 
     formulario = VehicleForm(user=gestor_maestros)
 
-    assert alcudia not in formulario.fields["current_office"].queryset
+    assert norte not in formulario.fields["current_office"].queryset
 
 
 # ---------------------------------------------------------------------------
@@ -148,8 +148,8 @@ def test_no_se_puede_aparcar_un_coche_en_una_oficina_ajena(client, gestor_maestr
 # ---------------------------------------------------------------------------
 
 
-def test_un_estado_manual_se_puede_poner(palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_un_estado_manual_se_puede_poner(centro):
+    vehiculo = VehicleFactory(current_office=centro)
 
     set_vehicle_status(vehicle=vehiculo, status=VehicleStatus.WORKSHOP)
     vehiculo.refresh_from_db()
@@ -158,17 +158,17 @@ def test_un_estado_manual_se_puede_poner(palma):
 
 
 @pytest.mark.parametrize("estado", [VehicleStatus.RENTED, VehicleStatus.RESERVED])
-def test_los_estados_de_la_operativa_no_se_ponen_a_mano(palma, estado):
+def test_los_estados_de_la_operativa_no_se_ponen_a_mano(centro, estado):
     """Alquilado y reservado los escribe el proceso, no la ficha."""
-    vehiculo = VehicleFactory(current_office=palma)
+    vehiculo = VehicleFactory(current_office=centro)
 
     with pytest.raises(FleetServiceError, match="operativa"):
         set_vehicle_status(vehicle=vehiculo, status=estado)
 
 
-def test_un_coche_alquilado_no_pasa_a_disponible_a_mano(palma):
+def test_un_coche_alquilado_no_pasa_a_disponible_a_mano(centro):
     """Criterio del prompt: el estado no puede contradecir a la realidad."""
-    vehiculo = VehicleFactory(current_office=palma)
+    vehiculo = VehicleFactory(current_office=centro)
     start_rental(vehicle=vehiculo)
     vehiculo.refresh_from_db()
 
@@ -179,9 +179,9 @@ def test_un_coche_alquilado_no_pasa_a_disponible_a_mano(palma):
     assert vehiculo.status == VehicleStatus.RENTED
 
 
-def test_el_ciclo_de_entrega_y_devolucion(palma):
+def test_el_ciclo_de_entrega_y_devolucion(centro):
     """El check-in lo pone en alquilado; el check-out lo devuelve."""
-    vehiculo = VehicleFactory(current_office=palma, mileage=10_000)
+    vehiculo = VehicleFactory(current_office=centro, mileage=10_000)
 
     start_rental(vehicle=vehiculo)
     vehiculo.refresh_from_db()
@@ -193,29 +193,29 @@ def test_el_ciclo_de_entrega_y_devolucion(palma):
     assert vehiculo.mileage == 10_450
 
 
-def test_los_kilometros_no_pueden_bajar(palma):
-    vehiculo = VehicleFactory(current_office=palma, mileage=10_000)
+def test_los_kilometros_no_pueden_bajar(centro):
+    vehiculo = VehicleFactory(current_office=centro, mileage=10_000)
     start_rental(vehicle=vehiculo)
 
     with pytest.raises(FleetServiceError, match="kilometros"):
         finish_rental(vehicle=vehiculo, mileage=9_000)
 
 
-def test_no_se_devuelve_un_coche_que_no_estaba_entregado(palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_no_se_devuelve_un_coche_que_no_estaba_entregado(centro):
+    vehiculo = VehicleFactory(current_office=centro)
 
     with pytest.raises(FleetServiceError, match="no consta entregado"):
         finish_rental(vehicle=vehiculo)
 
 
-def test_un_coche_con_bloqueo_vivo_no_pasa_a_disponible(palma):
+def test_un_coche_con_bloqueo_vivo_no_pasa_a_disponible(centro):
     from datetime import timedelta
 
     from django.utils import timezone
 
     from .factories import VehicleBlockFactory
 
-    vehiculo = VehicleFactory(current_office=palma, status=VehicleStatus.WORKSHOP)
+    vehiculo = VehicleFactory(current_office=centro, status=VehicleStatus.WORKSHOP)
     ahora = timezone.now()
     VehicleBlockFactory(
         vehicle=vehiculo, start_at=ahora - timedelta(hours=1), end_at=ahora + timedelta(days=1)
@@ -225,8 +225,8 @@ def test_un_coche_con_bloqueo_vivo_no_pasa_a_disponible(palma):
         set_vehicle_status(vehicle=vehiculo, status=VehicleStatus.AVAILABLE)
 
 
-def test_la_vista_de_estado_avisa_en_vez_de_reventar(client, gestor_maestros, palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_la_vista_de_estado_avisa_en_vez_de_reventar(client, gestor_maestros, centro):
+    vehiculo = VehicleFactory(current_office=centro)
     start_rental(vehicle=vehiculo)
     client.force_login(gestor_maestros)
 
@@ -245,8 +245,8 @@ def test_la_vista_de_estado_avisa_en_vez_de_reventar(client, gestor_maestros, pa
 # ---------------------------------------------------------------------------
 
 
-def test_la_baja_deja_el_coche_en_estado_baja(palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_la_baja_deja_el_coche_en_estado_baja(centro):
+    vehiculo = VehicleFactory(current_office=centro)
 
     set_vehicle_active(vehicle=vehiculo, active=False)
     vehiculo.refresh_from_db()
@@ -255,16 +255,16 @@ def test_la_baja_deja_el_coche_en_estado_baja(palma):
     assert vehiculo.status == VehicleStatus.RETIRED
 
 
-def test_no_se_da_de_baja_un_coche_que_esta_fuera(palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_no_se_da_de_baja_un_coche_que_esta_fuera(centro):
+    vehiculo = VehicleFactory(current_office=centro)
     start_rental(vehicle=vehiculo)
 
     with pytest.raises(FleetServiceError, match="no se puede dar de baja"):
         set_vehicle_active(vehicle=vehiculo, active=False)
 
 
-def test_un_vehiculo_no_se_borra(palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_un_vehiculo_no_se_borra(centro):
+    vehiculo = VehicleFactory(current_office=centro)
 
     with pytest.raises(PhysicalDeleteNotAllowed):
         vehiculo.delete()
@@ -291,9 +291,9 @@ ENDPOINTS = [
 
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objeto"), ENDPOINTS)
-def test_sin_permiso_403(client, agente_palma, palma, vista, metodo, con_objeto):
-    vehiculo = VehicleFactory(current_office=palma)
-    client.force_login(agente_palma)
+def test_sin_permiso_403(client, agente_centro, centro, vista, metodo, con_objeto):
+    vehiculo = VehicleFactory(current_office=centro)
+    client.force_login(agente_centro)
 
     url = reverse(vista, args=[vehiculo.pk] if con_objeto else [])
 

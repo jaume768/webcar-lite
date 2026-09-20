@@ -10,8 +10,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#172054">
-  <title>{% translate "Illes CRM · El CRM para alquileres de coches en Baleares" %}</title>
-  <meta name="description" content="{% translate 'Reservas, check-ins, devoluciones, cobros y contratos en una sola pantalla. Diseñado para empresas de alquiler de coches en las Islas Baleares.' %}">
+  <title>{% translate "RentFlow · El CRM para empresas de alquiler de coches" %}</title>
+  <meta name="description" content="{% translate 'Reservas, check-ins, devoluciones, cobros y contratos en una sola pantalla. Diseñado para empresas de alquiler de vehículos sin conductor.' %}">
   <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
   <link rel="preload" as="image" href="{{ fotos.hero }}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
@@ -29,13 +29,15 @@
         <path d="M3 22c3 0 3-2 6.5-2s3.5 2 6.5 2 3-2 6.5-2 3.5 2 6.5 2"/>
         <path d="M3 27c3 0 3-2 6.5-2s3.5 2 6.5 2 3-2 6.5-2 3.5 2 6.5 2" opacity=".6"/>
       </svg>
-      <span class="text-lg font-bold tracking-tight">Illes CRM</span>
+      <span class="text-lg font-bold tracking-tight">RentFlow</span>
     </a>
 
     <nav class="ml-10 hidden items-center gap-8 text-sm font-medium text-white/85 md:flex"
          aria-label="{% translate 'Secciones' %}">
       <a class="transition-colors hover:text-white" href="#producto">{% translate "Producto" %}</a>
       <a class="transition-colors hover:text-white" href="#como-funciona">{% translate "Cómo funciona" %}</a>
+      <a class="transition-colors hover:text-white" href="#opiniones">{% translate "Opiniones" %}</a>
+      <a class="transition-colors hover:text-white" href="#faq">{% translate "Preguntas" %}</a>
       <a class="transition-colors hover:text-white" href="#empezar">{% translate "Empezar" %}</a>
     </nav>
 
@@ -60,7 +62,7 @@
     <div class="mx-auto grid max-w-7xl gap-12 px-4 pt-28 pb-16 sm:px-8 sm:pt-36 lg:min-h-[760px] lg:grid-cols-[1.2fr_1fr] lg:items-center lg:pb-24">
       <div>
         <p class="text-[11px] font-semibold tracking-[0.2em] text-white/80 uppercase motion-safe:animate-fade-up sm:text-xs">
-          {% translate "El CRM para alquileres de coches en Baleares" %}
+          {% translate "El CRM para empresas de alquiler de coches" %}
         </p>
 
         <h1 class="mt-4 text-[2.75rem] leading-[1] font-bold tracking-tight text-white motion-safe:animate-fade-up [animation-delay:100ms] sm:text-6xl lg:text-[3.6rem] xl:text-[4.1rem]">
@@ -69,7 +71,7 @@
         </h1>
 
         <p class="mt-6 max-w-xl text-base leading-relaxed text-white/90 motion-safe:animate-fade-up [animation-delay:200ms] sm:text-lg">
-          {% translate "Centraliza reservas, check-ins, devoluciones, cobros y la operación de todo tu equipo. Diseñado para empresas de alquiler de coches en las Islas Baleares." %}
+          {% translate "Centraliza reservas, check-ins, devoluciones, cobros y la operación de todo tu equipo. Diseñado para empresas de alquiler de vehículos sin conductor." %}
         </p>
 
         <div class="mt-8 flex flex-col gap-3 motion-safe:animate-fade-up [animation-delay:300ms] sm:flex-row">
@@ -110,8 +112,8 @@
         </ul>
 
         <p class="mt-12 inline-block -rotate-6 font-script text-3xl leading-tight text-white/95 motion-safe:animate-fade-up [animation-delay:500ms] sm:text-4xl" aria-hidden="true">
-          {% translate "Baleares" %}<br>
-          <span class="pl-4">{% translate "se vive mejor sobre ruedas" %}</span>
+          {% translate "Tu flota" %}<br>
+          <span class="pl-4">{% translate "siempre en marcha" %}</span>
           <svg class="mt-1 ml-4 h-3 w-32 text-amber-400" viewBox="0 0 120 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M2 9C30 3 70 1 118 4"/></svg>
         </p>
       </div>
@@ -215,7 +217,7 @@
     <div class="reveal text-center">
       <p class="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">{% translate "Un flujo simple, resultados reales" %}</p>
       <h2 class="mt-3 text-3xl font-bold tracking-tight text-balance text-brand-950 sm:text-5xl">{% translate "Menos papeles, más coches en la calle" %}</h2>
-      <p class="mx-auto mt-3 max-w-2xl text-slate-500 sm:text-lg">{% translate "Todo lo que necesitas para gestionar tu negocio de alquiler en Baleares, de forma simple y eficiente." %}</p>
+      <p class="mx-auto mt-3 max-w-2xl text-slate-500 sm:text-lg">{% translate "Todo lo que necesitas para gestionar tu negocio de alquiler, de forma simple y eficiente." %}</p>
     </div>
 
     <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -274,10 +276,156 @@
     </ol>
   </section>
 
+  {# ----------------------------------------------------------- testimonios #}
+  <section id="opiniones" class="mx-auto max-w-7xl scroll-mt-24 px-4 py-14 sm:px-8 lg:py-16">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-12">
+      <div class="reveal">
+        <p class="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">{% translate "Lo que dicen nuestros clientes" %}</p>
+        <h2 class="mt-3 text-3xl leading-tight font-bold tracking-tight text-balance text-brand-950 sm:text-4xl">
+          {% translate "Empresas de alquiler que ya confían en RentFlow" %}
+        </h2>
+        <p class="mt-4 text-slate-500">
+          {% translate "Decenas de empresas de alquiler ya gestionan su operativa diaria con RentFlow. Más control, menos trabajo y clientes más satisfechos." %}
+        </p>
+        <a href="#faq"
+           class="group mt-6 inline-flex items-center gap-2 rounded-xl border border-line bg-white px-5 py-3 text-sm font-semibold text-brand-950 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 active:scale-95">
+          {% translate "Ver más opiniones" %}
+          <svg class="size-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+          </svg>
+        </a>
+      </div>
+
+      <ul class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {% for testimonio in testimonios %}
+          <li class="reveal flex flex-col rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgb(15_23_42/0.08)] ring-1 ring-slate-900/5">
+            <div class="flex items-center gap-3">
+              <img src="{{ testimonio.foto }}" alt="" loading="lazy" width="48" height="48"
+                   class="size-12 shrink-0 rounded-full object-cover">
+              <div class="min-w-0">
+                <p class="truncate font-semibold text-brand-950">{{ testimonio.nombre }}</p>
+                <p class="truncate text-xs text-slate-500">{{ testimonio.empresa }}</p>
+              </div>
+            </div>
+            <div class="mt-3 flex gap-0.5 text-amber-400" role="img" aria-label="{% translate '5 de 5 estrellas' %}">
+              {% for estrella in "12345" %}
+                <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.5l2.6 5.27 5.82.85-4.21 4.1.99 5.78L10 14.77l-5.2 2.73.99-5.78-4.21-4.1 5.82-.85L10 1.5z"/></svg>
+              {% endfor %}
+            </div>
+            <p class="mt-3 text-sm leading-relaxed text-slate-600">“{{ testimonio.texto }}”</p>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------- en cualquier sitio #}
+  <section class="px-3 pb-14 sm:px-6 lg:pb-20">
+    <div class="reveal relative isolate mx-auto max-w-[88rem] overflow-hidden rounded-[2rem] bg-brand-950">
+      <img src="{{ fotos.movilidad }}" alt="" loading="lazy"
+           class="absolute inset-0 -z-20 size-full object-cover">
+      <div aria-hidden="true"
+           class="absolute inset-0 -z-10 bg-gradient-to-b from-white/95 via-white/80 to-white/50
+                  lg:bg-gradient-to-r lg:from-white/95 lg:via-white/80 lg:to-white/20"></div>
+
+      <div class="grid gap-10 px-6 py-12 sm:px-12 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-center lg:gap-14 lg:py-14">
+        {# El movil apoya en el borde inferior de la banda: se ve grande sin romper la caja. #}
+        <div class="mx-auto w-full max-w-[19rem] lg:-mb-20 lg:max-w-[22rem]">
+          <img src="{{ fotos.movil }}" width="728" height="1322" loading="lazy"
+               alt="{% translate 'El panel de RentFlow en un teléfono móvil' %}"
+               class="w-full drop-shadow-2xl">
+        </div>
+
+        <div class="relative">
+          <p class="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">{% translate "Tu negocio siempre contigo" %}</p>
+          <h2 class="mt-3 text-3xl leading-tight font-bold tracking-tight text-balance text-brand-950 sm:text-4xl">
+            {% translate "Accede desde cualquier lugar" %}
+          </h2>
+          <p class="mt-3 max-w-xl text-slate-600">
+            {% translate "Trabaja desde el mostrador, la oficina o incluso tu móvil. RentFlow se adapta a ti, estés donde estés." %}
+          </p>
+
+          <ul class="mt-7 grid max-w-xl gap-5">
+            <li class="flex gap-4">
+              <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30">
+                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path stroke-linecap="round" d="M11 18.5h2"/></svg>
+              </span>
+              <div>
+                <h3 class="font-semibold text-brand-950">{% translate "Interfaz optimizada para móviles" %}</h3>
+                <p class="mt-0.5 text-sm text-slate-600">{% translate "Toda la información, en la palma de tu mano." %}</p>
+              </div>
+            </li>
+            <li class="flex gap-4">
+              <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30">
+                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 19.5a4.5 4.5 0 01-.64-8.95 5.25 5.25 0 0110.18-2.02A4.125 4.125 0 0118 19.5H6.75z"/></svg>
+              </span>
+              <div>
+                <h3 class="font-semibold text-brand-950">{% translate "Acceso en la nube" %}</h3>
+                <p class="mt-0.5 text-sm text-slate-600">{% translate "Seguro, rápido y siempre disponible." %}</p>
+              </div>
+            </li>
+            <li class="flex gap-4">
+              <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30">
+                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.5a3 3 0 00-6 0M12 11.25a3 3 0 100-6 3 3 0 000 6zM19.5 19.5a2.5 2.5 0 00-3.5-2.3M18 11.5a2.25 2.25 0 100-4.5M4.5 19.5a2.5 2.5 0 013.5-2.3M6 11.5a2.25 2.25 0 110-4.5"/></svg>
+              </span>
+              <div>
+                <h3 class="font-semibold text-brand-950">{% translate "Para todo tu equipo" %}</h3>
+                <p class="mt-0.5 text-sm text-slate-600">{% translate "Gestiona permisos y roles fácilmente." %}</p>
+              </div>
+            </li>
+          </ul>
+
+          <p class="pointer-events-none absolute top-0 right-0 hidden -rotate-6 font-script text-3xl leading-tight text-brand-950/90 xl:block" aria-hidden="true">
+            {% translate "Gestión sin" %}<br>
+            <span class="pl-6">{% translate "límites" %}</span>
+            <svg class="mt-1 ml-8 h-3 w-24 text-amber-400" viewBox="0 0 120 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M2 9C30 3 70 1 118 4"/></svg>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# -------------------------------------------------------------------- faq #}
+  <section id="faq" class="mx-auto max-w-7xl scroll-mt-24 px-4 pb-14 sm:px-8 lg:pb-16">
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start lg:gap-12">
+      <div class="reveal">
+        <p class="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">{% translate "Preguntas frecuentes" %}</p>
+        <h2 class="mt-3 text-3xl leading-tight font-bold tracking-tight text-balance text-brand-950 sm:text-4xl">
+          {% translate "¿Tienes dudas?" %}
+        </h2>
+        <p class="mt-3 text-slate-500">
+          {% translate "Aquí tienes respuestas a las preguntas más habituales. Si necesitas más información, estaremos encantados de ayudarte." %}
+        </p>
+        <a href="#empezar"
+           class="group mt-6 inline-flex items-center gap-2 rounded-xl border border-line bg-white px-5 py-3 text-sm font-semibold text-brand-950 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 active:scale-95">
+          {% translate "Ver todas las preguntas" %}
+          <svg class="size-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+          </svg>
+        </a>
+      </div>
+
+      {# `details` nativo: la portada no carga Alpine y esto no necesita JS. #}
+      <div class="reveal space-y-3 rounded-[1.75rem] bg-brand-50/60 p-4 sm:p-5">
+        {% for pregunta, respuesta in faqs %}
+          <details class="group rounded-2xl bg-white px-5 py-4 shadow-sm ring-1 ring-slate-900/5" {% if forloop.first %}open{% endif %}>
+            <summary class="flex cursor-pointer list-none items-center gap-4 text-sm font-semibold text-brand-950 marker:content-none">
+              <span class="flex-1">{{ pregunta }}</span>
+              <svg class="size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" d="M12 5v14M5 12h14"/>
+              </svg>
+            </summary>
+            <p class="mt-3 text-sm leading-relaxed text-slate-600">{{ respuesta }}</p>
+          </details>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
   {# ---------------------------------------------------------------- empezar #}
   <section id="empezar" class="scroll-mt-24 px-3 pb-6 sm:px-6">
     <div class="reveal relative isolate mx-auto max-w-[88rem] overflow-hidden rounded-[2rem] bg-brand-950">
-      <img src="{{ fotos.islas }}" alt="" loading="lazy"
+      <img src="{{ fotos.paisaje }}" alt="" loading="lazy"
            class="absolute inset-0 -z-20 size-full object-cover lg:left-1/4 lg:w-3/4">
       <div aria-hidden="true"
            class="absolute inset-0 -z-10 bg-gradient-to-b from-brand-950/95 via-brand-950/80 to-brand-950/60
@@ -286,7 +434,7 @@
       <div class="relative px-6 py-12 sm:px-12 lg:py-16">
         <p class="text-[11px] font-semibold tracking-[0.2em] text-white/70 uppercase sm:text-xs">{% translate "Tu negocio, un paso por delante" %}</p>
         <h2 class="mt-3 max-w-xl text-3xl leading-tight font-bold tracking-tight text-white sm:text-5xl">
-          {% translate "Lleva tu empresa de alquiler en Baleares al siguiente nivel" %}
+          {% translate "Lleva tu empresa de alquiler al siguiente nivel" %}
         </h2>
         <p class="mt-3 text-lg text-white/85">{% translate "Menos tareas, más tiempo para lo importante." %}</p>
 
@@ -332,15 +480,11 @@
         {% endif %}
 
         <p class="pointer-events-none absolute right-[30%] bottom-12 hidden -rotate-6 font-script text-4xl leading-tight text-white/95 lg:block" aria-hidden="true">
-          {% translate "Mismas islas." %}<br>
+          {% translate "Mismo equipo." %}<br>
           <span class="pl-6">{% translate "Más posibilidades." %}</span>
           <svg class="mt-1 ml-10 h-3 w-28 text-amber-400" viewBox="0 0 120 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M2 9C30 3 70 1 118 4"/></svg>
         </p>
 
-        <p class="mt-8 flex items-center gap-1.5 text-xs font-medium text-white/90 lg:absolute lg:right-8 lg:bottom-6 lg:mt-0">
-          <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M11.54 22.35a.75.75 0 00.92 0C14.2 21 19.5 16.4 19.5 10.5a7.5 7.5 0 00-15 0c0 5.9 5.3 10.5 7.04 11.85zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
-          {% translate "Mallorca, Baleares" %}
-        </p>
       </div>
     </div>
   </section>
@@ -353,7 +497,7 @@
       {% for modulo in modulos %}<li>{{ modulo }}</li>{% endfor %}
     </ul>
     <div class="mt-5 flex flex-col items-center gap-2 border-t border-line pt-5 text-sm text-slate-500 sm:flex-row">
-      <p><span class="font-semibold text-slate-700">Illes CRM</span> · {% translate "Alquiler de vehículos sin conductor" %}</p>
+      <p><span class="font-semibold text-slate-700">RentFlow</span> · {% translate "Alquiler de vehículos sin conductor" %}</p>
       <a class="hover:text-slate-800 sm:ml-auto" href="{% url 'accounts:login' %}">{% translate "Acceso de empleado" %}</a>
     </div>
   </div>

@@ -20,31 +20,31 @@ def _reloj_estable():
 
 
 @pytest.fixture
-def palma(db):
-    return OfficeFactory(code="palma", name="Palma Centro", pool=OfficePoolFactory(code="bal"))
+def centro(db):
+    return OfficeFactory(code="centro", name="Oficina Centro", pool=OfficePoolFactory(code="bal"))
 
 
 @pytest.fixture
-def alcudia(db, palma):
-    return OfficeFactory(code="alcudia", name="Alcudia", pool=palma.pool)
+def norte(db, centro):
+    return OfficeFactory(code="norte", name="Oficina Norte", pool=centro.pool)
 
 
 @pytest.fixture
-def reserva(db, palma):
+def reserva(db, centro):
     from apps.reservations.services import create_quick_reservation
 
     categoria = VehicleCategoryFactory(code="eco", name="Economico")
-    VehicleFactory(plate="1234ABC", category=categoria, current_office=palma)
+    VehicleFactory(plate="1234ABC", category=categoria, current_office=centro)
     RateFactory(
         code="mostrador",
         name="Mostrador",
         categories=[categoria],
-        offices=[palma],
+        offices=[centro],
         tiers=TRAMOS_ESTANDAR,
     )
     return create_quick_reservation(
         category=categoria,
-        pickup_office=palma,
+        pickup_office=centro,
         customer=CustomerFactory(),
         pickup_at=en(1),
         return_at=en(4),
@@ -52,7 +52,7 @@ def reserva(db, palma):
 
 
 @pytest.fixture
-def cajero(db, palma):
+def cajero(db, centro):
     """Mostrador: cobra, pero no puede cobrar de mas."""
     return UserFactory(
         email="cajero@ejemplo.es",
@@ -65,12 +65,12 @@ def cajero(db, palma):
                 "billing.view_billing",
             ],
         ),
-        offices=[palma],
+        offices=[centro],
     )
 
 
 @pytest.fixture
-def responsable(db, palma):
+def responsable(db, centro):
     """Ademas puede autorizar cobros por encima del pendiente."""
     return UserFactory(
         email="responsable@ejemplo.es",
@@ -84,5 +84,5 @@ def responsable(db, palma):
                 "billing.allow_overpayment",
             ],
         ),
-        offices=[palma],
+        offices=[centro],
     )

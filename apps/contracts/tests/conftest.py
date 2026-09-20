@@ -27,12 +27,12 @@ def _reloj_estable():
 @pytest.fixture
 def empresa(db):
     datos = CompanySettings.load()
-    datos.legal_name = "Baleares Rent a Car, S.L."
-    datos.trade_name = "Baleares Rent"
+    datos.legal_name = "Autos Demo Rent a Car, S.L."
+    datos.trade_name = "Autos Demo"
     datos.tax_id = "B07123456"
     datos.address = "Carrer de la Mar, 12"
-    datos.city = "Palma"
-    datos.province = "Illes Balears"
+    datos.city = "Valencia"
+    datos.province = "Valencia"
     datos.postal_code = "07001"
     datos.phone = "971 000 111"
     datos.email = "reservas@ejemplo.es"
@@ -47,17 +47,17 @@ def condiciones(db):
 
 
 @pytest.fixture
-def palma(db):
-    return OfficeFactory(code="palma", name="Palma Centro", pool=OfficePoolFactory(code="bal"))
+def centro(db):
+    return OfficeFactory(code="centro", name="Oficina Centro", pool=OfficePoolFactory(code="bal"))
 
 
 @pytest.fixture
-def alcudia(db, palma):
-    return OfficeFactory(code="alcudia", name="Alcudia Puerto", pool=palma.pool)
+def norte(db, centro):
+    return OfficeFactory(code="norte", name="Oficina Norte", pool=centro.pool)
 
 
 @pytest.fixture
-def empleado(db, palma):
+def empleado(db, centro):
     return UserFactory(
         email="mostrador@ejemplo.es",
         role=RoleFactory(
@@ -69,43 +69,43 @@ def empleado(db, palma):
                 "reservations.change_reservation",
             ],
         ),
-        offices=[palma],
+        offices=[centro],
     )
 
 
 @pytest.fixture
-def ajeno(db, alcudia):
+def ajeno(db, norte):
     """Mismo permiso, otra oficina: no tiene por que ver esta reserva."""
     return UserFactory(
-        email="alcudia@ejemplo.es",
+        email="norte@ejemplo.es",
         role=RoleFactory(
-            code="mostrador-alcudia",
-            name="Mostrador Alcudia",
+            code="mostrador-norte",
+            name="Mostrador Norte",
             permissions=["reservations.view_reservation", "reservations.change_reservation"],
         ),
-        offices=[alcudia],
+        offices=[norte],
     )
 
 
 @pytest.fixture
-def reserva(db, palma, empleado):
+def reserva(db, centro, empleado):
     from apps.availability.services import assign_vehicle
     from apps.reservations.services import create_quick_reservation
 
     categoria = VehicleCategoryFactory(code="eco", name="Economico")
     coche = VehicleFactory(
-        plate="1234ABC", category=categoria, current_office=palma, brand="Seat", model="Ibiza"
+        plate="1234ABC", category=categoria, current_office=centro, brand="Seat", model="Ibiza"
     )
     RateFactory(
         code="mostrador",
         name="Mostrador",
         categories=[categoria],
-        offices=[palma],
+        offices=[centro],
         tiers=TRAMOS_ESTANDAR,
     )
     reserva = create_quick_reservation(
         category=categoria,
-        pickup_office=palma,
+        pickup_office=centro,
         customer=CustomerFactory(
             first_name="Ana", last_name="Garcia Lopez", licence_number="B-123456"
         ),

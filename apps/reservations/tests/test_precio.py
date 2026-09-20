@@ -27,10 +27,10 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def reserva(economico, palma, cliente, coche, tarifa, agente):
+def reserva(economico, centro, cliente, coche, tarifa, agente):
     return create_quick_reservation(
         category=economico,
-        pickup_office=palma,
+        pickup_office=centro,
         customer=cliente,
         pickup_at=en(1),
         return_at=en(4),
@@ -61,7 +61,7 @@ def con_precio_manual(reserva, responsable_precio):
 
 
 @pytest.fixture
-def responsable_precio(db, palma):
+def responsable_precio(db, centro):
     """Usuario con permiso para tocar el precio a mano."""
     from apps.accounts.tests.factories import RoleFactory, UserFactory
 
@@ -76,7 +76,7 @@ def responsable_precio(db, palma):
                 "reservations.change_reservation_price",
             ],
         ),
-        offices=[palma],
+        offices=[centro],
     )
 
 

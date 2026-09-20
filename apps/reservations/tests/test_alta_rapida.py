@@ -23,11 +23,11 @@ from .factories import ExtraFactory, en
 pytestmark = pytest.mark.django_db
 
 
-def _alta(economico, palma, cliente, **kwargs):
+def _alta(economico, centro, cliente, **kwargs):
     kwargs.setdefault("pickup_at", en(1))
     kwargs.setdefault("return_at", en(4))
     return create_quick_reservation(
-        category=economico, pickup_office=palma, customer=cliente, **kwargs
+        category=economico, pickup_office=centro, customer=cliente, **kwargs
     )
 
 
@@ -37,9 +37,9 @@ def _alta(economico, palma, cliente, **kwargs):
 
 
 def test_el_alta_deja_la_reserva_pendiente_y_con_precio(
-    economico, palma, cliente, coche, tarifa, agente
+    economico, centro, cliente, coche, tarifa, agente
 ):
-    reserva = _alta(economico, palma, cliente, actor=agente)
+    reserva = _alta(economico, centro, cliente, actor=agente)
 
     assert reserva.status == ReservationStatus.PENDING
     assert reserva.customer == cliente
@@ -50,8 +50,8 @@ def test_el_alta_deja_la_reserva_pendiente_y_con_precio(
     assert reserva.base_amount == Decimal("135.00")
 
 
-def test_el_desglose_se_guarda_entero(economico, palma, cliente, coche, tarifa, agente):
-    reserva = _alta(economico, palma, cliente, actor=agente)
+def test_el_desglose_se_guarda_entero(economico, centro, cliente, coche, tarifa, agente):
+    reserva = _alta(economico, centro, cliente, actor=agente)
 
     desglose = reserva.price_breakdown
     assert desglose["rental_days"] == 3
@@ -61,8 +61,8 @@ def test_el_desglose_se_guarda_entero(economico, palma, cliente, coche, tarifa, 
     assert isinstance(desglose["total"], str)
 
 
-def test_el_alta_deja_rastro_en_el_historico(economico, palma, cliente, coche, tarifa, agente):
-    reserva = _alta(economico, palma, cliente, actor=agente)
+def test_el_alta_deja_rastro_en_el_historico(economico, centro, cliente, coche, tarifa, agente):
+    reserva = _alta(economico, centro, cliente, actor=agente)
 
     cambio = ReservationStatusChange.objects.get(reservation=reserva)
     assert cambio.from_status == ReservationStatus.DRAFT
@@ -70,11 +70,11 @@ def test_el_alta_deja_rastro_en_el_historico(economico, palma, cliente, coche, t
     assert cambio.changed_by == agente
 
 
-def test_sin_cliente_no_hay_alta(economico, palma, coche, tarifa, agente):
+def test_sin_cliente_no_hay_alta(economico, centro, coche, tarifa, agente):
     with pytest.raises(ReservationServiceError):
         create_quick_reservation(
             category=economico,
-            pickup_office=palma,
+            pickup_office=centro,
             customer=None,
             pickup_at=en(1),
             return_at=en(4),
@@ -82,13 +82,13 @@ def test_sin_cliente_no_hay_alta(economico, palma, coche, tarifa, agente):
         )
 
 
-def test_un_cliente_marcado_no_alquila(economico, palma, cliente, coche, tarifa, agente):
+def test_un_cliente_marcado_no_alquila(economico, centro, cliente, coche, tarifa, agente):
     cliente.is_blacklisted = True
     cliente.blacklist_reason = "Devolvio el coche con danos sin declarar."
     cliente.save(update_fields=["is_blacklisted", "blacklist_reason"])
 
     with pytest.raises(ReservationServiceError) as fallo:
-        _alta(economico, palma, cliente, actor=agente)
+        _alta(economico, centro, cliente, actor=agente)
 
     assert "marcado" in str(fallo.value)
 
@@ -98,14 +98,14 @@ def test_un_cliente_marcado_no_alquila(economico, palma, cliente, coche, tarifa,
 # ---------------------------------------------------------------------------
 
 
-def test_sin_disponibilidad_no_se_escribe_nada(economico, palma, cliente, coche, tarifa, agente):
+def test_sin_disponibilidad_no_se_escribe_nada(economico, centro, cliente, coche, tarifa, agente):
     """La comprobacion va dentro de la transaccion: o entra todo, o nada."""
-    _alta(economico, palma, cliente, actor=agente)  # el unico coche queda cogido
+    _alta(economico, centro, cliente, actor=agente)  # el unico coche queda cogido
     reservas_antes = Reservation.objects.count()
     numero_antes = ReservationCounter.objects.get().last_number
 
     with pytest.raises(NoAvailabilityError):
-        _alta(economico, palma, cliente, actor=agente)
+        _alta(economico, centro, cliente, actor=agente)
 
     assert Reservation.objects.count() == reservas_antes
     assert ReservationExtra.objects.count() == 0
@@ -113,9 +113,9 @@ def test_sin_disponibilidad_no_se_escribe_nada(economico, palma, cliente, coche,
     assert ReservationCounter.objects.get().last_number == numero_antes
 
 
-def test_sin_flota_tampoco(economico, palma, cliente, tarifa, agente):
+def test_sin_flota_tampoco(economico, centro, cliente, tarifa, agente):
     with pytest.raises(NoAvailabilityError):
-        _alta(economico, palma, cliente, actor=agente)
+        _alta(economico, centro, cliente, actor=agente)
 
     assert not Reservation.objects.exists()
 
@@ -137,10 +137,10 @@ def silla(db):
 
 
 def test_los_extras_se_guardan_con_su_precio(
-    economico, palma, cliente, coche, tarifa, agente, silla
+    economico, centro, cliente, coche, tarifa, agente, silla
 ):
     reserva = _alta(
-        economico, palma, cliente, actor=agente, extras=[ExtraRequest(extra=silla, quantity=1)]
+        economico, centro, cliente, actor=agente, extras=[ExtraRequest(extra=silla, quantity=1)]
     )
 
     linea = ReservationExtra.objects.get(reservation=reserva)
@@ -157,11 +157,11 @@ def test_los_extras_se_guardan_con_su_precio(
 
 
 def test_cambiar_el_maestro_no_toca_lo_ya_vendido(
-    economico, palma, cliente, coche, tarifa, agente, silla
+    economico, centro, cliente, coche, tarifa, agente, silla
 ):
     """Sube la silla infantil: la reserva de ayer sigue diciendo lo que se cobro."""
     reserva = _alta(
-        economico, palma, cliente, actor=agente, extras=[ExtraRequest(extra=silla, quantity=1)]
+        economico, centro, cliente, actor=agente, extras=[ExtraRequest(extra=silla, quantity=1)]
     )
     linea_antes = ReservationExtra.objects.get(reservation=reserva)
     total_antes = reserva.total
@@ -180,10 +180,10 @@ def test_cambiar_el_maestro_no_toca_lo_ya_vendido(
 
 
 def test_retirar_el_extra_del_catalogo_no_borra_la_linea(
-    economico, palma, cliente, coche, tarifa, agente, silla
+    economico, centro, cliente, coche, tarifa, agente, silla
 ):
     reserva = _alta(
-        economico, palma, cliente, actor=agente, extras=[ExtraRequest(extra=silla, quantity=1)]
+        economico, centro, cliente, actor=agente, extras=[ExtraRequest(extra=silla, quantity=1)]
     )
 
     silla.deactivate()
@@ -196,13 +196,13 @@ def test_retirar_el_extra_del_catalogo_no_borra_la_linea(
 # ---------------------------------------------------------------------------
 
 
-def test_los_numeros_son_correlativos(economico, palma, cliente, tarifa, agente):
+def test_los_numeros_son_correlativos(economico, centro, cliente, tarifa, agente):
     from apps.fleet.tests.factories import VehicleFactory
 
     for i in range(3):
-        VehicleFactory(plate=f"800{i}NUM", category=economico, current_office=palma)
+        VehicleFactory(plate=f"800{i}NUM", category=economico, current_office=centro)
 
-    numeros = [_alta(economico, palma, cliente, actor=agente).number for _ in range(3)]
+    numeros = [_alta(economico, centro, cliente, actor=agente).number for _ in range(3)]
 
     assert numeros == sorted(numeros)
     assert len(set(numeros)) == 3
@@ -211,11 +211,11 @@ def test_los_numeros_son_correlativos(economico, palma, cliente, tarifa, agente)
 
 
 def test_el_formato_del_numero_es_configurable(
-    economico, palma, cliente, coche, tarifa, agente, settings
+    economico, centro, cliente, coche, tarifa, agente, settings
 ):
     settings.RESERVATION_NUMBER_FORMAT = "RES/{sequence:04d}"
 
-    reserva = _alta(economico, palma, cliente, actor=agente)
+    reserva = _alta(economico, centro, cliente, actor=agente)
 
     assert reserva.number == "RES/0001"
 
@@ -229,8 +229,8 @@ def test_altas_simultaneas_numeros_distintos_y_sin_huecos():
     from apps.offices.tests.factories import OfficeFactory, OfficePoolFactory
     from apps.pricing.tests.factories import TRAMOS_ESTANDAR, RateFactory
 
-    pool = OfficePoolFactory(code="baleares", name="Baleares")
-    oficina = OfficeFactory(code="palma", name="Palma", pool=pool)
+    pool = OfficePoolFactory(code="ciudad", name="Ciudad")
+    oficina = OfficeFactory(code="centro", name="Valencia", pool=pool)
     categoria = VehicleCategoryFactory(code="eco", name="Economico")
     RateFactory(
         code="mostrador",

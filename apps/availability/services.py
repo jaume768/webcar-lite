@@ -7,7 +7,7 @@ Como se cuenta
 --------------
 La disponibilidad es un problema de **capacidad de la categoria dentro de un
 grupo de oficinas**, no de una oficina suelta. Dentro de un grupo la flota se
-mueve libremente, asi que un one-way de Palma al aeropuerto no cambia la
+mueve libremente, asi que un one-way de la oficina centro al aeropuerto no cambia la
 capacidad del grupo: el coche esta fuera durante el alquiler y vuelve al mismo
 sitio del que salio.
 

@@ -22,9 +22,9 @@ def iso(momento):
     return timezone.localtime(momento).strftime("%Y-%m-%dT%H:%M")
 
 
-def test_dos_bloqueos_del_mismo_vehiculo_no_pueden_solaparse(palma):
+def test_dos_bloqueos_del_mismo_vehiculo_no_pueden_solaparse(centro):
     """Test obligatorio: lo rechaza la constraint de exclusion, con IntegrityError."""
-    vehiculo = VehicleFactory(current_office=palma)
+    vehiculo = VehicleFactory(current_office=centro)
     inicio = timezone.now() + timedelta(days=1)
     VehicleBlockFactory(vehicle=vehiculo, start_at=inicio, end_at=inicio + timedelta(days=3))
 
@@ -40,9 +40,9 @@ def test_dos_bloqueos_del_mismo_vehiculo_no_pueden_solaparse(palma):
     assert "fleet_block_sin_solapes" in str(error.value)
 
 
-def test_dos_bloqueos_pegados_si_valen(palma):
+def test_dos_bloqueos_pegados_si_valen(centro):
     """El rango es [inicio, fin): que uno acabe cuando empieza el otro no es solape."""
-    vehiculo = VehicleFactory(current_office=palma)
+    vehiculo = VehicleFactory(current_office=centro)
     inicio = timezone.now() + timedelta(days=1)
     primero = VehicleBlockFactory(
         vehicle=vehiculo, start_at=inicio, end_at=inicio + timedelta(days=2)
@@ -56,10 +56,10 @@ def test_dos_bloqueos_pegados_si_valen(palma):
     assert segundo.pk
 
 
-def test_dos_coches_distintos_si_pueden_estar_bloqueados_a_la_vez(palma):
+def test_dos_coches_distintos_si_pueden_estar_bloqueados_a_la_vez(centro):
     inicio = timezone.now() + timedelta(days=1)
-    uno = VehicleFactory(plate="1111AAA", current_office=palma)
-    otro = VehicleFactory(plate="2222BBB", current_office=palma)
+    uno = VehicleFactory(plate="1111AAA", current_office=centro)
+    otro = VehicleFactory(plate="2222BBB", current_office=centro)
 
     VehicleBlockFactory(vehicle=uno, start_at=inicio, end_at=inicio + timedelta(days=2))
     VehicleBlockFactory(vehicle=otro, start_at=inicio, end_at=inicio + timedelta(days=2))
@@ -67,8 +67,8 @@ def test_dos_coches_distintos_si_pueden_estar_bloqueados_a_la_vez(palma):
     assert VehicleBlock.objects.count() == 2
 
 
-def test_el_fin_tiene_que_ser_posterior_al_inicio(palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_el_fin_tiene_que_ser_posterior_al_inicio(centro):
+    vehiculo = VehicleFactory(current_office=centro)
     inicio = timezone.now() + timedelta(days=1)
 
     with pytest.raises(IntegrityError) as error, transaction.atomic():
@@ -79,9 +79,9 @@ def test_el_fin_tiene_que_ser_posterior_al_inicio(palma):
     assert "fin_posterior_al_inicio" in str(error.value)
 
 
-def test_el_servicio_traduce_el_choque_a_un_aviso(palma):
+def test_el_servicio_traduce_el_choque_a_un_aviso(centro):
     """Entre la comprobacion del formulario y el INSERT cabe otro usuario."""
-    vehiculo = VehicleFactory(current_office=palma)
+    vehiculo = VehicleFactory(current_office=centro)
     inicio = timezone.now() + timedelta(days=1)
     VehicleBlockFactory(vehicle=vehiculo, start_at=inicio, end_at=inicio + timedelta(days=3))
 
@@ -98,8 +98,8 @@ def test_el_servicio_traduce_el_choque_a_un_aviso(palma):
 # ---------------------------------------------------------------------------
 
 
-def test_el_alta_crea_el_bloqueo(client, gestor_maestros, palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_el_alta_crea_el_bloqueo(client, gestor_maestros, centro):
+    vehiculo = VehicleFactory(current_office=centro)
     inicio = timezone.now() + timedelta(days=1)
     client.force_login(gestor_maestros)
 
@@ -120,9 +120,9 @@ def test_el_alta_crea_el_bloqueo(client, gestor_maestros, palma):
 
 
 def test_el_formulario_avisa_del_solape_antes_de_llegar_a_la_base_de_datos(
-    client, gestor_maestros, palma
+    client, gestor_maestros, centro
 ):
-    vehiculo = VehicleFactory(current_office=palma)
+    vehiculo = VehicleFactory(current_office=centro)
     inicio = timezone.now() + timedelta(days=1)
     VehicleBlockFactory(vehicle=vehiculo, start_at=inicio, end_at=inicio + timedelta(days=3))
     client.force_login(gestor_maestros)
@@ -144,19 +144,19 @@ def test_el_formulario_avisa_del_solape_antes_de_llegar_a_la_base_de_datos(
     assert vehiculo.blocks.count() == 1
 
 
-def test_solo_se_bloquean_coches_de_tus_oficinas(gestor_maestros, alcudia):
+def test_solo_se_bloquean_coches_de_tus_oficinas(gestor_maestros, norte):
     from apps.fleet.forms import VehicleBlockForm
 
-    ajeno = VehicleFactory(plate="2222BBB", current_office=alcudia)
+    ajeno = VehicleFactory(plate="2222BBB", current_office=norte)
 
     formulario = VehicleBlockForm(user=gestor_maestros)
 
     assert ajeno not in formulario.fields["vehicle"].queryset
 
 
-def test_anular_un_bloqueo_lo_borra_de_verdad(client, gestor_maestros, palma):
+def test_anular_un_bloqueo_lo_borra_de_verdad(client, gestor_maestros, centro):
     """Un bloqueo marcado como anulado seguiria ocupando hueco en la constraint."""
-    vehiculo = VehicleFactory(current_office=palma)
+    vehiculo = VehicleFactory(current_office=centro)
     bloqueo = VehicleBlockFactory(vehicle=vehiculo)
     client.force_login(gestor_maestros)
 
@@ -166,8 +166,8 @@ def test_anular_un_bloqueo_lo_borra_de_verdad(client, gestor_maestros, palma):
     assert not VehicleBlock.objects.filter(pk=bloqueo.pk).exists()
 
 
-def test_tras_anular_el_hueco_vuelve_a_estar_libre(client, gestor_maestros, palma):
-    vehiculo = VehicleFactory(current_office=palma)
+def test_tras_anular_el_hueco_vuelve_a_estar_libre(client, gestor_maestros, centro):
+    vehiculo = VehicleFactory(current_office=centro)
     bloqueo = VehicleBlockFactory(vehicle=vehiculo)
     client.force_login(gestor_maestros)
 
@@ -179,9 +179,9 @@ def test_tras_anular_el_hueco_vuelve_a_estar_libre(client, gestor_maestros, palm
     assert nuevo.pk
 
 
-def test_el_listado_solo_ensena_bloqueos_de_tu_flota(client, gestor_maestros, palma, alcudia):
-    VehicleBlockFactory(vehicle=VehicleFactory(plate="1111AAA", current_office=palma))
-    VehicleBlockFactory(vehicle=VehicleFactory(plate="2222BBB", current_office=alcudia))
+def test_el_listado_solo_ensena_bloqueos_de_tu_flota(client, gestor_maestros, centro, norte):
+    VehicleBlockFactory(vehicle=VehicleFactory(plate="1111AAA", current_office=centro))
+    VehicleBlockFactory(vehicle=VehicleFactory(plate="2222BBB", current_office=norte))
     client.force_login(gestor_maestros)
 
     contenido = client.get(reverse("fleet:block_list")).content.decode()
@@ -200,9 +200,9 @@ ENDPOINTS = [
 
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objeto"), ENDPOINTS)
-def test_sin_permiso_403(client, agente_palma, palma, vista, metodo, con_objeto):
-    bloqueo = VehicleBlockFactory(vehicle=VehicleFactory(current_office=palma))
-    client.force_login(agente_palma)
+def test_sin_permiso_403(client, agente_centro, centro, vista, metodo, con_objeto):
+    bloqueo = VehicleBlockFactory(vehicle=VehicleFactory(current_office=centro))
+    client.force_login(agente_centro)
 
     url = reverse(vista, args=[bloqueo.pk] if con_objeto else [])
 

@@ -89,6 +89,71 @@ PASOS_LANDING = [
     ("tarjeta", _("Se cobra"), _("Tarjeta, efectivo o transferencia, con la fianza aparte.")),
 ]
 
+#: (ruta de la foto en static/, nombre, empresa, texto). Las empresas son de
+#: ejemplo: cuando haya clientes reales que quieran aparecer, se sustituyen aqui.
+TESTIMONIOS_LANDING = [
+    (
+        "img/landing/testimonio-1.webp",
+        "Carlos Ramis",
+        "Ramis Rent a Car",
+        _(
+            "RentFlow nos ha ahorrado mucho tiempo en el mostrador. "
+            "Ahora todo es más rápido y organizado."
+        ),
+    ),
+    (
+        "img/landing/testimonio-2.webp",
+        "Laura Ferrer",
+        "AutoRent Levante",
+        _("Muy fácil de usar y el soporte siempre responde. Se nota que conocen el sector."),
+    ),
+    (
+        "img/landing/testimonio-3.webp",
+        "Miguel Ángel Torres",
+        "Costa Cars",
+        _(
+            "Controlamos toda la flota, reservas y cobros desde un solo sitio. "
+            "Imprescindible para nuestro día a día."
+        ),
+    ),
+]
+
+#: (pregunta, respuesta). La primera se pinta abierta.
+FAQ_LANDING = [
+    (
+        _("¿Es difícil de usar?"),
+        _(
+            "No. RentFlow está diseñado para ser intuitivo y fácil de usar. Además, te ofrecemos "
+            "formación y soporte para que empieces sin complicaciones."
+        ),
+    ),
+    (
+        _("¿Puedo importar mis reservas actuales?"),
+        _("Sí. Te ayudamos a pasar clientes, flota y reservas abiertas desde tu sistema anterior."),
+    ),
+    (
+        _("¿Funciona en móviles y tablets?"),
+        _(
+            "Sí. La interfaz se adapta a cualquier pantalla, así que puedes trabajar "
+            "fuera del mostrador."
+        ),
+    ),
+    (
+        _("¿Qué tipo de soporte ofrecéis?"),
+        _(
+            "Soporte en español por teléfono y correo, con la temporada alta cubierta "
+            "también en fin de semana."
+        ),
+    ),
+    (
+        _("¿Cuánto cuesta?"),
+        _(
+            "Una cuota mensual por oficina, sin permanencia. Escríbenos y te pasamos "
+            "el presupuesto."
+        ),
+    ),
+]
+
 #: Fotos de la portada, en static/. Los originales estan en fotos/ (PNG); aqui
 #: van convertidas a WebP, que pesan diez veces menos.
 FOTOS_LANDING = {
@@ -96,7 +161,9 @@ FOTOS_LANDING = {
     "flota": "img/landing/flota.webp",
     "clientes": "img/landing/clientes.webp",
     "cobros": "img/landing/cobros.webp",
-    "islas": "img/landing/islas.webp",
+    "paisaje": "img/landing/paisaje.webp",
+    "movilidad": "img/landing/movilidad.webp",
+    "movil": "img/landing/movil.webp",
 }
 
 
@@ -119,6 +186,12 @@ def home(request):
             {
                 "modulos": MODULOS_LANDING,
                 "pasos": PASOS_LANDING,
+                # La foto se resuelve aqui por lo mismo que `fotos`.
+                "testimonios": [
+                    {"foto": static(foto), "nombre": nombre, "empresa": empresa, "texto": texto}
+                    for foto, nombre, empresa, texto in TESTIMONIOS_LANDING
+                ],
+                "faqs": FAQ_LANDING,
                 # Se resuelven en cada peticion y no al importar: en produccion
                 # `static()` consulta el manifiesto de collectstatic.
                 "fotos": {clave: static(ruta) for clave, ruta in FOTOS_LANDING.items()},

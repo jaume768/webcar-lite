@@ -217,9 +217,9 @@ ENDPOINTS = [
 
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objeto"), ENDPOINTS)
-def test_sin_permiso_403(client, agente_palma, vista, metodo, con_objeto):
+def test_sin_permiso_403(client, agente_centro, vista, metodo, con_objeto):
     categoria = VehicleCategoryFactory(code="eco", name="Economico")
-    client.force_login(agente_palma)
+    client.force_login(agente_centro)
 
     url = reverse(vista, args=[categoria.pk] if con_objeto else [])
 

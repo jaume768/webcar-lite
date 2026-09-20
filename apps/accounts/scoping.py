@@ -1,7 +1,7 @@
 """Aislamiento por oficina.
 
 Regla del sistema: toda consulta de datos operativos pasa por aqui. Si un
-usuario solo tiene Palma, no puede leer ni escribir nada de Alcudia, ni por URL
+usuario solo tiene la oficina centro, no puede leer ni escribir nada de la oficina norte, ni por URL
 ni por formulario.
 """
 

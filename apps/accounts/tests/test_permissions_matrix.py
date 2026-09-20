@@ -30,11 +30,11 @@ ENDPOINTS_PROTEGIDOS = [
 
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objetivo", "permiso"), ENDPOINTS_PROTEGIDOS)
-def test_sin_permiso_devuelve_403(client, agente_palma, vista, metodo, con_objetivo, permiso):
-    client.force_login(agente_palma)
-    assert not agente_palma.has_perm(permiso)
+def test_sin_permiso_devuelve_403(client, agente_centro, vista, metodo, con_objetivo, permiso):
+    client.force_login(agente_centro)
+    assert not agente_centro.has_perm(permiso)
 
-    url = _url(vista, agente_palma if con_objetivo else None)
+    url = _url(vista, agente_centro if con_objetivo else None)
     respuesta = getattr(client, metodo)(url, {})
 
     assert respuesta.status_code == 403, f"{metodo.upper()} {url} deberia dar 403"
@@ -42,9 +42,9 @@ def test_sin_permiso_devuelve_403(client, agente_palma, vista, metodo, con_objet
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objetivo", "permiso"), ENDPOINTS_PROTEGIDOS)
 def test_sin_sesion_no_se_llega_al_endpoint(
-    client, agente_palma, vista, metodo, con_objetivo, permiso
+    client, agente_centro, vista, metodo, con_objetivo, permiso
 ):
-    url = _url(vista, agente_palma if con_objetivo else None)
+    url = _url(vista, agente_centro if con_objetivo else None)
 
     respuesta = getattr(client, metodo)(url, {})
 
@@ -53,29 +53,29 @@ def test_sin_sesion_no_se_llega_al_endpoint(
 
 
 @pytest.mark.parametrize(("vista", "metodo", "con_objetivo", "permiso"), ENDPOINTS_PROTEGIDOS)
-def test_con_permiso_no_da_403(client, gestor_palma, vista, metodo, con_objetivo, permiso):
+def test_con_permiso_no_da_403(client, gestor_centro, vista, metodo, con_objetivo, permiso):
     """Contraprueba: sin esto, la matriz pasaria aunque todo diera 403 siempre."""
-    client.force_login(gestor_palma)
-    assert gestor_palma.has_perm(permiso)
+    client.force_login(gestor_centro)
+    assert gestor_centro.has_perm(permiso)
 
-    url = _url(vista, gestor_palma if con_objetivo else None)
+    url = _url(vista, gestor_centro if con_objetivo else None)
     respuesta = getattr(client, metodo)(url, {})
 
     assert respuesta.status_code != 403
 
 
-def test_el_permiso_llega_por_el_rol_no_por_el_usuario(gestor_palma):
+def test_el_permiso_llega_por_el_rol_no_por_el_usuario(gestor_centro):
     """Los permisos viven en el rol; el usuario no los tiene asignados a mano."""
-    assert gestor_palma.user_permissions.count() == 0
-    assert gestor_palma.has_perm("accounts.manage_users")
+    assert gestor_centro.user_permissions.count() == 0
+    assert gestor_centro.has_perm("accounts.manage_users")
 
 
-def test_un_usuario_desactivado_pierde_los_permisos(gestor_palma):
-    gestor_palma.is_active = False
-    gestor_palma.save(update_fields=["is_active"])
-    gestor_palma = type(gestor_palma).objects.get(pk=gestor_palma.pk)
+def test_un_usuario_desactivado_pierde_los_permisos(gestor_centro):
+    gestor_centro.is_active = False
+    gestor_centro.save(update_fields=["is_active"])
+    gestor_centro = type(gestor_centro).objects.get(pk=gestor_centro.pk)
 
-    assert not gestor_palma.has_perm("accounts.manage_users")
+    assert not gestor_centro.has_perm("accounts.manage_users")
 
 
 def test_el_superusuario_no_necesita_rol(superusuario):

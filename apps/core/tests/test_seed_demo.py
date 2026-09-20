@@ -25,7 +25,7 @@ def test_la_demo_monta_una_empresa_entera(demo_cargada):
     assert Vehicle.objects.count() > 20
     assert Customer.objects.count() == 12
     assert Reservation.objects.count() > 10
-    assert CompanySettings.load().legal_name.startswith("Illes")
+    assert CompanySettings.load().legal_name.startswith("Autos Demo")
     assert TermsVersion.current() is not None
 
 

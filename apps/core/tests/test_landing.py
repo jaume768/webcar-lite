@@ -13,7 +13,7 @@ def test_quien_llega_sin_sesion_ve_la_portada(client):
 
     assert respuesta.status_code == 200
     assert "El mostrador entero" in contenido
-    assert "Illes CRM" in contenido
+    assert "RentFlow" in contenido
     # Y no se cuela nada del interior de la aplicacion.
     assert "Navegacion principal" not in contenido
     assert "selector-oficina" not in contenido
@@ -32,9 +32,9 @@ def test_la_portada_lleva_al_login(client):
     assert reverse("accounts:login") in contenido
 
 
-def test_con_sesion_la_misma_url_ensena_el_panel(client, agente_palma):
+def test_con_sesion_la_misma_url_ensena_el_panel(client, agente_centro):
     """La portada es solo para visitantes: quien entra ve su trabajo."""
-    client.force_login(agente_palma)
+    client.force_login(agente_centro)
 
     contenido = client.get(reverse("core:home")).content.decode()
 
