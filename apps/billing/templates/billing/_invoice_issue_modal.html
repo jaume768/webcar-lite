@@ -1,0 +1,63 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+{% comment %} Emitir factura. Ensena exactamente las lineas que se van a
+   facturar antes de pulsar: una vez emitida, ya no se toca. {% endcomment %}
+
+{% block modal_title %}{% translate "Emitir factura" %}{% endblock %}
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {% blocktranslate with numero=reservation.number cliente=reservation.customer.full_name %}Reserva {{ numero }} · {{ cliente }}{% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  <div class="mb-4 overflow-x-auto rounded-xl border border-line">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Concepto" %}</th>
+          <th scope="col" class="text-right">{% translate "Base" %}</th>
+          <th scope="col" class="text-right">{% translate "IVA" %}</th>
+          <th scope="col" class="text-right">{% translate "Total" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for linea in lineas %}
+          <tr>
+            <td class="text-slate-900">{{ linea.concept }}</td>
+            <td class="text-right tabular whitespace-nowrap">{{ linea.base_amount|floatformat:"2g" }} €</td>
+            <td class="text-right tabular whitespace-nowrap text-slate-500">{{ linea.tax_rate|floatformat:"-2" }} %</td>
+            <td class="text-right tabular whitespace-nowrap font-medium">{{ linea.total|floatformat:"2g" }} €</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <dl class="mb-5 grid grid-cols-3 gap-2 text-center">
+    <div class="rounded-xl bg-slate-50 p-3">
+      <dt class="text-xs text-slate-500">{% translate "Base imponible" %}</dt>
+      <dd class="mt-0.5 font-semibold tabular text-slate-900">{{ base|floatformat:"2g" }} €</dd>
+    </div>
+    <div class="rounded-xl bg-slate-50 p-3">
+      <dt class="text-xs text-slate-500">{% translate "IVA" %}</dt>
+      <dd class="mt-0.5 font-semibold tabular text-slate-900">{{ cuota|floatformat:"2g" }} €</dd>
+    </div>
+    <div class="rounded-xl bg-brand-50 p-3">
+      <dt class="text-xs text-brand-700">{% translate "Total" %}</dt>
+      <dd class="mt-0.5 text-lg font-bold tabular text-brand-950">{{ total|floatformat:"2g" }} €</dd>
+    </div>
+  </dl>
+
+  {% include "ui/_form_body.html" %}
+
+  <p class="mt-2 flex gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+    <svg class="size-4 shrink-0 text-amber-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.49 2.87c.66-1.16 2.36-1.16 3.02 0l6.28 11.03c.65 1.14-.18 2.6-1.51 2.6H3.72c-1.33 0-2.16-1.46-1.51-2.6L8.49 2.87ZM10 6a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 6Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+    {% translate "Una factura emitida no se edita ni se borra. Si hay un error, se corrige con una rectificativa." %}
+  </p>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="{{ form_id }}" class="btn-primary">{{ submit_label }}</button>
+{% endblock %}

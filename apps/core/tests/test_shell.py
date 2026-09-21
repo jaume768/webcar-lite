@@ -77,6 +77,52 @@ def test_cambiar_de_oficina_actualiza_la_sesion(client, agente_centro, centro, n
     assert "Oficina Norte" in respuesta.headers["HX-Trigger"]
 
 
+def test_el_selector_del_menu_movil_vuelve_con_sus_propios_ids(client, agente_centro, norte):
+    """El selector se pinta en la cabecera y en el menu del movil: cada uno
+    tiene que recibir de vuelta el suyo, sin ids repetidos en la pagina."""
+    agente_centro.offices.add(norte)
+    client.force_login(agente_centro)
+
+    movil = client.post(
+        reverse("core:set_active_office"),
+        {"office_id": str(norte.pk), "variante": "movil"},
+        headers={"hx-request": "true"},
+    ).content.decode()
+    cabecera = client.post(
+        reverse("core:set_active_office"),
+        {"office_id": str(norte.pk)},
+        headers={"hx-request": "true"},
+    ).content.decode()
+
+    assert 'id="selector-oficina-movil"' in movil
+    assert 'id="selector-oficina"' in cabecera
+    assert "selector-oficina-movil" not in cabecera
+
+
+def test_una_variante_desconocida_no_llega_al_html(client, agente_centro, norte):
+    agente_centro.offices.add(norte)
+    client.force_login(agente_centro)
+
+    contenido = client.post(
+        reverse("core:set_active_office"),
+        {"office_id": str(norte.pk), "variante": '"><script>'},
+        headers={"hx-request": "true"},
+    ).content.decode()
+
+    assert "<script>" not in contenido
+    assert 'id="selector-oficina"' in contenido
+
+
+def test_la_pagina_no_repite_ids_del_selector(client, agente_centro):
+    client.force_login(agente_centro)
+
+    contenido = client.get(reverse("core:home")).content.decode()
+
+    assert contenido.count('id="selector-oficina"') == 1
+    assert contenido.count('id="selector-oficina-movil"') == 1
+    assert "Navegacion rapida" in contenido
+
+
 def test_no_se_puede_activar_una_oficina_ajena(client, agente_centro, norte):
     """Manipular el POST no abre la puerta a otra oficina."""
     client.force_login(agente_centro)
@@ -113,3 +159,12 @@ def test_paginas_de_error_propias(client, usuario):
     respuesta = client.get(reverse("core:ui_kit_error", args=[500]))
     assert respuesta.status_code == 500
     assert "Algo se ha roto" in respuesta.content.decode()
+
+
+def test_el_menu_deja_facturacion_y_administracion_al_final():
+    from apps.core.navigation import MAIN_NAV
+
+    secciones = [str(seccion.label) for seccion in MAIN_NAV]
+
+    assert secciones[-2:] == ["Facturación", "Administración"]
+    assert "Planning" in [str(item.label) for item in MAIN_NAV[1].items]

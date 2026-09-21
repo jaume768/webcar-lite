@@ -36,7 +36,7 @@ from .forms import (
     QuickReservationForm,
     TransitionForm,
 )
-from .models import Reservation
+from .models import Reservation, ReservationStatus
 from .selectors import header_data, timeline
 from .services import (
     ManualPriceWouldBeLost,
@@ -237,11 +237,15 @@ def contexto_de_pestana(request, reserva: Reservation, pestana: str) -> dict:
             "cambios_de_precio": reserva.price_changes.select_related("changed_by"),
         }
     if pestana == "cobros":
-        from apps.billing.selectors import summary
+        from apps.billing.selectors import invoices_of, issued_invoice_for, summary
 
+        en_vigor = issued_invoice_for(reserva)
         return {
             "cobros": reserva.payments.select_related("created_by", "office"),
             "saldo": summary(reserva),
+            "facturas": invoices_of(reserva),
+            "factura_en_vigor": en_vigor,
+            "se_puede_facturar": en_vigor is None and reserva.status == ReservationStatus.FINISHED,
         }
     if pestana in ("checkin", "checkout"):
         from apps.operations.services import new_damages, preexisting_damages
@@ -949,3 +953,47 @@ class RecalculatePriceView(ReservationBaseView, TemplateView):
             return self.render_to_response(contexto, status=422)
 
         return _respuesta_de_cambio(_("Precio recalculado desde la tarifa."))
+
+
+class PlanningView(CrudPermissionMixin, TemplateView):
+    """Calendario de ocupacion: una fila por coche y una barra por reserva."""
+
+    permission_required = "reservations.view_reservation"
+    template_name = "reservations/planning.html"
+
+    def get_context_data(self, **kwargs):
+        from django.utils import timezone
+
+        from .forms import PlanningForm
+        from .planning import LEYENDA, LONGITUD_POR_DEFECTO, build_planning
+
+        form = PlanningForm(self.request.GET or None, user=self.request.user)
+        datos = form.cleaned_data if form.is_valid() else {}
+        planning = build_planning(
+            user=self.request.user,
+            start=datos.get("desde") or timezone.localdate(),
+            length=datos.get("dias") or LONGITUD_POR_DEFECTO,
+            office=datos.get("office"),
+            category=datos.get("category"),
+        )
+        # Lo que hay que conservar al moverse de fechas: oficina, categoria y dias.
+        filtros = self.request.GET.copy()
+        filtros.pop("desde", None)
+        filtros["dias"] = planning.length
+
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(
+            {
+                "form": form,
+                "planning": planning,
+                "leyenda": LEYENDA,
+                "filtros": filtros.urlencode(),
+                "hoy": timezone.localdate(),
+                "page_title": _("Planning"),
+                "breadcrumbs": [
+                    {"label": _("Inicio"), "url": reverse("core:home")},
+                    {"label": _("Planning")},
+                ],
+            }
+        )
+        return contexto

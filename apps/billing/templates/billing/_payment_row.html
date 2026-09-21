@@ -1,0 +1,17 @@
+{% load i18n %}
+<td class="whitespace-nowrap text-slate-600">
+  {{ row.paid_at|date:"d/m/Y H:i" }}
+  {% if row.created_by %}<span class="block text-xs text-slate-400">{{ row.created_by.get_short_name }}</span>{% endif %}
+</td>
+<td>
+  <a class="font-mono text-sm text-brand-700 hover:underline" href="{% url 'reservations:detail' row.reservation_id %}">{{ row.reservation.number }}</a>
+</td>
+<td class="text-slate-900">{{ row.reservation.customer.full_name|default:"—" }}</td>
+<td>
+  {{ row.get_payment_type_display }}
+  {% if row.is_deposit %}<span class="block text-xs text-sky-700">{% translate "fianza" %}</span>{% endif %}
+</td>
+<td class="text-slate-600">{{ row.get_method_display }}</td>
+<td class="font-mono text-xs text-slate-500">{{ row.reference|default:"—" }}</td>
+<td class="text-slate-600">{{ row.office.name }}</td>
+<td class="text-right tabular font-semibold whitespace-nowrap {% if row.is_outgoing %}text-rose-700{% else %}text-emerald-700{% endif %}">{{ row.amount|floatformat:"2g" }} €</td>

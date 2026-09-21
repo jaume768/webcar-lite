@@ -386,6 +386,37 @@ def test_la_ocupacion_es_el_porcentaje_de_coches_fuera(economico, centro, de_cen
     assert panel.stats.occupancy == 25
 
 
+def test_los_disponibles_son_los_coches_listos_para_salir(economico, centro, de_centro, coche):
+    VehicleFactory(plate="7100DIS", category=economico, current_office=centro)
+    coche.status = VehicleStatus.RENTED
+    coche.save(update_fields=["status"])
+
+    panel = build_dashboard(user=de_centro)
+
+    assert panel.stats.available == 1
+
+
+def test_la_semana_de_prevision_son_siete_dias_desde_hoy(centro, de_centro):
+    panel = build_dashboard(user=de_centro)
+
+    semana = panel.forecast.week
+    assert len(semana) == 7
+    assert semana[0].day == timezone.localdate()
+
+
+@pytest.mark.parametrize(
+    ("dia", "inicial"),
+    [(21, "L"), (22, "M"), (23, "X"), (24, "J"), (25, "V"), (26, "S"), (27, "D")],
+)
+def test_la_inicial_del_dia_distingue_martes_y_miercoles(dia, inicial):
+    """Sin base de datos: el miercoles es la X, no una segunda M."""
+    from datetime import date
+
+    from apps.operations.dashboard import DayOccupancy
+
+    assert DayOccupancy(day=date(2026, 9, dia), reservations=0, percent=0).initial == inicial
+
+
 def test_sin_flota_la_ocupacion_es_cero_y_no_revienta(centro, de_centro):
     panel = build_dashboard(user=de_centro)
 
@@ -729,3 +760,62 @@ def test_la_campana_pide_sesion(client):
     respuesta = client.get(reverse("core:alerts_menu"))
 
     assert respuesta.status_code == 302
+
+
+# ---------------------------------------------------------------------------
+# Un dia concreto
+# ---------------------------------------------------------------------------
+
+
+def test_un_dia_elegido_se_convierte_en_su_periodo():
+    from datetime import date
+
+    hoy = date(2026, 9, 21)
+
+    assert period_for(None, "2026-09-21", today=hoy) == PERIODS["hoy"]
+    assert period_for(None, "2026-09-22", today=hoy) == PERIODS["manana"]
+    otro = period_for("semana", "2026-09-30", today=hoy)
+    assert otro.code == "dia"
+    assert otro.bounds(hoy) == (date(2026, 9, 30), date(2026, 9, 30))
+    assert otro.query == "dia=2026-09-30"
+    assert not otro.is_past
+
+
+@pytest.mark.parametrize("basura", ["ayer", "2026-13-40", "1900-01-01"])
+def test_un_dia_invalido_o_absurdo_cae_en_el_periodo_pedido(basura):
+    from datetime import date
+
+    assert period_for("semana", basura, today=date(2026, 9, 21)) == PERIODS["semana"]
+
+
+def test_en_un_dia_pasado_salen_tambien_las_ya_finalizadas(economico, centro, de_centro, coche):
+    from datetime import date
+
+    from apps.operations.dashboard import Period
+
+    salida = timezone.now() - timedelta(days=5)
+    ReservationFactory(
+        category=economico,
+        pickup_office=centro,
+        return_office=centro,
+        vehicle=coche,
+        status=ReservationStatus.FINISHED,
+        pickup_at=salida,
+        return_at=salida + timedelta(days=2),
+    )
+    dia = timezone.localdate(salida)
+
+    panel = build_dashboard(user=de_centro, period=Period.for_day(dia, timezone.localdate()))
+
+    assert panel.period.is_past
+    assert len(panel.pickups) == 1
+    assert isinstance(panel.period.day, date)
+
+
+def test_la_pantalla_acepta_el_dia_por_la_url(client, de_centro):
+    client.force_login(de_centro)
+    dia = (timezone.localdate() + timedelta(days=9)).isoformat()
+
+    contenido = client.get(reverse("core:home"), {"dia": dia}).content.decode()
+
+    assert f'value="{dia}"' in contenido

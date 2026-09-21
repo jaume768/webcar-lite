@@ -4,6 +4,7 @@ No hay alta publica: las cuentas las crea alguien con `accounts.manage_users`.
 """
 
 import structlog
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_not_required, permission_required
@@ -38,6 +39,13 @@ class LoginView(auth_views.LoginView):
     template_name = "accounts/login.html"
     authentication_form = EmailAuthenticationForm
     redirect_authenticated_user = True
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        # El boton de demostracion solo existe con DEMO_MODE: en una
+        # instalacion real no se ensena (y la vista responde 404).
+        contexto["demo_activa"] = settings.DEMO_MODE
+        return contexto
 
 
 def csrf_failure(request, reason=""):

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Planning" %} · RentFlow{% endblock %}
+
+{% block page_actions %}
+  {% if perms.reservations.add_reservation %}
+    <a class="btn-primary" href="{% url 'reservations:quick' %}">{% translate "Nueva reserva" %}</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% comment %} Ancho de cada dia: con 7 dias sobra sitio para el nombre del
+     cliente; con 31 se aprieta y la barra se queda en lo justo. El scroll
+     horizontal hace el resto en pantallas pequenas. {% endcomment %}
+  {% if planning.length == 7 %}{% firstof "7.5rem" as ancho_dia %}{% elif planning.length == 31 %}{% firstof "2.75rem" as ancho_dia %}{% else %}{% firstof "4.25rem" as ancho_dia %}{% endif %}
+
+  {# ------------------------------------------------------------ filtros #}
+  <form method="get" action="{% url 'reservations:planning' %}"
+        class="card mb-5 flex flex-wrap items-center gap-2 p-3">
+    <div class="flex items-center gap-1">
+      <a class="btn-secondary px-2.5 py-2" href="?desde={{ planning.previous_start|date:'Y-m-d' }}&amp;{{ filtros }}"
+         aria-label="{% translate 'Periodo anterior' %}" title="{% translate 'Periodo anterior' %}">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+      </a>
+      <a class="btn-secondary px-3 py-2" href="?desde={{ hoy|date:'Y-m-d' }}&amp;{{ filtros }}">{% translate "Hoy" %}</a>
+      <a class="btn-secondary px-2.5 py-2" href="?desde={{ planning.next_start|date:'Y-m-d' }}&amp;{{ filtros }}"
+         aria-label="{% translate 'Periodo siguiente' %}" title="{% translate 'Periodo siguiente' %}">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+      </a>
+    </div>
+
+    <p class="px-2 text-sm font-semibold text-brand-950 first-letter:uppercase">
+      {{ planning.start|date:"j M" }} – {{ planning.end|date:"j M Y" }}
+    </p>
+
+    <div class="ml-auto flex flex-wrap items-center gap-2">
+      <label class="sr-only" for="{{ form.desde.id_for_label }}">{{ form.desde.label }}</label>
+      <input type="date" name="desde" id="{{ form.desde.id_for_label }}" value="{{ planning.start|date:'Y-m-d' }}"
+             class="input w-auto py-2" onchange="this.form.requestSubmit()">
+      <label class="sr-only" for="{{ form.dias.id_for_label }}">{{ form.dias.label }}</label>
+      <select name="dias" id="{{ form.dias.id_for_label }}" class="input w-auto py-2" onchange="this.form.requestSubmit()">
+        {% for valor, etiqueta in form.fields.dias.choices %}
+          <option value="{{ valor }}" {% if valor == planning.length %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+      <label class="sr-only" for="{{ form.office.id_for_label }}">{{ form.office.label }}</label>
+      <select name="office" id="{{ form.office.id_for_label }}" class="input w-auto py-2" onchange="this.form.requestSubmit()">
+        <option value="">{% translate "Todas mis oficinas" %}</option>
+        {% for oficina in form.fields.office.queryset %}
+          <option value="{{ oficina.pk }}" {% if form.office.value|stringformat:"s" == oficina.pk|stringformat:"s" %}selected{% endif %}>{{ oficina.name }}</option>
+        {% endfor %}
+      </select>
+      <label class="sr-only" for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+      <select name="category" id="{{ form.category.id_for_label }}" class="input w-auto py-2" onchange="this.form.requestSubmit()">
+        <option value="">{% translate "Todas las categorias" %}</option>
+        {% for categoria in form.fields.category.queryset %}
+          <option value="{{ categoria.pk }}" {% if form.category.value|stringformat:"s" == categoria.pk|stringformat:"s" %}selected{% endif %}>{{ categoria.name }}</option>
+        {% endfor %}
+      </select>
+      <noscript><button type="submit" class="btn-secondary py-2">{% translate "Ver" %}</button></noscript>
+    </div>
+  </form>
+
+  {# ------------------------------------------------------------- leyenda #}
+  <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+    {% for estado, etiqueta in leyenda %}
+      <span class="flex items-center gap-1.5">
+        <span class="size-3 rounded ring-1 ring-inset
+          {% if estado == 'pending' %}bg-amber-100 ring-amber-300{% elif estado == 'confirmed' %}bg-brand-100 ring-brand-300{% elif estado == 'in_progress' %}bg-emerald-100 ring-emerald-300{% else %}bg-slate-100 ring-slate-300{% endif %}"
+              aria-hidden="true"></span>
+        {{ etiqueta }}
+      </span>
+    {% endfor %}
+    <span class="ml-auto text-slate-500">
+      {% blocktranslate count total=planning.total %}{{ total }} reserva en el periodo{% plural %}{{ total }} reservas en el periodo{% endblocktranslate %}
+    </span>
+  </div>
+
+  {# ---------------------------------------------------------- calendario #}
+  <section class="card overflow-hidden">
+    {% if planning.groups %}
+      <div class="overflow-x-auto" style="--dias: {{ planning.length }}; --ancho: {{ ancho_dia }}">
+        <div class="min-w-max">
+
+          {# Cabecera de dias #}
+          <div class="grid grid-cols-[8.5rem_repeat(var(--dias),minmax(var(--ancho),1fr))] border-b border-line bg-slate-50/80 md:grid-cols-[13rem_repeat(var(--dias),minmax(var(--ancho),1fr))]">
+            <div class="sticky left-0 z-20 border-r border-line bg-slate-50 px-3 py-2.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              {% translate "Vehiculo" %}
+            </div>
+            {% for dia in planning.days %}
+              <div class="border-l border-line/70 px-1 py-2 text-center
+                          {% if dia.is_today %}bg-brand-600 text-white{% elif dia.is_weekend %}bg-amber-50 text-slate-700{% else %}text-slate-700{% endif %}">
+                <span class="block text-[10px] font-medium tracking-wide uppercase {% if not dia.is_today %}text-slate-400{% endif %}">{{ dia.day|date:"D" }}</span>
+                <span class="block text-sm font-semibold tabular">{{ dia.day|date:"j" }}</span>
+              </div>
+            {% endfor %}
+          </div>
+
+          {% for grupo in planning.groups %}
+            {# Cabecera de la categoria, con su foto si la tiene #}
+            <div class="border-b border-line bg-surface">
+              <div class="sticky left-0 inline-flex items-center gap-3 px-3 py-2.5">
+                {% if grupo.category.image %}
+                  <img src="{{ grupo.category.image.url }}" alt="" class="size-10 rounded-lg object-cover ring-1 ring-line" loading="lazy">
+                {% else %}
+                  <span class="flex size-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600" aria-hidden="true">
+                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11m-14 0h14m-14 0a2 2 0 00-2 2v3h18v-3a2 2 0 00-2-2M6 16v2m12-2v2M7 13.5h.01M17 13.5h.01"/></svg>
+                  </span>
+                {% endif %}
+                <span>
+                  <span class="block text-sm font-bold text-brand-950">{{ grupo.category.name }}</span>
+                  <span class="block text-xs text-slate-500">
+                    {% blocktranslate count total=grupo.reservations %}{{ total }} reserva{% plural %}{{ total }} reservas{% endblocktranslate %}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {% for fila in grupo.rows %}
+              <div class="grid grid-cols-[8.5rem_repeat(var(--dias),minmax(var(--ancho),1fr))] border-b border-line/70 md:grid-cols-[13rem_repeat(var(--dias),minmax(var(--ancho),1fr))]">
+                <div class="sticky left-0 z-10 flex min-w-0 flex-col justify-center border-r border-line px-3 py-1.5
+                            {% if fila.unassigned %}bg-amber-50{% else %}bg-surface{% endif %}">
+                  {% if fila.unassigned %}
+                    <span class="truncate text-sm font-semibold text-amber-800">{{ fila.title }}</span>
+                  {% else %}
+                    <span class="truncate font-mono text-sm font-semibold text-slate-900">{{ fila.title }}</span>
+                  {% endif %}
+                  <span class="truncate text-xs text-slate-500">{{ fila.subtitle }}</span>
+                </div>
+
+                <div class="relative grid grid-cols-[repeat(var(--dias),minmax(var(--ancho),1fr))]"
+                     style="grid-column: 2 / -1; grid-template-rows: repeat({{ fila.lanes }}, 2.75rem)">
+                  {# Fondo: una columna por dia, con fin de semana y hoy marcados #}
+                  {% for dia in planning.days %}
+                    <div class="border-l border-line/60 {% if dia.is_today %}bg-brand-50/70{% elif dia.is_weekend %}bg-amber-50/40{% endif %}"
+                         style="grid-column: {{ forloop.counter }}; grid-row: 1 / -1" aria-hidden="true"></div>
+                  {% endfor %}
+
+                  {% for barra in fila.bars %}
+                    <a href="{{ barra.url }}"
+                       style="grid-column: {{ barra.start_col }} / span {{ barra.span }}; grid-row: {{ barra.lane }}"
+                       class="relative z-[1] m-1 flex min-w-0 items-center gap-1.5 overflow-hidden rounded-lg px-2 text-xs shadow-sm ring-1 ring-inset transition
+                              {{ barra.style }} {% if barra.cut_start %}ml-0 rounded-l-none{% endif %} {% if barra.cut_end %}mr-0 rounded-r-none{% endif %}"
+                       title="{{ barra.reservation.number }} · {{ barra.customer_name }} · {{ barra.reservation.pickup_at|date:'d/m H:i' }} → {{ barra.reservation.return_at|date:'d/m H:i' }} · {{ barra.reservation.get_status_display }}{% if barra.reservation.vehicle %} · {{ barra.reservation.vehicle.plate }}{% endif %}">
+                      {% if barra.cut_start %}<span aria-hidden="true">‹</span>{% endif %}
+                      <span class="min-w-0 truncate">
+                        <span class="font-semibold">{{ barra.customer_name }}</span>
+                        {% if barra.span > 1 or planning.length == 7 %}
+                          <span class="opacity-70"> · {{ barra.reservation.number }} · {{ barra.reservation.pickup_at|date:"H:i" }}</span>
+                        {% endif %}
+                      </span>
+                      {% if barra.cut_end %}<span class="ml-auto" aria-hidden="true">›</span>{% endif %}
+                    </a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      {% translate "Nada que enseñar" as titulo_vacio %}
+      {% translate "No hay coches ni reservas con estos filtros en el periodo." as texto_vacio %}
+      {% include "ui/_empty.html" with empty_title=titulo_vacio empty_message=texto_vacio %}
+    {% endif %}
+  </section>
+{% endblock %}

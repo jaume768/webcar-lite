@@ -15,7 +15,7 @@ class EmailAuthenticationForm(AuthenticationForm):
     con Django y con django-axes, pero al usuario se le pide su correo."""
 
     username = forms.EmailField(
-        label=_("Correo electronico"),
+        label=_("Correo electrónico"),
         widget=forms.EmailInput(attrs={"autofocus": True, "autocomplete": "email"}),
     )
 

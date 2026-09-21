@@ -39,12 +39,46 @@ def overpaid_amount(reservation) -> Decimal:
 
 
 def issued_invoice_for(reservation):
-    """Factura emitida de esta reserva, si la hay.
+    """Factura en vigor de esta reserva, si la hay.
 
-    Provisional: `Invoice` llega en su propio prompt. Cuando exista, devolver la
-    factura hace que la ficha bloquee sola los cambios que la contradirian.
+    En vigor es una ordinaria que ninguna rectificativa ha anulado. Mientras
+    exista, la ficha bloquea los cambios que la contradirian; una vez
+    rectificada, la reserva se puede corregir y volver a facturar.
     """
-    return None
+    from .models import Invoice
+
+    if reservation.pk is None:
+        return None
+    return Invoice.objects.in_force().filter(reservation=reservation).first()
+
+
+def invoices_of(reservation):
+    """Todas las facturas de la reserva, rectificativas incluidas."""
+    from .models import Invoice
+
+    return Invoice.objects.filter(reservation=reservation).select_related("series", "rectifies")
+
+
+def reservations_to_invoice(user):
+    """Reservas finalizadas sin factura en vigor, con el scope del usuario.
+
+    Solo se factura lo finalizado: hasta la devolucion pueden llegar cargos de
+    kilometros, combustible o danos, y la factura tiene que llevarlos todos.
+    """
+    from django.db.models import Exists, OuterRef
+
+    from apps.reservations.models import Reservation, ReservationStatus
+
+    from .models import Invoice
+
+    en_vigor = Invoice.objects.in_force().filter(reservation=OuterRef("pk"))
+    return (
+        Reservation.objects.for_user(user)
+        .filter(status=ReservationStatus.FINISHED)
+        .exclude(Exists(en_vigor))
+        .select_related("customer", "category", "vehicle", "pickup_office")
+        .order_by("-actual_return_at", "-return_at")
+    )
 
 
 def has_issued_invoice(reservation) -> bool:

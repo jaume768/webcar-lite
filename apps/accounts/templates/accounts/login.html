@@ -1,39 +1,116 @@
 {% extends "accounts/base_auth.html" %}
-{% load i18n ui %}
+{% load i18n %}
 
 {% block title %}{% translate "Entrar" %} · RentFlow{% endblock %}
-{% block heading %}{% translate "Entrar" %}{% endblock %}
+{% block heading %}{% translate "Hola de nuevo" %}{% endblock %}
+{% block intro %}
+  <p class="mt-2 text-base text-slate-500">{% translate "Entra con tu correo para abrir el mostrador." %}</p>
+{% endblock %}
 
 {% block content %}
   {% comment %} El boton se desactiva al enviar: un doble clic mandaria el formulario
      dos veces, y el segundo envio llega con el token CSRF ya rotado. {% endcomment %}
-  <form method="post" class="mt-4" novalidate
+  <form method="post" novalidate class="space-y-5"
         onsubmit="this.querySelector('[type=submit]').disabled = true">
     {% csrf_token %}
 
     {% if form.non_field_errors %}
-      <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm
-                  text-rose-800" role="alert">
-        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      <div class="flex gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">
+        <svg class="mt-0.5 size-4 shrink-0 text-rose-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+        <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
       </div>
     {% endif %}
 
-    {% include "ui/_field.html" with field=form.username %}
-    {% include "ui/_field.html" with field=form.password %}
+    {% with campo=form.username %}
+      <div>
+        <label for="{{ campo.id_for_label }}" class="mb-1.5 block text-sm font-medium text-slate-700">{{ campo.label }}</label>
+        <div class="relative">
+          <svg class="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-slate-400"
+               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+          </svg>
+          <input type="email" name="{{ campo.html_name }}" id="{{ campo.id_for_label }}"
+                 value="{{ campo.value|default:'' }}" autocomplete="email" autofocus required
+                 placeholder="{% translate 'tu@empresa.es' %}"
+                 {% if campo.errors %}aria-invalid="true" aria-describedby="{{ campo.id_for_label }}-error"{% endif %}
+                 class="block w-full rounded-xl border bg-surface py-3 pr-3 pl-11 text-base text-slate-900 shadow-sm
+                        placeholder:text-slate-400 focus:ring-4 focus:outline-none
+                        {% if campo.errors %}border-rose-400 focus:border-rose-500 focus:ring-rose-500/15{% else %}border-line focus:border-brand-500 focus:ring-brand-500/15{% endif %}">
+        </div>
+        {% for error in campo.errors %}
+          <p id="{{ campo.id_for_label }}-error" class="mt-1.5 text-sm text-rose-700">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endwith %}
+
+    {% with campo=form.password %}
+      <div x-data="{ visible: false }">
+        <div class="mb-1.5 flex items-center justify-between">
+          <label for="{{ campo.id_for_label }}" class="text-sm font-medium text-slate-700">{{ campo.label }}</label>
+          <a class="text-sm font-medium text-brand-600 hover:text-brand-800" href="{% url 'accounts:password_reset' %}">
+            {% translate "¿La has olvidado?" %}
+          </a>
+        </div>
+        <div class="relative">
+          <svg class="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-slate-400"
+               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+          </svg>
+          <input type="password" :type="visible ? 'text' : 'password'"
+                 name="{{ campo.html_name }}" id="{{ campo.id_for_label }}"
+                 autocomplete="current-password" required
+                 {% if campo.errors %}aria-invalid="true" aria-describedby="{{ campo.id_for_label }}-error"{% endif %}
+                 class="block w-full rounded-xl border bg-surface py-3 pr-12 pl-11 text-base text-slate-900 shadow-sm
+                        focus:ring-4 focus:outline-none
+                        {% if campo.errors %}border-rose-400 focus:border-rose-500 focus:ring-rose-500/15{% else %}border-line focus:border-brand-500 focus:ring-brand-500/15{% endif %}">
+          <button type="button" @click="visible = !visible"
+                  class="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  :aria-label="visible ? '{% translate "Ocultar contraseña" %}' : '{% translate "Mostrar contraseña" %}'"
+                  aria-label="{% translate 'Mostrar contraseña' %}" x-cloak>
+            <svg x-show="!visible" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <svg x-show="visible" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+          </button>
+        </div>
+        {% for error in campo.errors %}
+          <p id="{{ campo.id_for_label }}-error" class="mt-1.5 text-sm text-rose-700">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endwith %}
 
     <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit" class="btn-primary w-full">{% translate "Entrar" %}</button>
+    <button type="submit"
+            class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-base font-semibold text-white
+                   shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 active:scale-[.98] disabled:opacity-60">
+      {% translate "Entrar" %}
+      <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+    </button>
   </form>
 
-  <p class="mt-4 text-center text-sm">
-    <a class="text-brand-700 hover:underline" href="{% url 'accounts:password_reset' %}">
-      {% translate "He olvidado mi contrasena" %}
-    </a>
-  </p>
+  {% if demo_activa %}
+    <div class="my-7 flex items-center gap-3 text-xs font-medium tracking-wider text-slate-400 uppercase">
+      <span class="h-px flex-1 bg-line"></span>{% translate "o prueba sin cuenta" %}<span class="h-px flex-1 bg-line"></span>
+    </div>
+    <form method="post" action="{% url 'core:demo_login' %}">
+      {% csrf_token %}
+      <button type="submit"
+              class="group flex w-full items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 text-left shadow-sm
+                     transition hover:border-brand-300 hover:bg-brand-50/40">
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-500">
+          <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/></svg>
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block text-sm font-semibold text-slate-900">{% translate "Entrar en la demostración" %}</span>
+          <span class="block text-xs text-slate-500">{% translate "Una empresa de ejemplo con un mes de actividad" %}</span>
+        </span>
+        <svg class="size-5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+      </button>
+    </form>
+  {% endif %}
 {% endblock %}
 
 {% block footer %}
-  <p class="mt-6 text-center text-xs text-slate-500">
+  <p class="mt-10 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
+    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
     {% translate "Acceso privado. Las cuentas las crea un responsable." %}
   </p>
 {% endblock %}

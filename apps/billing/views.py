@@ -1,22 +1,55 @@
-"""Pantallas de cobros y arqueo de caja."""
+"""Pantallas de facturacion: facturas, cobros, arqueo de caja y series."""
 
 import structlog
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import FormView, TemplateView
+from django.views.generic import FormView, TemplateView, View
 
-from apps.core.crud import CrudPermissionMixin
+from apps.core.crud import (
+    CrudListView,
+    CrudPermissionMixin,
+    ModalCreateView,
+    ModalFormView,
+    ModalUpdateView,
+    ToggleActiveView,
+)
 from apps.core.htmx import trigger_event, trigger_toast
 from apps.core.services import ServiceError
+from apps.core.tables import Column
 from apps.reservations.models import Reservation
 
-from .forms import CashRegisterForm, PaymentForm
-from .selectors import cash_register, cash_totals_by_method, pending_amount
-from .services import OverpaymentNotAllowed, refund, register_payment
+from .filters import InvoiceFilter, InvoiceSeriesFilter, PaymentFilter, ToInvoiceFilter
+from .forms import (
+    CashRegisterForm,
+    InvoiceSeriesForm,
+    IssueInvoiceForm,
+    PaymentForm,
+    RectifyInvoiceForm,
+)
+from .models import Invoice, InvoiceSeries, Payment
+from .pdf import render_invoice_pdf
+from .selectors import (
+    cash_register,
+    cash_totals_by_method,
+    pending_amount,
+    reservations_to_invoice,
+)
+from .services import (
+    OverpaymentNotAllowed,
+    invoice_lines_for,
+    issue_invoice,
+    rectify_invoice,
+    refund,
+    register_payment,
+    save_series,
+    set_series_active,
+    totals_of,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -169,3 +202,356 @@ class CashRegisterView(CrudPermissionMixin, TemplateView):
         if self.request.htmx:
             return render(self.request, "billing/_cash_register_panel.html", context)
         return super().render_to_response(context, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Facturas
+# ---------------------------------------------------------------------------
+
+
+class ToInvoiceListView(CrudListView):
+    """Reservas finalizadas que aun no tienen factura en vigor."""
+
+    permission_required = "billing.view_billing"
+    model = Reservation
+    filterset_class = ToInvoiceFilter
+    table_id = "tabla-por-facturar"
+    table_row_template = "billing/_to_invoice_row.html"
+    table_columns = [
+        Column(label=_("Reserva"), css="w-36"),
+        Column(label=_("Cliente")),
+        Column(label=_("Devolución")),
+        Column(label=_("Oficina")),
+        Column(label=_("Total"), align="right"),
+        Column(label=_("Acción"), align="right"),
+    ]
+    search_placeholder = _("Reserva, cliente o matrícula...")
+    empty_title = _("Todo facturado")
+    empty_message = _("No queda ninguna reserva finalizada sin su factura.")
+    page_title = _("Pendiente de facturar")
+
+    def get_base_queryset(self):
+        return reservations_to_invoice(self.request.user)
+
+
+class InvoiceListView(CrudListView):
+    permission_required = "billing.view_billing"
+    model = Invoice
+    scope_to_user = True
+    filterset_class = InvoiceFilter
+    table_id = "tabla-facturas"
+    table_row_template = "billing/_invoice_row.html"
+    table_columns = [
+        Column(label=_("Número"), css="w-36"),
+        Column(label=_("Fecha")),
+        Column(label=_("Cliente")),
+        Column(label=_("Reserva")),
+        Column(label=_("Base"), align="right"),
+        Column(label=_("IVA"), align="right"),
+        Column(label=_("Total"), align="right"),
+        Column(label=_("Estado")),
+        Column(label=_("Acciones"), align="right"),
+    ]
+    search_placeholder = _("Factura, reserva, cliente o NIF...")
+    empty_title = _("Ninguna factura coincide")
+    empty_message = _("Cambia la búsqueda o quita algún filtro.")
+    page_title = _("Facturas")
+
+    def get_base_queryset(self):
+        return (
+            super()
+            .get_base_queryset()
+            .select_related("series", "reservation", "rectifies")
+            .prefetch_related("rectifications")
+        )
+
+
+class InvoiceScopedMixin(CrudPermissionMixin):
+    """Una factura de otra oficina no existe para este usuario, ni por URL."""
+
+    permission_required = "billing.view_billing"
+
+    def get_invoice(self) -> Invoice:
+        if not hasattr(self, "_factura"):
+            self._factura = get_object_or_404(
+                Invoice.objects.for_user(self.request.user).select_related(
+                    "series", "reservation", "office", "rectifies", "created_by"
+                ),
+                pk=self.kwargs["pk"],
+            )
+        return self._factura
+
+
+class InvoiceDetailView(InvoiceScopedMixin, TemplateView):
+    template_name = "billing/invoice_detail.html"
+
+    def get_context_data(self, **kwargs):
+        from apps.settings_app.models import CompanySettings
+
+        from .verifactu import qr_svg
+
+        factura = self.get_invoice()
+        empresa = CompanySettings.load()
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(
+            {
+                "invoice": factura,
+                "lineas": factura.lines.all(),
+                "rectificativas": factura.rectifications.all(),
+                "qr": qr_svg(factura.qr_data),
+                "logo_url": empresa.logo.url if empresa.logo else "",
+                "page_title": str(factura),
+                "breadcrumbs": [
+                    {"label": _("Inicio"), "url": reverse("core:home")},
+                    {"label": _("Facturas"), "url": reverse("billing:invoice_list")},
+                    {"label": factura.number},
+                ],
+            }
+        )
+        return contexto
+
+
+class InvoicePdfView(InvoiceScopedMixin, View):
+    """El PDF se genera al pedirlo: la factura no cambia, asi que sale siempre igual.
+
+    Lo puede sacar quien vea facturacion o quien vea la reserva: en mostrador
+    hay que poder imprimirle la factura al cliente. El scope de oficina se
+    sigue aplicando en la consulta.
+    """
+
+    PERMISOS = ("billing.view_billing", "reservations.view_reservation")
+
+    def has_permission(self):
+        usuario = self.request.user
+        return any(usuario.has_perm(permiso) for permiso in self.PERMISOS)
+
+    def get(self, request, *args, **kwargs):
+        factura = self.get_invoice()
+        contenido = render_invoice_pdf(factura)
+        logger.info("factura_descargada", invoice_number=factura.number, actor_id=request.user.pk)
+        respuesta = HttpResponse(contenido, content_type="application/pdf")
+        respuesta["Content-Disposition"] = f'inline; filename="{factura.number}.pdf"'
+        return respuesta
+
+
+class InvoiceIssueView(ModalFormView):
+    """Emitir la factura de una reserva, con la vista previa de sus lineas."""
+
+    permission_required = "billing.add_invoice"
+    form_class = IssueInvoiceForm
+    modal_title = _("Emitir factura")
+    submit_label = _("Emitir factura")
+    list_url_name = "billing:to_invoice"
+    table_id = "emitir-factura"
+    modal_width = "max-w-2xl"
+
+    @property
+    def reservation(self) -> Reservation:
+        if not hasattr(self, "_reserva"):
+            self._reserva = get_object_or_404(
+                Reservation.objects.for_user(self.request.user).select_related("customer"),
+                pk=self.kwargs["pk"],
+            )
+        return self._reserva
+
+    def get_template_names(self):
+        if self.request.htmx:
+            return ["billing/_invoice_issue_modal.html"]
+        return ["ui/_form_page.html"]
+
+    def get_context_data(self, **kwargs):
+        lineas = invoice_lines_for(self.reservation)
+        base, cuota, total = totals_of(lineas)
+        contexto = super().get_context_data(**kwargs)
+        contexto.update(
+            {
+                "reservation": self.reservation,
+                "lineas": lineas,
+                "base": base,
+                "cuota": cuota,
+                "total": total,
+            }
+        )
+        return contexto
+
+    def save_object(self, form):
+        return issue_invoice(
+            reservation=self.reservation,
+            series=form.cleaned_data["series"],
+            actor=self.request.user,
+        )
+
+    def get_success_message(self, objeto) -> str:
+        return _("Factura %(numero)s emitida.") % {"numero": objeto.number}
+
+    def get_success_url(self) -> str:
+        return reverse("billing:invoice_detail", args=[self.object.pk])
+
+    def form_valid(self, form):
+        respuesta = super().form_valid(form)
+        if self.request.htmx and respuesta.status_code == 200:
+            trigger_event(respuesta, EVENTO_RESERVA)
+        return respuesta
+
+
+class InvoiceRectifyView(InvoiceScopedMixin, ModalFormView):
+    """Anular una factura con su rectificativa y abrir la rectificativa."""
+
+    permission_required = "billing.rectify_invoice"
+    form_class = RectifyInvoiceForm
+    modal_title = _("Emitir rectificativa")
+    submit_label = _("Emitir rectificativa")
+    list_url_name = "billing:invoice_list"
+    table_id = "rectificar-factura"
+
+    def get_template_names(self):
+        if self.request.htmx:
+            return ["billing/_invoice_rectify_modal.html"]
+        return ["ui/_form_page.html"]
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        contexto["invoice"] = self.get_invoice()
+        return contexto
+
+    def save_object(self, form):
+        return rectify_invoice(
+            invoice=self.get_invoice(),
+            reason=form.cleaned_data["reason"],
+            series=form.cleaned_data["series"],
+            actor=self.request.user,
+        )
+
+    def get_success_message(self, objeto) -> str:
+        return _("Rectificativa %(numero)s emitida.") % {"numero": objeto.number}
+
+    def get_success_url(self) -> str:
+        return reverse("billing:invoice_detail", args=[self.object.pk])
+
+    def form_valid(self, form):
+        respuesta = super().form_valid(form)
+        if self.request.htmx and respuesta.status_code == 200 and getattr(self, "object", None):
+            # La ficha de la original ya no vale: se abre la rectificativa.
+            respuesta["HX-Redirect"] = self.get_success_url()
+            messages.success(self.request, self.get_success_message(self.object))
+        return respuesta
+
+
+# ---------------------------------------------------------------------------
+# Cobros
+# ---------------------------------------------------------------------------
+
+
+class PaymentListView(CrudListView):
+    """Todos los movimientos de dinero, de todas las reservas del usuario."""
+
+    permission_required = "billing.view_billing"
+    model = Payment
+    scope_to_user = True
+    filterset_class = PaymentFilter
+    table_id = "tabla-cobros"
+    table_row_template = "billing/_payment_row.html"
+    table_columns = [
+        Column(label=_("Fecha")),
+        Column(label=_("Reserva")),
+        Column(label=_("Cliente")),
+        Column(label=_("Concepto")),
+        Column(label=_("Medio")),
+        Column(label=_("Referencia")),
+        Column(label=_("Oficina")),
+        Column(label=_("Importe"), align="right"),
+    ]
+    search_placeholder = _("Reserva, referencia o cliente...")
+    empty_title = _("Ningún cobro coincide")
+    empty_message = _("Cambia la búsqueda o quita algún filtro.")
+    page_title = _("Cobros")
+
+    def get_base_queryset(self):
+        return (
+            super()
+            .get_base_queryset()
+            .select_related("reservation__customer", "office", "created_by")
+        )
+
+
+# ---------------------------------------------------------------------------
+# Series (administracion)
+# ---------------------------------------------------------------------------
+
+
+class InvoiceSeriesListView(CrudListView):
+    permission_required = "billing.view_invoiceseries"
+    model = InvoiceSeries
+    filterset_class = InvoiceSeriesFilter
+    table_id = "tabla-series"
+    table_row_template = "billing/_series_row.html"
+    table_columns = [
+        Column(label=_("Código"), css="font-mono tabular w-24"),
+        Column(label=_("Nombre")),
+        Column(label=_("Tipo")),
+        Column(label=_("Formato")),
+        Column(label=_("Siguiente")),
+        Column(label=_("Emitidas"), align="right"),
+        Column(label=_("Estado")),
+        Column(label=_("Acciones"), align="right"),
+    ]
+    search_placeholder = _("Código o nombre...")
+    empty_title = _("Ninguna serie coincide")
+    empty_message = _("Cambia la búsqueda o quita algún filtro.")
+    page_title = _("Series de facturación")
+    create_url_name = "billing:series_create"
+    create_label = _("Nueva serie")
+    create_permission = "billing.add_invoiceseries"
+
+    def get_base_queryset(self):
+        from django.db.models import Count
+
+        return (
+            super()
+            .get_base_queryset()
+            .annotate(emitidas=Count("invoices"))
+            .prefetch_related("counters")
+            .order_by("kind", "code")
+        )
+
+
+class InvoiceSeriesFormMixin:
+    model = InvoiceSeries
+    form_class = InvoiceSeriesForm
+    table_id = "tabla-series"
+    list_url_name = "billing:series_list"
+
+    def save_object(self, form):
+        return save_series(series=form.save(commit=False), actor=self.request.user)
+
+
+class InvoiceSeriesCreateView(InvoiceSeriesFormMixin, ModalCreateView):
+    permission_required = "billing.add_invoiceseries"
+    modal_title = _("Nueva serie")
+    submit_label = _("Crear serie")
+    success_message = _("Serie %(objeto)s creada.")
+
+
+class InvoiceSeriesUpdateView(InvoiceSeriesFormMixin, ModalUpdateView):
+    permission_required = "billing.change_invoiceseries"
+    modal_title = _("Editar serie")
+    success_message = _("Serie %(objeto)s actualizada.")
+
+
+class InvoiceSeriesToggleView(ToggleActiveView):
+    permission_required = "billing.change_invoiceseries"
+    model = InvoiceSeries
+    list_url_name = "billing:series_list"
+    activated_message = _("Serie %(objeto)s reactivada.")
+    deactivated_message = _("Serie %(objeto)s desactivada.")
+
+    def perform(self, objeto):
+        set_series_active(series=objeto, active=self.activate, actor=self.request.user)
+
+
+class InvoiceSeriesActivateView(InvoiceSeriesToggleView):
+    activate = True
+
+
+class InvoiceSeriesDeactivateView(InvoiceSeriesToggleView):
+    activate = False

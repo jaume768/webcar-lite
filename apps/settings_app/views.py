@@ -1,4 +1,4 @@
-"""Pantalla de configuracion de la empresa y de las condiciones generales."""
+"""Configuracion de la empresa, condiciones generales y politicas."""
 
 import structlog
 from django.contrib import messages
@@ -8,11 +8,20 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, View
 
-from apps.core.crud import CrudPermissionMixin
+from apps.core.crud import (
+    CrudListView,
+    CrudPermissionMixin,
+    ModalCreateView,
+    ModalUpdateView,
+    ToggleActiveView,
+)
 from apps.core.htmx import trigger_event, trigger_toast
+from apps.core.tables import Column
 
-from .forms import CompanySettingsForm, TermsVersionForm
-from .models import CompanySettings, TermsVersion
+from .filters import PolicyFilter
+from .forms import CompanySettingsForm, PolicyForm, TermsVersionForm
+from .models import CompanySettings, Policy, TermsVersion
+from .services import save_policy, set_policy_active
 
 logger = structlog.get_logger(__name__)
 
@@ -109,3 +118,73 @@ class TermsPublishView(CrudPermissionMixin, View):
             _("Ahora se aplican las condiciones v%(version)s.") % {"version": version.version},
             "success",
         )
+
+
+# ---------------------------------------------------------------------------
+# Politicas
+# ---------------------------------------------------------------------------
+
+
+class PolicyListView(CrudListView):
+    permission_required = "settings_app.view_policy"
+    model = Policy
+    filterset_class = PolicyFilter
+    table_id = "tabla-politicas"
+    table_row_template = "settings_app/_policy_row.html"
+    table_columns = [
+        Column(label=_("Orden"), css="tabular w-16"),
+        Column(label=_("Política")),
+        Column(label=_("En facturas")),
+        Column(label=_("Estado")),
+        Column(label=_("Acciones"), align="right"),
+    ]
+    search_placeholder = _("Título o texto...")
+    empty_title = _("Ninguna política")
+    empty_message = _("Crea la primera: cancelación, combustible, fianza...")
+    page_title = _("Políticas")
+    create_url_name = "settings_app:policy_create"
+    create_label = _("Nueva política")
+    create_permission = "settings_app.add_policy"
+
+
+class PolicyFormMixin:
+    model = Policy
+    form_class = PolicyForm
+    table_id = "tabla-politicas"
+    list_url_name = "settings_app:policy_list"
+    modal_width = "max-w-2xl"
+
+    def save_object(self, form):
+        return save_policy(policy=form.save(commit=False), actor=self.request.user)
+
+
+class PolicyCreateView(PolicyFormMixin, ModalCreateView):
+    permission_required = "settings_app.add_policy"
+    modal_title = _("Nueva política")
+    submit_label = _("Crear política")
+    success_message = _("Política %(objeto)s creada.")
+
+
+class PolicyUpdateView(PolicyFormMixin, ModalUpdateView):
+    permission_required = "settings_app.change_policy"
+    modal_title = _("Editar política")
+    success_message = _("Política %(objeto)s actualizada.")
+
+
+class PolicyToggleView(ToggleActiveView):
+    permission_required = "settings_app.change_policy"
+    model = Policy
+    list_url_name = "settings_app:policy_list"
+    activated_message = _("Política %(objeto)s reactivada.")
+    deactivated_message = _("Política %(objeto)s desactivada.")
+
+    def perform(self, objeto):
+        set_policy_active(policy=objeto, active=self.activate, actor=self.request.user)
+
+
+class PolicyActivateView(PolicyToggleView):
+    activate = True
+
+
+class PolicyDeactivateView(PolicyToggleView):
+    activate = False

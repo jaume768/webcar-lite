@@ -18,6 +18,8 @@ dependencies = [
     "django-filter>=24.0,<26.0",
     "Pillow>=11.0,<13.0",
     "weasyprint>=65.0,<67.0",
+    # QR de Verifactu en la factura. Python puro, sin dependencias.
+    "segno>=1.6,<2.0",
     "whitenoise[brotli]>=6.9,<7.0",
     "gunicorn>=23.0,<24.0",
 ]

@@ -115,10 +115,13 @@
   }
 
   /* El menu lateral se pinta fuera de pantalla en movil antes de que Alpine
-     tome el control. Las utilidades ganan a esta regla en cuanto lo hace. */
+     tome el control. Las utilidades ganan a esta regla en cuanto lo hace.
+     Tiene que ser `translate` y no `transform`: las utilidades translate-x-*
+     de Tailwind 4 escriben `translate`, y un `transform` aqui se sumaria a
+     ellas y dejaria el menu siempre escondido. */
   @media (width < 64rem) {
     [data-sidebar] {
-      transform: translateX(-100%);
+      translate: -100% 0;
     }
   }
 

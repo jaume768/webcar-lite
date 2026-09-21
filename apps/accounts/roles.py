@@ -26,6 +26,13 @@ FORZAR_DISPONIBILIDAD = "availability.override_availability"
 VER_FACTURACION = "billing.view_billing"
 COBRAR = "billing.add_payment"
 SOBREPAGO = "billing.allow_overpayment"
+EMITIR_FACTURAS = "billing.add_invoice"
+RECTIFICAR_FACTURAS = "billing.rectify_invoice"
+GESTIONAR_SERIES = [
+    "billing.view_invoiceseries",
+    "billing.add_invoiceseries",
+    "billing.change_invoiceseries",
+]
 GESTIONAR_TARIFAS = "pricing.manage_rates"
 
 # --- Maestros ---------------------------------------------------------------
@@ -90,6 +97,7 @@ RESPONSABLE = [
     CAMBIAR_PRECIO,
     FORZAR_DISPONIBILIDAD,
     VER_FACTURACION,
+    EMITIR_FACTURAS,
     SOBREPAGO,
     EDITAR_FLOTA,
 ]
@@ -100,6 +108,9 @@ ADMINISTRACION = [
     # Tocar una reserva ya facturada obliga a emitir rectificativa: solo
     # administracion, nunca el mostrador.
     MODIFICAR_FACTURADA,
+    # Anular una factura y la numeracion de las series son decisiones fiscales.
+    RECTIFICAR_FACTURAS,
+    *GESTIONAR_SERIES,
     GESTIONAR_TARIFAS,
     GESTION_USUARIOS,
     CONFIGURACION,
@@ -117,7 +128,18 @@ ADMINISTRACION = [
     "pricing.add_extra",
     "pricing.change_extra",
     *EDITAR_TARIFAS,
+    # Politicas de la empresa: las que salen al pie de las facturas.
+    "settings_app.view_policy",
+    "settings_app.add_policy",
+    "settings_app.change_policy",
 ]
+
+
+#: Lo que ve de mas la cuenta de demostracion, encima de su rol de mostrador:
+#: todo lo de administracion, para que en la demo se pueda abrir cualquier
+#: opcion del menu. No se toca el rol de mostrador, que es el que usan los
+#: mostradores de verdad; estos permisos van solo a esa cuenta.
+DEMO_EXTRA = list(ADMINISTRACION)
 
 
 @dataclass(frozen=True)

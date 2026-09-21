@@ -81,3 +81,26 @@ def activate_user(*, user: User, actor: User) -> User:
 def password_reset_token(user: User) -> str:
     """Token del enlace para estrenar o recuperar la contrasena."""
     return default_token_generator.make_token(user)
+
+
+def grant_demo_permissions(user: User) -> None:
+    """Da a la cuenta de demostracion los permisos de `roles.DEMO_EXTRA`.
+
+    Van como permisos del usuario, no del rol: el rol de mostrador sigue igual
+    para todos los demas. Es idempotente; se llama al cargar la demo y al
+    entrar por el boton de demostracion, para que una demo ya cargada antes
+    de este cambio tambien los tenga.
+    """
+    from django.contrib.auth.models import Permission
+
+    from .roles import DEMO_EXTRA
+
+    for nombre in DEMO_EXTRA:
+        app_label, codename = nombre.split(".", 1)
+        permiso = Permission.objects.filter(
+            content_type__app_label=app_label, codename=codename
+        ).first()
+        if permiso is None:
+            logger.warning("permiso_de_demo_inexistente", permiso=nombre)
+            continue
+        user.user_permissions.add(permiso)

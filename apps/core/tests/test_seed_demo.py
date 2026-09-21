@@ -82,3 +82,44 @@ def test_en_produccion_no_se_cargan_datos_de_mentira(settings):
         call_command("seed_demo", verbosity=0)
 
     assert "produccion" in str(fallo.value)
+
+
+def test_la_cuenta_demo_ve_todas_las_opciones_del_menu(demo_cargada, settings):
+    """En la demo se tiene que poder abrir todo: simulador, facturacion, series..."""
+    from apps.accounts.models import User
+    from apps.core.navigation import MAIN_NAV, sections_for
+
+    demo = User.objects.get(email=settings.DEMO_EMAIL)
+    todas = {item.url_name for seccion in MAIN_NAV for item in seccion.items}
+    visibles = {item.url_name for seccion in sections_for(demo) for item in seccion.items}
+
+    assert visibles == todas
+
+
+def test_los_permisos_de_la_demo_no_cambian_el_rol_de_mostrador(demo_cargada, settings):
+    """Van a la cuenta demo, no al rol: un mostrador de verdad sigue igual."""
+    from apps.accounts.models import Role
+
+    mostrador = Role.objects.get(code="mostrador")
+
+    assert not mostrador.permissions.filter(codename="view_invoiceseries").exists()
+    assert not mostrador.permissions.filter(codename="view_rate").exists()
+
+
+def test_la_demo_trae_facturas_y_deja_algo_por_facturar(demo_cargada):
+    from apps.accounts.models import User
+    from apps.billing.models import Invoice
+    from apps.billing.selectors import reservations_to_invoice
+
+    direccion = User.objects.get(email="direccion@autosdemo.example")
+
+    assert Invoice.objects.exists()
+    assert reservations_to_invoice(direccion).exists()
+
+
+def test_el_boton_de_demo_solo_sale_con_demo_mode(client, settings):
+    settings.DEMO_MODE = True
+    assert "Entrar en la demostración" in client.get("/entrar/").content.decode()
+
+    settings.DEMO_MODE = False
+    assert "Entrar en la demostración" not in client.get("/entrar/").content.decode()

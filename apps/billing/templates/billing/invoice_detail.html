@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ invoice.number }} · RentFlow{% endblock %}
+
+{% block page_header %}
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold tracking-wide text-brand-600 uppercase">
+        {% if invoice.is_rectifying %}{% translate "Factura rectificativa" %}{% else %}{% translate "Factura" %}{% endif %}
+      </p>
+      <div class="mt-1 flex flex-wrap items-center gap-3">
+        <h1 class="font-mono text-2xl font-bold tracking-tight text-brand-950 sm:text-3xl">{{ invoice.number }}</h1>
+        {% if invoice.is_rectifying %}
+          {% translate "Rectificativa" as etiqueta %}
+          {% include "ui/_badge.html" with status="invoice_rectifying" label=etiqueta only %}
+        {% elif rectificativas %}
+          {% translate "Rectificada" as etiqueta %}
+          {% include "ui/_badge.html" with status="invoice_rectified" label=etiqueta only %}
+        {% else %}
+          {% translate "En vigor" as etiqueta %}
+          {% include "ui/_badge.html" with status="invoice_in_force" label=etiqueta only %}
+        {% endif %}
+      </div>
+      <p class="mt-1 text-sm text-slate-500">
+        {% blocktranslate with fecha=invoice.issued_at|date:"j \d\e F \d\e Y" serie=invoice.series.name %}Emitida el {{ fecha }} · serie {{ serie }}{% endblocktranslate %}
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <a class="btn-secondary" href="{% url 'billing:invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+        {% translate "Descargar PDF" %}
+      </a>
+      {% if perms.billing.rectify_invoice and not invoice.is_rectifying and not rectificativas %}
+        <button type="button" class="btn-danger"
+                hx-get="{% url 'billing:invoice_rectify' invoice.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+          {% translate "Rectificar" %}
+        </button>
+      {% endif %}
+    </div>
+  </header>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div class="min-w-0 space-y-6">
+
+      {% if invoice.is_rectifying %}
+        <div class="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <svg class="size-5 shrink-0 text-amber-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.49 2.87c.66-1.16 2.36-1.16 3.02 0l6.28 11.03c.65 1.14-.18 2.6-1.51 2.6H3.72c-1.33 0-2.16-1.46-1.51-2.6L8.49 2.87ZM10 6a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 6Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+          <div>
+            <p class="font-semibold">
+              {% translate "Rectifica la factura" %}
+              <a class="font-mono underline" href="{% url 'billing:invoice_detail' invoice.rectifies_id %}">{{ invoice.rectifies.number }}</a>
+            </p>
+            <p class="mt-0.5">{% translate "Motivo" %}: {{ invoice.rectification_reason }}</p>
+          </div>
+        </div>
+      {% endif %}
+      {% for rectificativa in rectificativas %}
+        <div class="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p>
+            {% translate "Anulada por la rectificativa" %}
+            <a class="font-mono font-semibold underline" href="{% url 'billing:invoice_detail' rectificativa.pk %}">{{ rectificativa.number }}</a>
+            · {{ rectificativa.issued_at|date:"d/m/Y" }} · {{ rectificativa.rectification_reason }}
+          </p>
+        </div>
+      {% endfor %}
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <section class="card p-5">
+          <div class="flex items-start justify-between gap-3">
+            <h2 class="text-xs font-semibold tracking-wider text-slate-500 uppercase">{% translate "Emisor" %}</h2>
+            {% if logo_url %}<img src="{{ logo_url }}" alt="" class="max-h-8 max-w-28 object-contain">{% endif %}
+          </div>
+          <p class="mt-2 font-semibold text-slate-900">{{ invoice.issuer_name }}</p>
+          <p class="text-sm text-slate-600">{% translate "NIF" %} {{ invoice.issuer_tax_id }}</p>
+          <p class="text-sm text-slate-600">{{ invoice.issuer_address }}</p>
+        </section>
+        <section class="card p-5">
+          <h2 class="text-xs font-semibold tracking-wider text-slate-500 uppercase">{% translate "Cliente" %}</h2>
+          <p class="mt-2 font-semibold text-slate-900">{{ invoice.customer_name }}</p>
+          <p class="text-sm text-slate-600">{% translate "NIF" %} {{ invoice.customer_tax_id }}</p>
+          <p class="text-sm text-slate-600">{{ invoice.customer_address|default:"—" }}</p>
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Líneas" %}</h2>
+          <a class="card-link" href="{% url 'reservations:detail' invoice.reservation_id %}">
+            {% blocktranslate with numero=invoice.reservation.number %}Reserva {{ numero }}{% endblocktranslate %}
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+          </a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <caption class="sr-only">{% translate "Líneas de la factura" %}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Concepto" %}</th>
+                <th scope="col" class="text-right">{% translate "Cant." %}</th>
+                <th scope="col" class="text-right">{% translate "Precio" %}</th>
+                <th scope="col" class="text-right">{% translate "Base" %}</th>
+                <th scope="col" class="text-right">{% translate "IVA" %}</th>
+                <th scope="col" class="text-right">{% translate "Total" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for linea in lineas %}
+                <tr>
+                  <td class="text-slate-900">{{ linea.concept }}</td>
+                  <td class="text-right tabular">{{ linea.quantity|floatformat:"-2" }}</td>
+                  <td class="text-right tabular whitespace-nowrap">{{ linea.unit_price|floatformat:"2g" }} €</td>
+                  <td class="text-right tabular whitespace-nowrap">{{ linea.base_amount|floatformat:"2g" }} €</td>
+                  <td class="text-right tabular whitespace-nowrap text-slate-500">{{ linea.tax_rate|floatformat:"-2" }} %</td>
+                  <td class="text-right tabular font-medium whitespace-nowrap">{{ linea.total|floatformat:"2g" }} €</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <dl class="ml-auto w-full max-w-xs space-y-1.5 border-t border-line px-5 py-4 text-sm">
+          <div class="flex justify-between"><dt class="text-slate-500">{% translate "Base imponible" %}</dt><dd class="tabular">{{ invoice.base_amount|floatformat:"2g" }} €</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">{% translate "IVA" %}</dt><dd class="tabular">{{ invoice.tax_amount|floatformat:"2g" }} €</dd></div>
+          <div class="flex justify-between border-t border-line pt-2 text-base font-bold text-brand-950"><dt>{% translate "Total" %}</dt><dd class="tabular">{{ invoice.total|floatformat:"2g" }} €</dd></div>
+        </dl>
+      </section>
+    </div>
+
+    {% if invoice.policies %}
+      <section class="card p-5 xl:col-start-1">
+        <h2 class="card-title">{% translate "Condiciones impresas" %}</h2>
+        <p class="mt-1 text-xs text-slate-500">{% translate "Copia de las políticas vigentes al emitir la factura." %}</p>
+        <dl class="mt-4 space-y-3 text-sm">
+          {% for politica in invoice.policies %}
+            <div>
+              <dt class="font-semibold text-slate-900">{{ politica.title }}</dt>
+              <dd class="mt-0.5 text-slate-600">{{ politica.body|linebreaksbr }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </section>
+    {% endif %}
+
+    <aside class="space-y-6 xl:col-start-2 xl:row-start-1">
+      <section class="card p-5">
+        <h2 class="card-title">{% translate "Registro Verifactu" %}</h2>
+        <p class="mt-1 text-xs text-slate-500">
+          {% translate "Huella encadenada y QR generados al emitir. El envío a la AEAT todavía no está activo." %}
+        </p>
+        <div class="mt-4 flex justify-center rounded-xl bg-slate-50 p-3 [&_svg]:size-40">{{ qr|safe }}</div>
+        <dl class="mt-4 space-y-3 text-xs">
+          <div>
+            <dt class="font-medium text-slate-500">{% translate "Fecha del registro" %}</dt>
+            <dd class="text-slate-900">{{ invoice.fecha_registro|date:"d/m/Y H:i:s" }}</dd>
+          </div>
+          <div>
+            <dt class="font-medium text-slate-500">{% translate "Huella" %}</dt>
+            <dd class="font-mono break-all text-slate-900">{{ invoice.hash_actual }}</dd>
+          </div>
+          <div>
+            <dt class="font-medium text-slate-500">{% translate "Huella anterior" %}</dt>
+            <dd class="font-mono break-all text-slate-600">{{ invoice.hash_anterior|default:_("Primera de la cadena") }}</dd>
+          </div>
+          <div>
+            <dt class="font-medium text-slate-500">{% translate "Tipo" %}</dt>
+            <dd class="text-slate-900">{{ invoice.verifactu_type }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="card p-5 text-sm">
+        <h2 class="card-title">{% translate "Datos" %}</h2>
+        <dl class="mt-3 space-y-2">
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">{% translate "Oficina" %}</dt><dd class="text-right text-slate-900">{{ invoice.office.name }}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">{% translate "Emitida por" %}</dt><dd class="text-right text-slate-900">{{ invoice.created_by.get_full_name|default:"—" }}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">{% translate "Moneda" %}</dt><dd class="text-right text-slate-900">{{ invoice.currency }}</dd></div>
+        </dl>
+      </section>
+    </aside>
+  </div>
+{% endblock %}

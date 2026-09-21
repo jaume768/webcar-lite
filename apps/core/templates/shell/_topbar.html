@@ -1,13 +1,17 @@
 {% load i18n %}
-<header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line/70
-               bg-surface/90 px-4 backdrop-blur sm:px-6 lg:px-8">
+<header class="sticky top-0 z-20 flex min-h-[calc(4rem+env(safe-area-inset-top))] items-center gap-3 border-b border-line/70
+               bg-surface/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur sm:px-6 lg:px-8">
 
-  <button type="button" class="btn-ghost p-2 lg:hidden" @click="sidebarAbierta = true"
-          aria-label="{% translate 'Abrir navegacion' %}">
-    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-         aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round"
-         d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
-  </button>
+  {% comment %} En movil no hay menu lateral a la vista: la marca ocupa su sitio
+     y el menu se abre desde "Mas", en la barra inferior. {% endcomment %}
+  <a href="{% url 'core:home' %}" class="flex shrink-0 items-center gap-2 lg:hidden">
+    <svg class="size-8 text-brand-900" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6"
+         stroke-linejoin="round" aria-hidden="true">
+      <path d="M4.5 14.5 16 4.5l11.5 10V26a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 26V14.5Z"/>
+      <path d="M12.5 27.5v-7a3.5 3.5 0 0 1 7 0v7" fill="currentColor" stroke="none"/>
+    </svg>
+    <span class="text-2xl font-bold tracking-tight text-brand-950">Rent<span class="text-brand-600">Flow</span></span>
+  </a>
 
   {% comment %} Busqueda global: va al listado de reservas, que ya busca por
      numero, cliente y matricula. Sin permiso de reservas no hay nada que
@@ -35,18 +39,18 @@
     </span>
 
     {% if user.is_authenticated %}
-      {% include "shell/_office_selector.html" %}
+      <div class="hidden lg:block">{% include "shell/_office_selector.html" %}</div>
 
       {% comment %} Campana: los avisos se piden al abrirla, asi ninguna
          pantalla paga su calculo. En el panel ya se conocen y se marca el punto. {% endcomment %}
       <div class="relative" x-data="{ abierto: false }" @keydown.escape.window="abierto = false">
         <button type="button"
-                class="relative rounded-xl p-2.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                class="relative rounded-xl p-2.5 text-brand-950 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:text-slate-600"
                 @click="abierto = !abierto" :aria-expanded="abierto" aria-haspopup="true"
                 aria-label="{% translate 'Avisos' %}"
                 hx-get="{% url 'core:alerts_menu' %}" hx-target="#menu-avisos" hx-trigger="click"
                 hx-swap="innerHTML">
-          <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+          <svg class="size-6 lg:size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
           </svg>
           {% if panel.alerts %}
@@ -54,7 +58,7 @@
           {% endif %}
         </button>
         <div x-show="abierto" x-cloak x-transition @click.outside="abierto = false"
-             class="absolute right-0 mt-2 w-80 overflow-hidden rounded-2xl border border-line bg-surface shadow-xl">
+             class="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-line bg-surface shadow-xl">
           <p class="border-b border-line px-4 py-3 text-sm font-semibold text-slate-900">{% translate "Avisos" %}</p>
           <div id="menu-avisos">
             <p class="px-4 py-6 text-center text-sm text-slate-400">{% translate "Cargando..." %}</p>
@@ -64,12 +68,12 @@
 
       {% if perms.reservations.add_reservation %}
         <a href="{% url 'reservations:quick' %}"
-           class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-3 py-2.5 text-sm font-semibold text-white
-                  shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 active:scale-95 sm:px-4">
+           class="hidden items-center gap-2 rounded-xl bg-brand-600 px-3 py-2.5 text-sm font-semibold text-white
+                  shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 active:scale-95 sm:px-4 lg:inline-flex">
           <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
           </svg>
-          <span class="hidden sm:inline">{% translate "Nueva reserva" %}</span>
+          {% translate "Nueva reserva" %}
         </a>
       {% endif %}
     {% else %}

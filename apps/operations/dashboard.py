@@ -12,6 +12,7 @@ from decimal import Decimal
 from django.db.models import Count, Q, Sum
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.formats import date_format
 from django.utils.translation import gettext_lazy as _
 
 from apps.billing.models import DEPOSIT_TYPES, RENTAL_TYPES, Payment, PaymentMethod
@@ -53,6 +54,8 @@ class Period:
     suffix: str
     first_offset: int
     last_offset: int
+    #: Solo en el periodo de un dia elegido en el calendario.
+    day: date | None = None
 
     def bounds(self, today: date) -> tuple[date, date]:
         return today + timedelta(days=self.first_offset), today + timedelta(days=self.last_offset)
@@ -61,6 +64,32 @@ class Period:
     def is_today(self) -> bool:
         return self.first_offset == self.last_offset == 0
 
+    @property
+    def is_past(self) -> bool:
+        """Un dia que ya paso: lo que salio o volvio ya esta finalizado."""
+        return self.last_offset < 0
+
+    def anchor(self, today: date) -> date:
+        """Dia de referencia del selector de fecha: el primero del periodo."""
+        return self.day or today + timedelta(days=self.first_offset)
+
+    @property
+    def query(self) -> str:
+        """Parametro de la URL que vuelve a pedir este mismo periodo."""
+        return f"dia={self.day.isoformat()}" if self.day else f"periodo={self.code}"
+
+    @classmethod
+    def for_day(cls, day: date, today: date) -> "Period":
+        desfase = (day - today).days
+        return cls(
+            code="dia",
+            label=date_format(day, "j M Y"),
+            suffix=str(_("el %(dia)s") % {"dia": date_format(day, "j \\d\\e F")}),
+            first_offset=desfase,
+            last_offset=desfase,
+            day=day,
+        )
+
 
 PERIODS = {
     "hoy": Period("hoy", _("Hoy"), _("hoy"), 0, 0),
@@ -68,9 +97,30 @@ PERIODS = {
     "semana": Period("semana", _("Semana"), _("esta semana"), 0, 6),
 }
 
+#: Hasta donde se puede saltar con el selector de dia, en cada sentido. Evita
+#: que una fecha absurda en la URL dispare consultas sobre decadas de datos.
+MAXIMO_DIAS_DE_SALTO = 3 * 365
 
-def period_for(code: str | None) -> Period:
-    """Periodo pedido por la URL. Lo que no se reconoce cae en hoy."""
+
+def period_for(code: str | None, day: str | None = None, *, today: date | None = None) -> Period:
+    """Periodo pedido por la URL. Lo que no se reconoce cae en hoy.
+
+    `day` (AAAA-MM-DD) gana a `code`: es el dia elegido en el calendario. Si
+    coincide con hoy o manana se devuelve ese periodo, para que su pestana
+    salga marcada.
+    """
+    hoy = today or timezone.localdate()
+    if day:
+        try:
+            elegido = date.fromisoformat(day)
+        except ValueError:
+            elegido = None
+        if elegido is not None and abs((elegido - hoy).days) <= MAXIMO_DIAS_DE_SALTO:
+            if elegido == hoy:
+                return PERIODS["hoy"]
+            if elegido == hoy + timedelta(days=1):
+                return PERIODS["manana"]
+            return Period.for_day(elegido, hoy)
     return PERIODS.get(code or "", PERIODS["hoy"])
 
 
@@ -193,6 +243,10 @@ class Stats:
         return self.fleet_by_status.get(VehicleStatus.RENTED, 0)
 
     @property
+    def available(self) -> int:
+        return self.fleet_by_status.get(VehicleStatus.AVAILABLE, 0)
+
+    @property
     def occupancy(self) -> int:
         """Porcentaje de flota fuera."""
         return _porcentaje(self.rented, self.fleet_total)
@@ -219,6 +273,11 @@ class AgendaItem:
         return ESTILO_DE_AGENDA.get(self.state, ESTILO_DE_AGENDA["pendiente"])
 
 
+#: Inicial de cada dia de la semana, de lunes a domingo. El miercoles es la X,
+#: como en cualquier calendario espanol: la M ya es del martes.
+INICIALES_DE_DIA = (_("L"), _("M"), _("X"), _("J"), _("V"), _("S"), _("D"))
+
+
 @dataclass(frozen=True)
 class DayOccupancy:
     day: date
@@ -228,6 +287,10 @@ class DayOccupancy:
     @property
     def is_weekend(self) -> bool:
         return self.day.weekday() >= 5
+
+    @property
+    def initial(self) -> str:
+        return str(INICIALES_DE_DIA[self.day.weekday()])
 
 
 # Medidas del grafico de prevision, en unidades del viewBox del SVG.
@@ -297,6 +360,11 @@ class OccupancyForecast:
     def labels(self) -> list[dict]:
         """Una fecha de cada dos: con catorce seguidas no se lee ninguna."""
         return [p for i, p in enumerate(self.points) if i % 2 == 0]
+
+    @property
+    def week(self) -> list:
+        """Los siete primeros dias: las barras de la semana en el movil."""
+        return self.days[:7]
 
     @property
     def peak(self) -> DayOccupancy | None:
@@ -526,10 +594,12 @@ def build_dashboard(*, user, office=None, now=None, period=None, include_cash=Fa
     # --- entregas y devoluciones del periodo --------------------------------
     # Las entregas ya hechas tambien salen: el mostrador quiere ver como va el
     # dia, no solo lo que queda.
+    # En un dia pasado lo que salio y ya volvio esta finalizado: tambien cuenta.
+    ya_cerradas = (ReservationStatus.FINISHED,) if periodo.is_past else ()
     entregas = list(
         annotate_balance(
             _reservas_base(office_ids).filter(
-                status__in=(*POR_ENTREGAR, ReservationStatus.IN_PROGRESS),
+                status__in=(*POR_ENTREGAR, ReservationStatus.IN_PROGRESS, *ya_cerradas),
                 pickup_at__date__range=(desde, hasta),
             )
         )[:LIMITE_POR_BLOQUE]
@@ -538,11 +608,12 @@ def build_dashboard(*, user, office=None, now=None, period=None, include_cash=Fa
 
     # Hoy solo vuelve lo que esta fuera. Mirando hacia delante tambien cuenta lo
     # que aun no ha salido pero volvera dentro del periodo.
-    estados_de_vuelta = (
-        (ReservationStatus.IN_PROGRESS,)
-        if periodo.is_today
-        else (*POR_ENTREGAR, ReservationStatus.IN_PROGRESS)
-    )
+    if periodo.is_today:
+        estados_de_vuelta = (ReservationStatus.IN_PROGRESS,)
+    elif periodo.is_past:
+        estados_de_vuelta = (ReservationStatus.IN_PROGRESS, ReservationStatus.FINISHED)
+    else:
+        estados_de_vuelta = (*POR_ENTREGAR, ReservationStatus.IN_PROGRESS)
     devoluciones = list(
         annotate_balance(
             Reservation.objects.filter(

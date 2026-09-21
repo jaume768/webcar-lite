@@ -1,0 +1,21 @@
+{% load i18n %}
+<td>
+  <a class="font-mono text-sm text-brand-700 hover:underline" href="{% url 'reservations:detail' row.pk %}">{{ row.number }}</a>
+</td>
+<td>
+  <span class="block font-medium text-slate-900">{{ row.customer.full_name|default:"—" }}</span>
+  <span class="block text-xs text-slate-500">{{ row.customer.document_number }}</span>
+</td>
+<td class="whitespace-nowrap text-slate-600">{{ row.actual_return_at|default:row.return_at|date:"d/m/Y H:i" }}</td>
+<td class="text-slate-600">{{ row.pickup_office.name }}</td>
+<td class="text-right tabular font-medium whitespace-nowrap text-slate-900">{{ row.grand_total|floatformat:"2g" }} €</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.billing.add_invoice %}
+    <a class="btn-primary px-3 py-1.5 text-xs" href="{% url 'billing:invoice_issue' row.pk %}"
+       hx-get="{% url 'billing:invoice_issue' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Facturar" %}
+    </a>
+  {% else %}
+    <a class="btn-ghost px-2 py-1" href="{% url 'reservations:detail' row.pk %}">{% translate "Ver" %}</a>
+  {% endif %}
+</td>

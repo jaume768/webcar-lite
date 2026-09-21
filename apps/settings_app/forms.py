@@ -3,7 +3,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import CompanySettings, TermsVersion
+from .models import CompanySettings, Policy, TermsVersion
 
 
 class CompanySettingsForm(forms.ModelForm):
@@ -49,3 +49,10 @@ class TermsVersionForm(forms.ModelForm):
         if not cuerpo:
             raise forms.ValidationError(_("Las condiciones no pueden estar vacias."))
         return cuerpo
+
+
+class PolicyForm(forms.ModelForm):
+    class Meta:
+        model = Policy
+        fields = ["title", "body", "show_on_invoice", "sort_order"]
+        widgets = {"body": forms.Textarea(attrs={"rows": 6})}

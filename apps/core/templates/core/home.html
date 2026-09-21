@@ -1,25 +1,26 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui %}
 
 {% block title %}{% translate "Mostrador" %} · RentFlow{% endblock %}
 
 {% block breadcrumb %}{% endblock %}
 
 {% block page_header %}
-  <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
-    <div>
-      <div class="flex flex-wrap items-center gap-3">
-        <h1 class="text-2xl font-bold tracking-tight text-brand-950 sm:text-4xl">
+  <header class="mb-5 flex flex-wrap items-end justify-between gap-4 md:mb-6">
+    <div class="w-full md:w-auto">
+      <div class="flex items-start justify-between gap-3 md:flex-wrap md:items-center md:justify-start">
+        <h1 class="min-w-0 text-[1.75rem] leading-tight font-bold tracking-tight text-brand-950 sm:text-4xl">
           {{ saludo }}{% if user.first_name %}, {{ user.first_name }}{% endif %}
         </h1>
         {% if panel.alerts %}
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-sm font-medium text-amber-800 ring-1 ring-amber-600/20">
-            <span class="size-2 rounded-full bg-amber-500" aria-hidden="true"></span>
+          <a href="#avisos"
+             class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800 ring-1 ring-amber-600/20 md:rounded-full md:py-1">
+            <svg class="size-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.49 2.87c.66-1.16 2.36-1.16 3.02 0l6.28 11.03c.65 1.14-.18 2.6-1.51 2.6H3.72c-1.33 0-2.16-1.46-1.51-2.6L8.49 2.87ZM10 6a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 6Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
             {% blocktranslate count total=panel.alerts|length %}{{ total }} aviso{% plural %}{{ total }} avisos{% endblocktranslate %}
-          </span>
+          </a>
         {% else %}
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-800 ring-1 ring-emerald-600/20">
-            <span class="size-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+          <span class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800 ring-1 ring-emerald-600/20 md:rounded-full md:py-1">
+            <svg class="size-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.86-9.78a.75.75 0 0 0-1.22-.88l-3.24 4.5-1.62-1.62a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.09l3.75-5.22Z" clip-rule="evenodd"/></svg>
             {% translate "Todo en marcha" %}
           </span>
         {% endif %}
@@ -27,14 +28,18 @@
       <p class="mt-1 text-base text-slate-500 first-letter:uppercase sm:text-lg">{% now "l, j \d\e F" %}</p>
     </div>
 
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex w-full flex-wrap items-center gap-2 md:w-auto md:gap-3">
       {% comment %} Filtro de oficina del panel: solo con mas de una. Recarga la
          pagina entera para que periodo y oficina viajen siempre juntos. {% endcomment %}
       {% if panel.show_office_picker %}
-        <form method="get" action="{% url 'core:home' %}">
-          <input type="hidden" name="periodo" value="{{ panel.period.code }}">
+        <form method="get" action="{% url 'core:home' %}" class="min-w-0 flex-1 md:flex-none">
+          {% if panel.period.day %}
+            <input type="hidden" name="dia" value="{{ panel.period.day|date:'Y-m-d' }}">
+          {% else %}
+            <input type="hidden" name="periodo" value="{{ panel.period.code }}">
+          {% endif %}
           <label class="sr-only" for="office">{% translate "Oficina" %}</label>
-          <select class="input w-auto rounded-xl py-2.5 font-medium" id="office" name="office"
+          <select class="input w-full truncate rounded-xl py-2 font-medium md:w-auto md:py-2.5" id="office" name="office"
                   onchange="this.form.requestSubmit()">
             <option value="">{% translate "Todas mis oficinas" %}</option>
             {% for oficina in panel.offices %}
@@ -48,11 +53,36 @@
         </form>
       {% endif %}
 
-      <nav class="inline-flex rounded-xl border border-line bg-surface p-1 shadow-sm" aria-label="{% translate 'Periodo' %}">
+      {% comment %} Un dia concreto: flechas para ir de uno en uno y el calendario
+         del navegador para saltar a cualquiera. Al elegir fecha se recarga la
+         pagina entera, igual que con el filtro de oficina. {% endcomment %}
+      <form method="get" action="{% url 'core:home' %}"
+            class="order-last flex w-full items-center gap-1 rounded-xl border border-line bg-surface p-1 shadow-sm md:order-none md:w-auto">
+        {% if panel.office %}<input type="hidden" name="office" value="{{ panel.office.pk }}">{% endif %}
+        <a href="?dia={{ dia_elegido|add_days:-1|date:'Y-m-d' }}{% if panel.office %}&amp;office={{ panel.office.pk }}{% endif %}"
+           class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+           aria-label="{% translate 'Dia anterior' %}" title="{% translate 'Dia anterior' %}">
+          <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+        </a>
+        <label class="sr-only" for="dia-panel">{% translate "Ir a un dia" %}</label>
+        <input id="dia-panel" type="date" name="dia" value="{{ dia_elegido|date:'Y-m-d' }}"
+               onchange="this.form.requestSubmit()"
+               class="min-w-0 flex-1 rounded-lg border-0 bg-transparent px-2 py-1.5 text-sm font-medium text-slate-900
+                      focus:ring-2 focus:ring-brand-500/30 focus:outline-none md:flex-none
+                      {% if panel.period.day %}bg-brand-50 text-brand-800{% endif %}">
+        <a href="?dia={{ dia_elegido|add_days:1|date:'Y-m-d' }}{% if panel.office %}&amp;office={{ panel.office.pk }}{% endif %}"
+           class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+           aria-label="{% translate 'Dia siguiente' %}" title="{% translate 'Dia siguiente' %}">
+          <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+        </a>
+        <noscript><button type="submit" class="btn-secondary py-1">{% translate "Ir" %}</button></noscript>
+      </form>
+
+      <nav class="inline-flex shrink-0 rounded-xl border border-line bg-surface p-1 shadow-sm" aria-label="{% translate 'Periodo' %}">
         {% for codigo, periodo in periods %}
           <a href="?periodo={{ codigo }}{% if panel.office %}&amp;office={{ panel.office.pk }}{% endif %}"
              {% if codigo == panel.period.code %}aria-current="page"{% endif %}
-             class="rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:px-6
+             class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors sm:px-6 md:py-2
                     {% if codigo == panel.period.code %}bg-brand-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
             {{ periodo.label }}
           </a>

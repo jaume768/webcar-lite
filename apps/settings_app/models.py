@@ -1,4 +1,4 @@
-"""Configuracion de la empresa y condiciones generales versionadas."""
+"""Configuracion de la empresa, condiciones generales versionadas y politicas."""
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -7,7 +7,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.models import TimeStampedModel
+from apps.core.models import ActivableModel, TimeStampedModel
 
 
 class SettingsPermissions(models.Model):  # noqa: DJ008 - sin filas: no hay nada que representar
@@ -201,3 +201,41 @@ class TermsVersion(TimeStampedModel):
                 self.created_by = actor
             super().save()
         return self
+
+
+class Policy(TimeStampedModel, ActivableModel):
+    """Una politica de la empresa: cancelacion, combustible, fianza, danos...
+
+    Las marcadas para factura se imprimen al pie de las facturas. La factura
+    copia su texto al emitirse: cambiar una politica manana no reescribe las
+    facturas de ayer.
+    """
+
+    title = models.CharField(_("titulo"), max_length=120)
+    body = models.TextField(_("texto"))
+    show_on_invoice = models.BooleanField(
+        _("sale en las facturas"),
+        default=True,
+        help_text=_("Se imprime al pie de las facturas que se emitan a partir de ahora."),
+    )
+    sort_order = models.PositiveSmallIntegerField(
+        _("orden"), default=0, help_text=_("Las de numero mas bajo salen primero.")
+    )
+
+    class Meta:
+        verbose_name = _("politica")
+        verbose_name_plural = _("politicas")
+        ordering = ["sort_order", "title"]
+        # Se desactivan, no se borran: igual que el resto de maestros.
+        default_permissions = ("view", "add", "change")
+
+    def __str__(self):
+        return self.title
+
+
+def policies_for_invoice() -> list[dict]:
+    """Texto de las politicas que se imprimen en una factura, listo para copiar."""
+    return [
+        {"title": politica.title, "body": politica.body}
+        for politica in Policy.objects.filter(is_active=True, show_on_invoice=True)
+    ]

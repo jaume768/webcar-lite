@@ -1,0 +1,31 @@
+{% load i18n %}
+{% translate "Activa" as etiqueta_activa %}
+{% translate "Desactivada" as etiqueta_inactiva %}
+<td class="tabular text-slate-500">{{ row.sort_order }}</td>
+<td class="max-w-xl">
+  <span class="block font-medium text-slate-900">{{ row.title }}</span>
+  <span class="line-clamp-2 text-xs text-slate-500">{{ row.body }}</span>
+</td>
+<td>
+  {% if row.show_on_invoice %}
+    {% translate "Sí" as etiqueta %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta only %}
+  {% else %}
+    <span class="text-sm text-slate-400">{% translate "No" %}</span>
+  {% endif %}
+</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activa only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactiva only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% url 'settings_app:policy_update' row.pk as edit_url %}
+  {% url 'settings_app:policy_activate' row.pk as activate_url %}
+  {% url 'settings_app:policy_deactivate' row.pk as deactivate_url %}
+  {% blocktranslate asvar aviso with titulo=row.title %}"{{ titulo }}" dejará de salir en las facturas nuevas. Las ya emitidas no cambian.{% endblocktranslate %}
+  {% translate "Desactivar política" as titulo_aviso %}
+  {% include "offices/_actions.html" with puede_editar=perms.settings_app.change_policy edit_url=edit_url activate_url=activate_url deactivate_url=deactivate_url confirm_message=aviso confirm_title=titulo_aviso %}
+</td>

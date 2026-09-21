@@ -2,7 +2,7 @@
 {% comment %} Avisos. Llegan de tres sitios: django.contrib.messages al cargar la pagina,
    la cabecera HX-Trigger del servidor y los errores de HTMX en el cliente. {% endcomment %}
 <div class="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4
-            sm:items-end"
+            pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:items-end lg:pb-4"
      role="status" aria-live="polite" aria-atomic="false"
      x-data x-init="$store.toasts.desdeMensajes($el)">
 

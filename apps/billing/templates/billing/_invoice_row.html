@@ -1,0 +1,32 @@
+{% load i18n %}
+<td>
+  <a class="font-mono text-sm font-medium text-brand-700 hover:underline" href="{% url 'billing:invoice_detail' row.pk %}">{{ row.number }}</a>
+</td>
+<td class="whitespace-nowrap text-slate-600">{{ row.issued_at|date:"d/m/Y" }}</td>
+<td>
+  <span class="block font-medium text-slate-900">{{ row.customer_name }}</span>
+  <span class="block text-xs text-slate-500">{{ row.customer_tax_id }}</span>
+</td>
+<td>
+  <a class="font-mono text-sm text-slate-600 hover:text-brand-700 hover:underline" href="{% url 'reservations:detail' row.reservation_id %}">{{ row.reservation.number }}</a>
+</td>
+<td class="text-right tabular whitespace-nowrap text-slate-600">{{ row.base_amount|floatformat:"2g" }} €</td>
+<td class="text-right tabular whitespace-nowrap text-slate-600">{{ row.tax_amount|floatformat:"2g" }} €</td>
+<td class="text-right tabular font-semibold whitespace-nowrap {% if row.total < 0 %}text-rose-700{% else %}text-slate-900{% endif %}">{{ row.total|floatformat:"2g" }} €</td>
+<td>
+  {% if row.is_rectifying %}
+    {% translate "Rectificativa" as etiqueta %}
+    {% include "ui/_badge.html" with status="invoice_rectifying" label=etiqueta only %}
+    <span class="mt-0.5 block text-xs text-slate-500">{% blocktranslate with numero=row.rectifies.number %}de {{ numero }}{% endblocktranslate %}</span>
+  {% elif row.rectifications.all %}
+    {% translate "Rectificada" as etiqueta %}
+    {% include "ui/_badge.html" with status="invoice_rectified" label=etiqueta only %}
+  {% else %}
+    {% translate "En vigor" as etiqueta %}
+    {% include "ui/_badge.html" with status="invoice_in_force" label=etiqueta only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  <a class="btn-ghost px-2 py-1" href="{% url 'billing:invoice_detail' row.pk %}">{% translate "Ver" %}</a>
+  <a class="btn-ghost px-2 py-1" href="{% url 'billing:invoice_pdf' row.pk %}" target="_blank" rel="noopener">PDF</a>
+</td>

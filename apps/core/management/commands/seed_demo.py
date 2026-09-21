@@ -49,6 +49,23 @@ EXTRAS = [
     ("todo-riesgo", "Seguro a todo riesgo", "per_day", "12.00", 1, "120.00"),
 ]
 
+POLITICAS = [
+    (
+        "Cancelación",
+        "Gratuita hasta 48 horas antes de la recogida. Después se cobra el primer día de alquiler.",
+    ),
+    (
+        "Combustible",
+        "El vehículo se entrega con el depósito lleno y se devuelve igual. El combustible que "
+        "falte se factura al precio vigente por litro.",
+    ),
+    (
+        "Fianza",
+        "Se retiene al entregar el vehículo y se devuelve al recibirlo sin daños ni cargos "
+        "pendientes.",
+    ),
+]
+
 CLIENTES = [
     ("Ana", "Garcia Lopez"),
     ("Marc", "Ferrer Pons"),
@@ -125,12 +142,14 @@ class Command(BaseCommand):
             self._borrar_reservas()
 
         reservas = self._reservas(categorias, oficinas, clientes, vehiculos, usuarios)
+        self._politicas()
+        facturas = self._facturas(usuarios)
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Demo lista: {empresa.legal_name} · condiciones v{condiciones.version} · "
                 f"{len(oficinas)} oficinas · {len(vehiculos)} vehiculos · "
-                f"{len(clientes)} clientes · {reservas} reservas"
+                f"{len(clientes)} clientes · {reservas} reservas · {facturas} facturas"
             )
         )
         self.stdout.write(
@@ -370,22 +389,94 @@ class Command(BaseCommand):
             usuario.save()
             usuario.offices.set(oficinas.values())
             usuarios[rol_code] = usuario
+
+        from apps.accounts.services import grant_demo_permissions
+
+        grant_demo_permissions(usuarios["mostrador"])
         return usuarios
 
     # --- actividad --------------------------------------------------------
 
     def _borrar_reservas(self):
-        from apps.billing.models import Payment
+        from apps.billing.models import (
+            Invoice,
+            InvoiceKind,
+            InvoiceLine,
+            InvoiceSeriesCounter,
+            Payment,
+        )
         from apps.contracts.models import Contract
         from apps.operations.models import CheckIn, CheckOut, Damage
         from apps.reservations.models import Reservation
 
+        # Solo en la demo: una factura real no se borra nunca (Invoice.delete()
+        # revienta). Aqui se tira la demo entera, cadena de huellas incluida, y
+        # los contadores vuelven a cero para que la numeracion no tenga huecos.
+        # El borrado en bloque no pasa por Invoice.delete(); el orden lo marcan
+        # las claves protegidas: lineas, rectificativas y luego las originales.
+        InvoiceLine.objects.all().delete()
+        Invoice.objects.filter(kind=InvoiceKind.RECTIFYING).delete()
+        Invoice.objects.all().delete()
+        InvoiceSeriesCounter.objects.all().delete()
         Contract.objects.all().delete()
         Payment.objects.all().update(reservation=None) if False else None
         for modelo in (CheckOut, CheckIn, Damage):
             modelo.objects.all().delete()
         Payment.objects.all().delete()
         Reservation.objects.all().delete()
+
+    def _politicas(self):
+        """Politicas de la empresa de ejemplo. Las marcadas salen en las facturas."""
+        from apps.settings_app.models import Policy
+
+        for orden, (titulo, texto) in enumerate(POLITICAS, start=1):
+            Policy.objects.get_or_create(
+                title=titulo, defaults={"body": texto, "sort_order": orden * 10}
+            )
+
+    def _facturas(self, usuarios) -> int:
+        """Factura las reservas finalizadas y deja alguna sin facturar.
+
+        Emite con el mismo servicio que el mostrador, asi que la numeracion y
+        la cadena de huellas son las de verdad. Las mas recientes se quedan
+        sin factura para que "Pendiente de facturar" tenga algo que ensenar.
+        Idempotente: lo ya facturado no se vuelve a facturar.
+        """
+        from apps.billing.models import InvoiceKind, InvoiceSeries
+        from apps.billing.selectors import reservations_to_invoice
+        from apps.billing.services import InvoiceServiceError, issue_invoice
+
+        # Las crea la migracion 0004; aqui solo por si la base de datos se
+        # monto sin migraciones (los tests) o alguien las ha desactivado.
+        for codigo, nombre, tipo, formato in (
+            ("f", "Facturas", InvoiceKind.ORDINARY, "F{year}-{sequence:05d}"),
+            ("fr", "Rectificativas", InvoiceKind.RECTIFYING, "FR{year}-{sequence:05d}"),
+        ):
+            if not InvoiceSeries.objects.filter(
+                kind=tipo, is_default=True, is_active=True
+            ).exists():
+                InvoiceSeries.objects.update_or_create(
+                    code=codigo,
+                    defaults={
+                        "name": nombre,
+                        "kind": tipo,
+                        "number_format": formato,
+                        "is_default": True,
+                        "is_active": True,
+                    },
+                )
+
+        emisor = usuarios["administracion"]
+        pendientes = list(reservations_to_invoice(emisor).order_by("return_at"))
+        emitidas = 0
+        for reserva in pendientes[:-3]:
+            try:
+                issue_invoice(reservation=reserva, actor=emisor)
+            except InvoiceServiceError as exc:
+                self.stdout.write(f"Sin factura {reserva.number}: {exc}")
+                continue
+            emitidas += 1
+        return emitidas
 
     def _reservas(self, categorias, oficinas, clientes, vehiculos, usuarios):
         """Reservas repartidas por el mes: pasadas, de hoy y futuras."""

@@ -254,3 +254,33 @@ class ManualPriceForm(forms.Form):
         if not motivo:
             raise forms.ValidationError(_("Explica por que se cambia el precio."))
         return motivo
+
+
+class PlanningForm(forms.Form):
+    """Filtros del planning. Todo opcional: sin nada, dos semanas desde hoy."""
+
+    desde = forms.DateField(label=_("Desde"), required=False, widget=DateInput())
+    dias = forms.TypedChoiceField(
+        label=_("Dias"),
+        coerce=int,
+        required=False,
+        choices=[(7, _("7 dias")), (14, _("14 dias")), (31, _("31 dias"))],
+    )
+    office = forms.ModelChoiceField(
+        label=_("Oficina"), queryset=Office.objects.none(), required=False
+    )
+    category = forms.ModelChoiceField(
+        label=_("Categoria"), queryset=VehicleCategory.objects.none(), required=False
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        from apps.offices.selectors import offices_for_user
+
+        super().__init__(*args, **kwargs)
+        # Solo las oficinas del usuario: una ajena por la URL no valida.
+        self.fields["office"].queryset = offices_for_user(user).order_by("name")
+        self.fields["office"].empty_label = _("Todas mis oficinas")
+        self.fields["category"].queryset = VehicleCategory.objects.active().order_by(
+            "sort_order", "name"
+        )
+        self.fields["category"].empty_label = _("Todas las categorias")

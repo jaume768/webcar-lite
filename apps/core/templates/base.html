@@ -2,7 +2,7 @@
 <html lang="{{ LANGUAGE_CODE|default:'es' }}" class="h-full">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}RentFlow{% endblock %}</title>
   <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
@@ -27,8 +27,8 @@
       {% comment %} Ancho maximo y margenes generosos: en un monitor de
          mostrador, el contenido pegado a los bordes se lee peor. {% endcomment %}
       <main id="contenido" tabindex="-1"
-            class="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 focus:outline-none
-                   sm:px-6 lg:px-8 lg:py-8">
+            class="mx-auto w-full max-w-[1600px] flex-1 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] focus:outline-none
+                   sm:px-6 sm:pt-6 lg:px-8 lg:py-8">
         {% block breadcrumb %}
           {% include "shell/_breadcrumb.html" %}
         {% endblock %}
@@ -50,6 +50,8 @@
         {% block content %}{% endblock %}
       </main>
     </div>
+
+    {% include "shell/_bottom_nav.html" %}
   </div>
 
   {% include "shell/_toasts.html" %}

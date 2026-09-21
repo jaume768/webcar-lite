@@ -79,9 +79,21 @@ def documents_for(reservation) -> list[DocumentEntry]:
 
 
 def _facturas(reservation) -> list[DocumentEntry]:
-    """Facturas de la reserva.
+    """Facturas de la reserva, rectificativas incluidas. El PDF se genera al pedirlo."""
+    from apps.billing.selectors import invoices_of
 
-    Provisional: `Invoice` llega en su propio prompt. Cuando exista, se rellena
-    aqui y la pestana las ensena sin tocar nada mas.
-    """
-    return []
+    return [
+        DocumentEntry(
+            kind="invoice",
+            title=str(
+                _("Factura rectificativa %(numero)s")
+                if factura.is_rectifying
+                else _("Factura %(numero)s")
+            )
+            % {"numero": factura.number},
+            created_at=factura.issued_at,
+            download_url=reverse("billing:invoice_pdf", args=[factura.pk]),
+            detail=f"{factura.total} €",
+        )
+        for factura in invoices_of(reservation)
+    ]

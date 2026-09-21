@@ -6,6 +6,7 @@ app_name = "reservations"
 
 urlpatterns = [
     path("reservas/", views.ReservationListView.as_view(), name="list"),
+    path("planning/", views.PlanningView.as_view(), name="planning"),
     path("reservas/rapida/", views.QuickReservationView.as_view(), name="quick"),
     path("reservas/rapida/precio/", views.QuickReservationPreview.as_view(), name="quick_preview"),
     path("reservas/rapida/clientes/", views.CustomerSearchView.as_view(), name="customer_search"),

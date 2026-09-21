@@ -1,0 +1,21 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Emitir rectificativa" %}{% endblock %}
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {% blocktranslate with numero=invoice.number total=invoice.total|floatformat:"2g" %}Anula la factura {{ numero }} ({{ total }} €){% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  <p class="mb-4 rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+    {% blocktranslate with numero=invoice.number %}Se emite una factura rectificativa con las mismas líneas en negativo. La {{ numero }} no se toca, pero deja de estar en vigor y la reserva se puede corregir y volver a facturar.{% endblocktranslate %}
+  </p>
+  {% include "ui/_form_body.html" %}
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="{{ form_id }}" class="btn-danger">{{ submit_label }}</button>
+{% endblock %}

@@ -212,7 +212,7 @@ def home(request):
     panel = build_dashboard(
         user=request.user,
         office=oficina,
-        period=period_for(request.GET.get("periodo")),
+        period=period_for(request.GET.get("periodo"), request.GET.get("dia")),
         # La caja se consulta solo para quien puede ver cobros: no basta con no
         # pintarla.
         include_cash=request.user.has_perm("billing.view_billing"),
@@ -223,6 +223,7 @@ def home(request):
         "panel": panel,
         "saludo": _saludo(timezone.localtime(panel.generated_at).hour),
         "periods": PERIODS.items(),
+        "dia_elegido": panel.period.anchor(timezone.localdate()),
         "refresh_seconds": settings.DASHBOARD_REFRESH_SECONDS,
     }
 
@@ -262,7 +263,9 @@ def set_active_office(request):
         logger.warning("oficina_no_permitida", office_id=request.POST.get("office_id"))
         raise PermissionDenied(_("Esa oficina no esta disponible para tu usuario.")) from None
 
-    response = render(request, "shell/_office_selector.html")
+    # Solo variantes conocidas: el valor acaba en un id del HTML.
+    variante = "movil" if request.POST.get("variante") == "movil" else ""
+    response = render(request, "shell/_office_selector.html", {"variante": variante})
     return trigger_toast(response, _("Oficina activa: %s") % office.name, "success")
 
 
@@ -408,6 +411,10 @@ def demo_login(request):
         )
         return HttpResponseRedirect(reverse("accounts:login"))
 
+    from apps.accounts.services import grant_demo_permissions
+
+    # Una demo cargada antes de ampliar sus permisos tambien los recibe.
+    grant_demo_permissions(usuario)
     login(request, usuario)
     logger.info("acceso_de_demostracion", user_id=usuario.pk)
     messages.info(

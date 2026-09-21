@@ -62,3 +62,16 @@ def add_class(field, css: str):
     if getattr(field, "help_text", ""):
         attrs["aria-describedby"] = f"{field.auto_id}-ayuda"
     return field.as_widget(attrs=attrs)
+
+
+@register.filter(name="add_days")
+def add_days(value, days):
+    """Fecha desplazada `days` dias. Para enlaces de "dia anterior / siguiente"."""
+    from datetime import timedelta
+
+    if not value:
+        return value
+    try:
+        return value + timedelta(days=int(days))
+    except (TypeError, ValueError):
+        return value

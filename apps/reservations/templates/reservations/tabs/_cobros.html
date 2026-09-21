@@ -31,6 +31,49 @@
     </p>
   {% endif %}
 
+  {# ------------------------------------------------------------ factura #}
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{% translate "Factura" %}</h2>
+      {% if se_puede_facturar and perms.billing.add_invoice %}
+        <button type="button" class="btn-primary py-1.5 text-xs"
+                hx-get="{% url 'billing:invoice_issue' reservation.pk %}"
+                hx-target="#modal-host" hx-swap="innerHTML">
+          {% translate "Emitir factura" %}
+        </button>
+      {% endif %}
+    </div>
+    {% if facturas %}
+      <ul class="divide-y divide-line">
+        {% for factura in facturas %}
+          <li class="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+            <span class="font-mono font-semibold text-slate-900">{{ factura.number }}</span>
+            <span class="text-slate-500">{{ factura.issued_at|date:"d/m/Y" }}</span>
+            {% if factura.is_rectifying %}
+              {% translate "Rectificativa" as etiqueta %}
+              {% include "ui/_badge.html" with status="invoice_rectifying" label=etiqueta only %}
+            {% elif factura == factura_en_vigor %}
+              {% translate "En vigor" as etiqueta %}
+              {% include "ui/_badge.html" with status="invoice_in_force" label=etiqueta only %}
+            {% else %}
+              {% translate "Rectificada" as etiqueta %}
+              {% include "ui/_badge.html" with status="invoice_rectified" label=etiqueta only %}
+            {% endif %}
+            <span class="ml-auto font-semibold tabular {% if factura.total < 0 %}text-rose-700{% else %}text-slate-900{% endif %}">{{ factura.total|floatformat:"2g" }} €</span>
+            {% if perms.billing.view_billing %}
+              <a class="btn-ghost px-2 py-1" href="{% url 'billing:invoice_detail' factura.pk %}">{% translate "Ver" %}</a>
+            {% endif %}
+            <a class="btn-ghost px-2 py-1" href="{% url 'billing:invoice_pdf' factura.pk %}" target="_blank" rel="noopener">PDF</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% elif se_puede_facturar %}
+      <p class="px-5 py-4 text-sm text-slate-500">{% translate "Reserva finalizada y sin facturar." %}</p>
+    {% else %}
+      <p class="px-5 py-4 text-sm text-slate-500">{% translate "Se factura al finalizar la reserva, cuando ya están todos los cargos de la devolución." %}</p>
+    {% endif %}
+  </section>
+
   <section class="card">
     <div class="card-header">
       <h2 class="card-title">{% translate "Movimientos" %}</h2>

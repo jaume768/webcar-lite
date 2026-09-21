@@ -1,0 +1,36 @@
+{% load i18n %}
+{% translate "Activa" as etiqueta_activa %}
+{% translate "Desactivada" as etiqueta_inactiva %}
+<td class="font-mono tabular text-slate-600">{{ row.code }}</td>
+<td>
+  <span class="font-medium text-slate-900">{{ row.name }}</span>
+  {% if row.is_default %}
+    {% translate "Por defecto" as etiqueta %}
+    {% include "ui/_badge.html" with status="series_default" label=etiqueta only %}
+  {% endif %}
+</td>
+<td>
+  {% if row.kind == "rectifying" %}
+    {% include "ui/_badge.html" with status="series_rectifying" label=row.get_kind_display only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="series_ordinary" label=row.get_kind_display only %}
+  {% endif %}
+</td>
+<td class="font-mono text-xs whitespace-nowrap text-slate-600">{{ row.number_format }}</td>
+<td class="font-mono text-sm whitespace-nowrap text-slate-900">{{ row.next_number }}</td>
+<td class="text-right tabular text-slate-600">{{ row.emitidas }}</td>
+<td>
+  {% if row.is_active %}
+    {% include "ui/_badge.html" with status="active" label=etiqueta_activa only %}
+  {% else %}
+    {% include "ui/_badge.html" with status="inactive" label=etiqueta_inactiva only %}
+  {% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% url 'billing:series_update' row.pk as edit_url %}
+  {% url 'billing:series_activate' row.pk as activate_url %}
+  {% url 'billing:series_deactivate' row.pk as deactivate_url %}
+  {% blocktranslate asvar aviso with codigo=row.code %}La serie {{ codigo }} dejara de ofrecerse al emitir. No se borra: sus facturas la siguen usando.{% endblocktranslate %}
+  {% translate "Desactivar serie" as titulo_aviso %}
+  {% include "offices/_actions.html" with puede_editar=perms.billing.change_invoiceseries edit_url=edit_url activate_url=activate_url deactivate_url=deactivate_url confirm_message=aviso confirm_title=titulo_aviso %}
+</td>

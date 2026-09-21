@@ -28,7 +28,15 @@
         {% include "ui/_field.html" with field=form.country %}
         {% include "ui/_field.html" with field=form.email %}
         {% include "ui/_field.html" with field=form.website %}
-        {% include "ui/_field.html" with field=form.logo %}
+        <div>
+          {% if form.instance.logo %}
+            <div class="mb-2 flex items-center gap-3 rounded-xl border border-line bg-slate-50 p-3">
+              <img src="{{ form.instance.logo.url }}" alt="{% translate 'Logo actual' %}" class="max-h-12 max-w-40 object-contain">
+              <span class="text-xs text-slate-500">{% translate "Sale en la cabecera de las facturas y los contratos." %}</span>
+            </div>
+          {% endif %}
+          {% include "ui/_field.html" with field=form.logo %}
+        </div>
       </div>
       {% include "ui/_field.html" with field=form.registry_note %}
       <button type="submit" class="btn-primary">{% translate "Guardar" %}</button>
