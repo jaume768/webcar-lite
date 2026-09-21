@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ parte }} · RentFlow{% endblock %}
+
+{% block page_actions %}
+  <a class="btn-secondary" href="{% url 'compliance:ses_xml' parte.pk %}">{% translate "Descargar XML" %}</a>
+  {% if perms.compliance.change_sessubmission and parte.status != "sent" and parte.status != "accepted" %}
+    <form method="post" action="{% url 'compliance:ses_action' parte.pk 'revalidar' %}">{% csrf_token %}
+      <button class="btn-secondary" type="submit">{% translate "Revisar datos" %}</button>
+    </form>
+    {% if parte.status == "ready" or parte.status == "error" or parte.status == "rejected" %}
+      <form method="post" action="{% url 'compliance:ses_action' parte.pk 'enviar' %}">{% csrf_token %}
+        <button class="btn-primary" type="submit">{% if envio_real %}{% translate "Enviar al Ministerio" %}{% else %}{% translate "Validar (envío simulado)" %}{% endif %}</button>
+      </form>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if not envio_real %}
+    <p class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      {% translate "El envío real a SES.Hospedajes está desactivado. El parte se valida y se guarda; descarga el XML para subirlo en la sede o configura SES_ENABLED y las credenciales del Ministerio." %}
+    </p>
+  {% endif %}
+  <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div class="min-w-0 space-y-6">
+      <section class="card p-5">
+        <div class="flex flex-wrap items-center gap-3">
+          {% include "ui/_badge.html" with status=parte.status label=parte.get_status_display only %}
+          <a class="card-link" href="{% url 'reservations:detail' parte.reservation_id %}">{% blocktranslate with numero=parte.reservation.number %}Reserva {{ numero }}{% endblocktranslate %}</a>
+        </div>
+        {% if parte.missing %}
+          <h2 class="mt-4 text-sm font-semibold text-rose-700">{% translate "Faltan estos datos" %}</h2>
+          <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-slate-700">
+            {% for dato in parte.missing %}<li>{{ dato }}</li>{% endfor %}
+          </ul>
+          <p class="mt-3 text-xs text-slate-500">{% translate "Complétalos en la ficha del cliente, del vehículo o de la oficina y pulsa «Revisar datos»." %}</p>
+        {% else %}
+          <p class="mt-4 text-sm text-emerald-700">{% translate "Datos completos." %}</p>
+        {% endif %}
+      </section>
+      <section class="card">
+        <div class="card-header"><h2 class="card-title">XML</h2></div>
+        <pre class="max-h-[32rem] overflow-auto px-5 py-4 font-mono text-xs leading-relaxed text-slate-700">{{ parte.xml }}</pre>
+      </section>
+    </div>
+    <aside class="space-y-4">
+      <section class="card p-5 text-sm">
+        <dl class="space-y-2">
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">{% translate "Plazo" %}</dt><dd class="{% if parte.is_overdue %}font-semibold text-rose-600{% endif %}">{{ parte.deadline_at|date:"d/m/Y H:i"|default:"—" }}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">{% translate "Intentos" %}</dt><dd>{{ parte.attempts }}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">{% translate "Enviada" %}</dt><dd>{{ parte.sent_at|date:"d/m/Y H:i"|default:"—" }}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">{% translate "Lote" %}</dt><dd class="font-mono">{{ parte.lot_code|default:"—" }}</dd></div>
+        </dl>
+        {% if parte.response %}
+          <p class="mt-4 text-xs font-medium text-slate-500">{% translate "Respuesta" %}</p>
+          <pre class="mt-1 max-h-60 overflow-auto rounded-lg bg-slate-50 p-2 text-xs whitespace-pre-wrap text-slate-600">{{ parte.response }}</pre>
+        {% endif %}
+      </section>
+    </aside>
+  </div>
+{% endblock %}

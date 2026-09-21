@@ -8,7 +8,11 @@
   <span class="block text-xs text-slate-500">{{ row.customer_tax_id }}</span>
 </td>
 <td>
-  <a class="font-mono text-sm text-slate-600 hover:text-brand-700 hover:underline" href="{% url 'reservations:detail' row.reservation_id %}">{{ row.reservation.number }}</a>
+  {% if row.reservation_id %}
+    <a class="font-mono text-sm text-slate-600 hover:text-brand-700 hover:underline" href="{% url 'reservations:detail' row.reservation_id %}">{{ row.reservation.number }}</a>
+  {% else %}
+    <span class="text-xs font-medium text-slate-400">{% translate "Factura libre" %}</span>
+  {% endif %}
 </td>
 <td class="text-right tabular whitespace-nowrap text-slate-600">{{ row.base_amount|floatformat:"2g" }} €</td>
 <td class="text-right tabular whitespace-nowrap text-slate-600">{{ row.tax_amount|floatformat:"2g" }} €</td>

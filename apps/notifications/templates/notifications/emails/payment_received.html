@@ -1,0 +1,6 @@
+{% extends "notifications/emails/_base.html" %}{% load i18n %}
+{% block titulo_visible %}{% translate "¡Pago recibido!" %}{% endblock %}
+{% block cuerpo %}
+{% if pago %}<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{{ pago.get_purpose_display }}: <strong>{{ pago.amount|floatformat:2 }} €</strong></p>{% endif %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% translate "Gracias. Lo hemos apuntado en tu reserva." %}</p>
+{% endblock %}

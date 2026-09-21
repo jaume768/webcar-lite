@@ -9,7 +9,12 @@ ALLOWED_HOSTS = ["*"]
 # En dev el manifest de whitenoise estorba: exige collectstatic para cada cambio.
 STORAGES["staticfiles"] = {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"}
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# Con clave de Brevo, tambien en desarrollo se envia de verdad (para probar).
+EMAIL_BACKEND = (
+    "apps.notifications.backends.BrevoEmailBackend"
+    if env("BREVO_API_KEY", default="")
+    else "django.core.mail.backends.console.EmailBackend"
+)
 
 # Ejecuta las tareas en el proceso salvo que se levante el worker aparte.
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)

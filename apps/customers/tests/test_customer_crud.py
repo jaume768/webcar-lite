@@ -20,6 +20,7 @@ def datos_cliente(**cambios):
         "last_name": "González",
         "birth_date": "1990-05-12",
         "nationality": "ES",
+        "language": "es",
         "document_type": "dni",
         "document_number": "12345678Z",
         "document_expiry": "",
@@ -55,6 +56,15 @@ def test_el_alta_crea_el_cliente(client, gestor_maestros):
     assert respuesta.status_code == 200
     assert "crud:guardado" in respuesta.headers["HX-Trigger"]
     assert cliente.full_name == "Maria González"
+
+
+def test_el_alta_guarda_el_idioma_del_cliente(client, gestor_maestros):
+    """Es el idioma de sus correos, su factura y su contrato."""
+    client.force_login(gestor_maestros)
+
+    client.post(reverse("customers:customer_create"), datos_cliente(language="de"), headers=HTMX)
+
+    assert Customer.objects.get(document_number="12345678Z").language == "de"
 
 
 def test_un_dni_mal_formado_se_rechaza_con_mensaje_claro(client, gestor_maestros):

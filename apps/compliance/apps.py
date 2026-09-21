@@ -7,3 +7,16 @@ class ComplianceConfig(AppConfig):
     name = "apps.compliance"
     label = "compliance"
     verbose_name = _("Cumplimiento normativo")
+
+    def ready(self):
+        from apps.core import badges
+
+        for estado, tono in {
+            "incomplete": "warning",
+            "ready": "info",
+            "sent": "success",
+            "accepted": "success",
+            "rejected": "danger",
+            "error": "danger",
+        }.items():
+            badges.register(estado, tono)

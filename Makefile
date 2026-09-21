@@ -4,7 +4,7 @@ RUN     := $(COMPOSE) run --rm web
 EXEC    := $(COMPOSE) exec web
 
 .DEFAULT_GOAL := help
-.PHONY: help env build up down logs coverage shell bash dbshell test lint format migrate makemigrations manage sync_roles seed superuser collectstatic clean
+.PHONY: help env build up down logs coverage shell bash dbshell test lint format migrate makemigrations messages manage sync_roles seed superuser collectstatic clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -56,6 +56,10 @@ migrate: ## Aplica migraciones
 
 makemigrations: ## Genera migraciones
 	$(EXEC) python manage.py makemigrations $(ARGS)
+
+messages: ## Actualiza locale/ (en, de, fr) y compila las traducciones
+	$(EXEC) python manage.py makemessages -l en -l de -l fr --ignore=.venv --ignore=node_modules --no-obsolete
+	$(EXEC) python manage.py compilemessages --ignore=.venv --ignore=node_modules
 
 manage: ## Ejecuta un comando de Django (ARGS="sync_roles")
 	$(EXEC) python manage.py $(ARGS)

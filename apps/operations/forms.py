@@ -3,11 +3,11 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.forms import DateTimeField
+from apps.core.forms import DateField, DateTimeField
 from apps.offices.models import Office
 from apps.reservations.models import ChargeKind
 
-from .models import Damage, DamageSeverity, DamageType, DamageZone, FuelLevel
+from .models import Damage, DamageSeverity, DamageType, DamageZone, FuelLevel, TrafficFine
 
 
 class CheckInForm(forms.Form):
@@ -143,3 +143,46 @@ class DamageForm(forms.ModelForm):
         if not zona:
             raise forms.ValidationError(_("Pincha la zona danada en el croquis."))
         return zona
+
+
+class TrafficFineForm(forms.ModelForm):
+    """Datos de la notificacion. La reserva y el conductor los pone el servicio."""
+
+    offense_at = DateTimeField(label=_("Fecha y hora de la infracción"))
+    notified_on = DateField(label=_("Fecha de notificación"), required=False)
+    identify_by = DateField(
+        label=_("Plazo para identificar"),
+        required=False,
+        help_text=_("Vacío: 20 días naturales desde la notificación."),
+    )
+
+    class Meta:
+        model = TrafficFine
+        fields = [
+            "vehicle",
+            "offense_at",
+            "place",
+            "authority",
+            "file_number",
+            "description",
+            "amount",
+            "notified_on",
+            "identify_by",
+            "notes",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+            "notes": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        from apps.fleet.models import Vehicle
+        from apps.offices.selectors import offices_for_user
+
+        super().__init__(*args, **kwargs)
+        # Solo coches de las oficinas del usuario; los de baja tambien, porque la
+        # multa puede llegar meses despues de retirarlos.
+        self.fields["vehicle"].queryset = Vehicle.objects.filter(
+            current_office__in=offices_for_user(user)
+        ).order_by("plate")
+        self.fields["vehicle"].label_from_instance = lambda v: f"{v.plate} · {v.brand} {v.model}"

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ fine.file_number }} · RentFlow{% endblock %}
+
+{% block page_actions %}
+  {% if perms.operations.change_trafficfine %}
+    <a class="btn-secondary" href="{% url 'operations:fine_update' fine.pk %}"
+       hx-get="{% url 'operations:fine_update' fine.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Editar" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div class="min-w-0 space-y-6">
+      <section class="card p-5">
+        <div class="flex flex-wrap items-center gap-3">
+          {% include "ui/_badge.html" with status=fine.status label=fine.get_status_display only %}
+          {% if fine.is_overdue %}
+            <span class="text-sm font-semibold text-rose-600">{% translate "Plazo de identificación vencido" %}</span>
+          {% endif %}
+        </div>
+        <dl class="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <div><dt class="text-slate-500">{% translate "Organismo" %}</dt><dd class="font-medium">{{ fine.authority }}</dd></div>
+          <div><dt class="text-slate-500">{% translate "Expediente" %}</dt><dd class="font-mono font-medium">{{ fine.file_number }}</dd></div>
+          <div><dt class="text-slate-500">{% translate "Infracción" %}</dt><dd>{{ fine.offense_at|date:"d/m/Y H:i" }}{% if fine.place %} · {{ fine.place }}{% endif %}</dd></div>
+          <div><dt class="text-slate-500">{% translate "Vehículo" %}</dt><dd class="font-mono">{{ fine.vehicle.plate }} <span class="font-sans text-slate-500">{{ fine.vehicle.brand }} {{ fine.vehicle.model }}</span></dd></div>
+          <div><dt class="text-slate-500">{% translate "Importe" %}</dt><dd class="font-semibold tabular">{{ fine.amount|floatformat:"2g" }} €</dd></div>
+          <div><dt class="text-slate-500">{% translate "Notificada / plazo" %}</dt><dd>{{ fine.notified_on|date:"d/m/Y"|default:"—" }} → <span class="{% if fine.is_overdue %}font-semibold text-rose-600{% endif %}">{{ fine.identify_by|date:"d/m/Y"|default:"—" }}</span></dd></div>
+          {% if fine.description %}<div class="sm:col-span-2"><dt class="text-slate-500">{% translate "Descripción" %}</dt><dd>{{ fine.description|linebreaksbr }}</dd></div>{% endif %}
+        </dl>
+      </section>
+
+      <section class="card p-5">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="card-title">{% translate "Conductor a identificar" %}</h2>
+          {% if fine.reservation_id %}
+            <a class="card-link" href="{% url 'reservations:detail' fine.reservation_id %}">{% blocktranslate with numero=fine.reservation.number %}Reserva {{ numero }}{% endblocktranslate %}</a>
+          {% endif %}
+        </div>
+        {% if fine.driver_name %}
+          <p class="mt-1 text-xs text-slate-500">{% translate "Titular del contrato cuando se cometió la infracción. Son los datos que se comunican al organismo." %}</p>
+          <dl class="mt-4 grid gap-x-6 gap-y-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2">
+            <div><dt class="text-slate-500">{% translate "Nombre" %}</dt><dd class="font-semibold">{{ fine.driver_name }}</dd></div>
+            <div><dt class="text-slate-500">{% translate "Documento" %}</dt><dd class="font-mono">{{ fine.driver_document|default:"—" }}</dd></div>
+            <div><dt class="text-slate-500">{% translate "Permiso de conducir" %}</dt><dd class="font-mono">{{ fine.driver_licence|default:"—" }}</dd></div>
+            <div><dt class="text-slate-500">{% translate "Dirección" %}</dt><dd>{{ fine.driver_address|default:"—" }}</dd></div>
+          </dl>
+          {% if adicionales %}
+            <p class="mt-4 text-sm font-medium text-slate-700">{% translate "Conductores adicionales de la reserva" %}</p>
+            <ul class="mt-1 space-y-1 text-sm text-slate-600">
+              {% for conductor in adicionales %}
+                <li>{{ conductor.first_name }} {{ conductor.last_name }} · <span class="font-mono">{{ conductor.document_number|default:"—" }}</span> · {% translate "carnet" %} <span class="font-mono">{{ conductor.licence_number }}</span></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% else %}
+          <p class="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            {% translate "Ninguna reserva tenía este coche a esa hora. Revisa la matrícula y la hora de la infracción y vuelve a buscar." %}
+          </p>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="space-y-4">
+      <section class="card p-5">
+        <h2 class="card-title">{% translate "Qué hacer" %}</h2>
+        <div class="mt-4 space-y-2">
+          {% if perms.operations.change_trafficfine %}
+            {% if fine.status == "matched" or fine.status == "received" %}
+              <form method="post" action="{% url 'operations:fine_action' fine.pk 'identificado' %}">{% csrf_token %}
+                <button class="btn-primary w-full" type="submit">{% translate "Conductor ya identificado" %}</button>
+              </form>
+            {% endif %}
+            {% if fine.status != "charged" and fine.status != "closed" %}
+              <form method="post" action="{% url 'operations:fine_action' fine.pk 'reasignar' %}">{% csrf_token %}
+                <button class="btn-secondary w-full" type="submit">{% translate "Volver a buscar la reserva" %}</button>
+              </form>
+            {% endif %}
+          {% endif %}
+          {% if facturar_url and perms.billing.add_invoice %}
+            <a class="btn-secondary w-full" href="{{ facturar_url }}">{% translate "Facturar al cliente" %}</a>
+          {% endif %}
+          {% if fine.invoice_id %}
+            <a class="btn-secondary w-full" href="{% url 'billing:invoice_detail' fine.invoice_id %}">
+              {% blocktranslate with numero=fine.invoice.number %}Ver factura {{ numero }}{% endblocktranslate %}
+            </a>
+          {% endif %}
+          {% if perms.operations.change_trafficfine and fine.status != "closed" %}
+            <form method="post" action="{% url 'operations:fine_action' fine.pk 'cerrar' %}">{% csrf_token %}
+              <button class="btn-ghost w-full text-slate-600" type="submit">{% translate "Cerrar multa" %}</button>
+            </form>
+          {% endif %}
+        </div>
+      </section>
+      {% if fine.notes %}
+        <section class="card p-5 text-sm text-slate-600"><h2 class="card-title">{% translate "Notas" %}</h2><p class="mt-2">{{ fine.notes|linebreaksbr }}</p></section>
+      {% endif %}
+    </aside>
+  </div>
+{% endblock %}

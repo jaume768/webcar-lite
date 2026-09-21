@@ -396,6 +396,28 @@ def transition(
         changed_by=user if getattr(user, "pk", None) else None,
     )
 
+    from apps.auditlog import services as audit
+    from apps.auditlog.models import AuditAction
+
+    audit.record(
+        AuditAction.CANCEL
+        if to_status in (ReservationStatus.CANCELLED, ReservationStatus.NO_SHOW)
+        else AuditAction.STATUS,
+        f"{reservation.number}: {ReservationStatus(desde).label} → "
+        f"{ReservationStatus(to_status).label}",
+        obj=reservation,
+        actor=user,
+        changes={"status": [desde, to_status], "reason": motivo},
+    )
+    # Correos al cliente: al confirmar y al terminar el alquiler.
+    from apps.notifications.models import EmailKind
+    from apps.notifications.services import queue_email
+
+    if to_status == ReservationStatus.CONFIRMED:
+        queue_email(kind=EmailKind.CONFIRMATION, reservation=reservation, actor=user)
+    elif to_status == ReservationStatus.FINISHED:
+        queue_email(kind=EmailKind.RETURN, reservation=reservation, actor=user)
+
     logger.info(
         "reserva_cambio_de_estado",
         reservation_number=reservation.number,

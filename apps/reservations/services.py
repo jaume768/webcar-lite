@@ -14,6 +14,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.auditlog import services as audit
+from apps.auditlog.models import AuditAction
 from apps.availability.services import (
     check_category_availability,
     reserve_capacity,
@@ -238,6 +240,19 @@ def create_quick_reservation(
         changed_by=actor if getattr(actor, "pk", None) else None,
     )
 
+    audit.record(
+        AuditAction.CREATE,
+        _("Reserva %(numero)s creada (%(total)s €)")
+        % {"numero": reservation.number, "total": reservation.total},
+        obj=reservation,
+        actor=actor,
+        changes={
+            "pickup_at": reservation.pickup_at,
+            "return_at": reservation.return_at,
+            "category": reservation.category.code,
+            "total": reservation.total,
+        },
+    )
     logger.info(
         "reserva_alta_rapida",
         reservation_number=reservation.number,
@@ -534,6 +549,12 @@ def apply_change(
     _comprobar_factura(reservation, actor)
 
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    antes = {
+        "pickup_at": reservation.pickup_at,
+        "return_at": reservation.return_at,
+        "category": reservation.category.code,
+        "vehicle": reservation.vehicle.plate if reservation.vehicle_id else None,
+    }
     # Un cambio de fechas o de categoria recalcula, y eso se llevaria por
     # delante un precio pactado a mano. Nunca en silencio.
     _comprobar_precio_manual(reservation, confirm_manual_override)
@@ -590,6 +611,21 @@ def apply_change(
         actor=actor,
     )
 
+    audit.record(
+        AuditAction.UPDATE,
+        _("Reserva %(numero)s modificada") % {"numero": reservation.number},
+        obj=reservation,
+        actor=actor,
+        changes=audit.diff(
+            antes,
+            {
+                "pickup_at": reservation.pickup_at,
+                "return_at": reservation.return_at,
+                "category": reservation.category.code,
+                "vehicle": reservation.vehicle.plate if reservation.vehicle_id else None,
+            },
+        ),
+    )
     logger.info(
         "reserva_modificada",
         reservation_number=reservation.number,
@@ -614,6 +650,13 @@ def release_vehicle(*, reservation: Reservation, actor=None) -> Reservation:
     reservation.vehicle = None
     reservation.needs_reassignment = True
     reservation.save(update_fields=["vehicle", "needs_reassignment", "updated_at"])
+    audit.record(
+        AuditAction.VEHICLE,
+        _("Coche soltado de %(numero)s") % {"numero": reservation.number},
+        obj=reservation,
+        actor=actor,
+        changes={"vehicle": None},
+    )
     logger.info(
         "vehiculo_liberado",
         reservation_number=reservation.number,
@@ -735,6 +778,14 @@ def _registrar_cambio_de_precio(
         new_total=reservation.total,
         reason=reason,
         changed_by=actor if getattr(actor, "pk", None) else None,
+    )
+    audit.record(
+        AuditAction.PRICE,
+        _("Precio de %(numero)s: %(antes)s → %(despues)s €")
+        % {"numero": reservation.number, "antes": anterior, "despues": reservation.total},
+        obj=reservation,
+        actor=actor,
+        changes={"total": [anterior, reservation.total], "kind": kind, "reason": reason},
     )
     logger.info(
         "precio_de_reserva_cambiado",

@@ -39,6 +39,18 @@
         </div>
       </div>
       {% include "ui/_field.html" with field=form.registry_note %}
+
+      <h3 class="mt-6 mb-3 border-t border-line pt-5 text-sm font-semibold text-slate-900">{% translate "Correos automáticos al cliente" %}</h3>
+      <p class="mb-3 text-xs text-slate-500">{% translate "Se envían en el idioma del cliente (español, inglés, alemán o francés)." %}</p>
+      <div class="grid gap-x-4 sm:grid-cols-2">
+        {% include "ui/_field.html" with field=form.email_confirmation %}
+        {% include "ui/_field.html" with field=form.email_contract %}
+        {% include "ui/_field.html" with field=form.email_reminder %}
+        {% include "ui/_field.html" with field=form.reminder_hours %}
+        {% include "ui/_field.html" with field=form.email_return %}
+        {% include "ui/_field.html" with field=form.email_invoice %}
+      </div>
+      {% include "ui/_field.html" with field=form.pickup_instructions %}
       <button type="submit" class="btn-primary">{% translate "Guardar" %}</button>
       <p class="field-hint mt-2">
         {% translate "Salen en la cabecera del contrato y de la factura." %}

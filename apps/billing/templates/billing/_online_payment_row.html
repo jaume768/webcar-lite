@@ -1,0 +1,8 @@
+{% load i18n %}
+<td class="whitespace-nowrap text-slate-600">{{ row.created_at|date:"d/m/Y H:i" }}</td>
+<td><a class="font-mono text-sm text-brand-700 hover:underline" href="{% url 'reservations:detail' row.reservation_id %}">{{ row.reservation.number }}</a>
+  <span class="block text-xs text-slate-500">{{ row.reservation.customer.full_name|default:"—" }}</span></td>
+<td>{{ row.get_purpose_display }}</td>
+<td class="capitalize text-slate-600">{{ row.provider }}</td>
+<td class="text-right tabular whitespace-nowrap">{{ row.amount|floatformat:"2g" }} €</td>
+<td>{% include "ui/_badge.html" with status=row.status label=row.get_status_display only %}</td>

@@ -1,0 +1,23 @@
+{% load i18n %}
+<td>
+  <a class="font-mono text-sm font-medium text-brand-700 hover:underline" href="{% url 'operations:fine_detail' row.pk %}">{{ row.file_number }}</a>
+  <span class="block text-xs text-slate-500">{{ row.authority }}</span>
+</td>
+<td class="whitespace-nowrap text-slate-600">
+  {{ row.offense_at|date:"d/m/Y H:i" }}
+  {% if row.place %}<span class="block max-w-48 truncate text-xs text-slate-400">{{ row.place }}</span>{% endif %}
+</td>
+<td class="font-mono text-sm">{{ row.vehicle.plate }}</td>
+<td>
+  {% if row.reservation_id %}
+    <a class="font-mono text-sm text-slate-700 hover:text-brand-700 hover:underline" href="{% url 'reservations:detail' row.reservation_id %}">{{ row.reservation.number }}</a>
+    <span class="block text-xs text-slate-500">{{ row.driver_name }}</span>
+  {% else %}
+    <span class="text-xs font-medium text-rose-600">{% translate "Sin reserva" %}</span>
+  {% endif %}
+</td>
+<td class="text-right tabular whitespace-nowrap">{{ row.amount|floatformat:"2g" }} €</td>
+<td class="whitespace-nowrap {% if row.is_overdue %}font-semibold text-rose-600{% else %}text-slate-600{% endif %}">
+  {{ row.identify_by|date:"d/m/Y"|default:"—" }}
+</td>
+<td>{% include "ui/_badge.html" with status=row.status label=row.get_status_display only %}</td>

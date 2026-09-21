@@ -3,7 +3,7 @@
 import structlog
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -23,15 +23,25 @@ from apps.core.services import ServiceError
 from apps.core.tables import Column
 from apps.reservations.models import Reservation
 
-from .filters import InvoiceFilter, InvoiceSeriesFilter, PaymentFilter, ToInvoiceFilter
+from .filters import (
+    InvoiceFilter,
+    InvoiceSeriesFilter,
+    OnlinePaymentFilter,
+    PaymentFilter,
+    ToInvoiceFilter,
+)
 from .forms import (
+    CaptureDepositForm,
     CashRegisterForm,
     InvoiceSeriesForm,
     IssueInvoiceForm,
+    ManualInvoiceForm,
+    ManualInvoiceLineFormSet,
+    OnlinePaymentForm,
     PaymentForm,
     RectifyInvoiceForm,
 )
-from .models import Invoice, InvoiceSeries, Payment
+from .models import Invoice, InvoiceSeries, OnlinePayment, Payment
 from .pdf import render_invoice_pdf
 from .selectors import (
     cash_register,
@@ -253,6 +263,10 @@ class InvoiceListView(CrudListView):
         Column(label=_("Acciones"), align="right"),
     ]
     search_placeholder = _("Factura, reserva, cliente o NIF...")
+    create_url_name = "billing:manual_invoice"
+    create_label = _("Factura libre")
+    create_permission = "billing.add_invoice"
+    create_in_modal = False
     empty_title = _("Ninguna factura coincide")
     empty_message = _("Cambia la búsqueda o quita algún filtro.")
     page_title = _("Facturas")
@@ -555,3 +569,259 @@ class InvoiceSeriesActivateView(InvoiceSeriesToggleView):
 
 class InvoiceSeriesDeactivateView(InvoiceSeriesToggleView):
     activate = False
+
+
+# ---------------------------------------------------------------------------
+# Factura libre
+# ---------------------------------------------------------------------------
+
+
+class ManualInvoiceCreateView(CrudPermissionMixin, TemplateView):
+    """Factura a un cliente sin reserva: una multa, un dano, un cargo suelto.
+
+    Acepta valores de partida por la URL (`customer`, `concept`, `price`,
+    `tax`, `office`, `notes`, `multa`) para que otras pantallas, como la ficha
+    de una multa, abran el formulario ya relleno.
+    """
+
+    permission_required = "billing.add_invoice"
+    template_name = "billing/manual_invoice.html"
+
+    def _iniciales(self):
+        from django.conf import settings
+
+        datos = self.request.GET
+        cabecera = {
+            clave: datos[clave] for clave in ("customer", "office", "notes") if datos.get(clave)
+        }
+        linea = {"quantity": 1, "tax_rate": settings.DEFAULT_TAX_RATE}
+        if datos.get("concept"):
+            linea["concept"] = datos["concept"]
+        if datos.get("price"):
+            linea["unit_price"] = datos["price"]
+        if datos.get("tax"):
+            linea["tax_rate"] = datos["tax"]
+        return cabecera, [linea]
+
+    def get(self, request, *args, **kwargs):
+        cabecera, lineas = self._iniciales()
+        return self.render_to_response(
+            self.contexto(
+                ManualInvoiceForm(initial=cabecera, user=request.user),
+                ManualInvoiceLineFormSet(initial=lineas, prefix="lineas"),
+            )
+        )
+
+    def post(self, request, *args, **kwargs):
+        from .services import free_line, issue_manual_invoice
+
+        form = ManualInvoiceForm(request.POST, user=request.user)
+        lineas = ManualInvoiceLineFormSet(request.POST, prefix="lineas")
+        if not (form.is_valid() and lineas.is_valid()):
+            return self.render_to_response(self.contexto(form, lineas), status=422)
+        datos = form.cleaned_data
+        try:
+            factura = issue_manual_invoice(
+                customer=datos["customer"],
+                office=datos["office"],
+                series=datos["series"],
+                notes=datos["notes"],
+                lines=[
+                    free_line(
+                        concept=linea["concept"],
+                        quantity=linea["quantity"],
+                        unit_price=linea["unit_price"],
+                        tax_rate=linea["tax_rate"],
+                    )
+                    for linea in lineas.cleaned_data
+                    if linea and linea.get("concept")
+                ],
+                actor=request.user,
+            )
+        except ServiceError as exc:
+            form.add_error(None, str(exc))
+            return self.render_to_response(self.contexto(form, lineas), status=422)
+
+        if request.GET.get("multa"):
+            from apps.operations.fines import attach_invoice
+
+            attach_invoice(fine_id=request.GET["multa"], invoice=factura, actor=request.user)
+        messages.success(request, _("Factura %(numero)s emitida.") % {"numero": factura.number})
+        return HttpResponseRedirect(reverse("billing:invoice_detail", args=[factura.pk]))
+
+    def contexto(self, form, lineas):
+        from apps.customers.models import Customer
+
+        cliente = None
+        valor = form["customer"].value()
+        if valor:
+            cliente = Customer.objects.filter(pk=valor).first()
+        return {
+            "form": form,
+            "lineas": lineas,
+            "cliente": cliente,
+            "page_title": _("Nueva factura libre"),
+            "breadcrumbs": [
+                {"label": _("Inicio"), "url": reverse("core:home")},
+                {"label": _("Facturas"), "url": reverse("billing:invoice_list")},
+                {"label": _("Nueva factura libre")},
+            ],
+        }
+
+
+# ---------------------------------------------------------------------------
+# Pagos online: mostrador
+# ---------------------------------------------------------------------------
+
+
+class OnlinePaymentCreateView(ModalFormView):
+    permission_required = "billing.add_onlinepayment"
+    form_class = OnlinePaymentForm
+    modal_title = _("Pedir pago online")
+    submit_label = _("Crear enlace de pago")
+    list_url_name = "reservations:list"
+    table_id = "pago-online"
+
+    @property
+    def reservation(self) -> Reservation:
+        if not hasattr(self, "_reserva"):
+            self._reserva = get_object_or_404(
+                Reservation.objects.for_user(self.request.user).select_related("customer"),
+                pk=self.kwargs["pk"],
+            )
+        return self._reserva
+
+    def get_initial(self):
+        return {"amount": pending_amount(self.reservation) or self.reservation.deposit_amount}
+
+    def get_context_data(self, **kwargs):
+        from .gateways import enabled_providers
+
+        contexto = super().get_context_data(**kwargs)
+        contexto["sin_pasarelas"] = not enabled_providers()
+        return contexto
+
+    def get_template_names(self):
+        if self.request.htmx:
+            return ["billing/_online_payment_modal.html"]
+        return ["ui/_form_page.html"]
+
+    def save_object(self, form):
+        from .online import create_link
+
+        datos = form.cleaned_data
+        pago = create_link(
+            reservation=self.reservation,
+            provider=datos["provider"],
+            purpose=datos["purpose"],
+            amount=datos["amount"],
+            actor=self.request.user,
+        )
+        if datos["send_email"]:
+            from apps.notifications.services import queue_email
+
+            queue_email(
+                kind="payment_link",
+                reservation=self.reservation,
+                context={"pago_id": pago.pk},
+                actor=self.request.user,
+            )
+        return pago
+
+    def get_success_message(self, objeto) -> str:
+        return _("Enlace creado: %(url)s") % {"url": objeto.public_url}
+
+    def get_success_url(self) -> str:
+        return reverse("reservations:detail", args=[self.reservation.pk])
+
+    def form_valid(self, form):
+        respuesta = super().form_valid(form)
+        if self.request.htmx and respuesta.status_code == 200:
+            trigger_event(respuesta, EVENTO_RESERVA)
+        return respuesta
+
+
+class OnlinePaymentScopedMixin(CrudPermissionMixin):
+    permission_required = "billing.change_onlinepayment"
+
+    def get_online_payment(self):
+        return get_object_or_404(
+            OnlinePayment.objects.for_user(self.request.user).select_related("reservation"),
+            pk=self.kwargs["pk"],
+        )
+
+
+class CaptureDepositView(OnlinePaymentScopedMixin, ModalFormView):
+    form_class = CaptureDepositForm
+    modal_title = _("Cobrar de la fianza")
+    submit_label = _("Cobrar")
+    list_url_name = "reservations:list"
+    table_id = "cobrar-fianza"
+
+    def get_initial(self):
+        return {"amount": self.get_online_payment().amount}
+
+    def save_object(self, form):
+        from .online import capture_deposit
+
+        return capture_deposit(
+            online_payment=self.get_online_payment(),
+            amount=form.cleaned_data["amount"],
+            actor=self.request.user,
+        )
+
+    def get_success_message(self, objeto) -> str:
+        return _("Cobrados %(importe)s € de la fianza.") % {"importe": objeto.captured_amount}
+
+    def form_valid(self, form):
+        respuesta = super().form_valid(form)
+        if self.request.htmx and respuesta.status_code == 200:
+            trigger_event(respuesta, EVENTO_RESERVA)
+        return respuesta
+
+
+class OnlinePaymentActionView(OnlinePaymentScopedMixin, View):
+    """Liberar la fianza o anular un enlace. Por POST, respuesta HTMX."""
+
+    def post(self, request, pk, accion, *args, **kwargs):
+        from .online import cancel_link, release_deposit
+
+        acciones = {
+            "liberar": (release_deposit, _("Fianza liberada.")),
+            "anular": (cancel_link, _("Enlace anulado.")),
+        }
+        if accion not in acciones:
+            raise PermissionDenied
+        servicio, mensaje = acciones[accion]
+        try:
+            servicio(online_payment=self.get_online_payment(), actor=request.user)
+        except ServiceError as exc:
+            return trigger_toast(HttpResponse(status=200), str(exc), "warning")
+        respuesta = HttpResponse(status=200)
+        trigger_event(respuesta, EVENTO_RESERVA)
+        return trigger_toast(respuesta, mensaje, "success")
+
+
+class OnlinePaymentListView(CrudListView):
+    permission_required = "billing.view_onlinepayment"
+    model = OnlinePayment
+    filterset_class = OnlinePaymentFilter
+    table_id = "tabla-pagos-online"
+    table_row_template = "billing/_online_payment_row.html"
+    table_columns = [
+        Column(label=_("Creado")),
+        Column(label=_("Reserva")),
+        Column(label=_("Concepto")),
+        Column(label=_("Pasarela")),
+        Column(label=_("Importe"), align="right"),
+        Column(label=_("Estado")),
+    ]
+    search_placeholder = _("Reserva o referencia...")
+    empty_title = _("Sin pagos online")
+    empty_message = _("Se piden desde la pestaña Cobros de cada reserva.")
+    page_title = _("Pagos online")
+
+    def get_base_queryset(self):
+        return OnlinePayment.objects.for_user(self.request.user).select_related(
+            "reservation__customer"
+        )

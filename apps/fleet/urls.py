@@ -47,4 +47,27 @@ urlpatterns = [
     path("bloqueos/nuevo/", views.VehicleBlockCreateView.as_view(), name="block_create"),
     path("bloqueos/<int:pk>/editar/", views.VehicleBlockUpdateView.as_view(), name="block_update"),
     path("bloqueos/<int:pk>/anular/", views.VehicleBlockDeleteView.as_view(), name="block_delete"),
+    # Mantenimiento
+    path("mantenimiento/", views.MaintenanceListView.as_view(), name="maintenance_list"),
+    path("mantenimiento/nuevo/", views.MaintenanceCreateView.as_view(), name="maintenance_create"),
+    path(
+        "mantenimiento/<int:pk>/editar/",
+        views.MaintenanceUpdateView.as_view(),
+        name="maintenance_update",
+    ),
+    path(
+        "mantenimiento/<int:pk>/taller/",
+        views.MaintenanceStartView.as_view(),
+        name="maintenance_start",
+    ),
+    path(
+        "mantenimiento/<int:pk>/hecho/",
+        views.MaintenanceFinishView.as_view(),
+        name="maintenance_finish",
+    ),
+    path(
+        "mantenimiento/<int:pk>/anular/",
+        views.MaintenanceCancelView.as_view(),
+        name="maintenance_cancel",
+    ),
 ]

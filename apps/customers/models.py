@@ -35,6 +35,23 @@ class DocumentType(models.TextChoices):
     PASSPORT = "passport", _("Pasaporte")
 
 
+class Sex(models.TextChoices):
+    """Tal como lo pide el parte de SES.Hospedajes."""
+
+    MALE = "male", _("Hombre")
+    FEMALE = "female", _("Mujer")
+    OTHER = "other", _("Otro")
+
+
+class CustomerLanguage(models.TextChoices):
+    """Idioma de los correos y documentos que recibe el cliente."""
+
+    ES = "es", _("Español")
+    EN = "en", _("Inglés")
+    DE = "de", _("Alemán")
+    FR = "fr", _("Francés")
+
+
 class CustomerDocumentKind(models.TextChoices):
     ID_FRONT = "id_front", _("Documento de identidad (anverso)")
     ID_BACK = "id_back", _("Documento de identidad (reverso)")
@@ -93,6 +110,20 @@ class Customer(TimeStampedModel, ActivableModel, UserStampedModel):
         help_text=_("Necesaria para el suplemento de conductor joven."),
     )
     nationality = models.CharField(_("nacionalidad"), max_length=2, default="ES")
+    sex = models.CharField(
+        _("sexo"),
+        max_length=10,
+        choices=Sex.choices,
+        blank=True,
+        help_text=_("Lo exige el parte de SES.Hospedajes."),
+    )
+    language = models.CharField(
+        _("idioma"),
+        max_length=5,
+        choices=CustomerLanguage.choices,
+        default=CustomerLanguage.ES,
+        help_text=_("Idioma de los correos, la factura y el contrato que recibe."),
+    )
 
     document_type = models.CharField(
         _("tipo de documento"),
@@ -101,6 +132,12 @@ class Customer(TimeStampedModel, ActivableModel, UserStampedModel):
         default=DocumentType.DNI,
     )
     document_number = models.CharField(_("numero de documento"), max_length=20)
+    document_support = models.CharField(
+        _("numero de soporte"),
+        max_length=20,
+        blank=True,
+        help_text=_("El que aparece en el DNI o NIE (IDESP / soporte). Lo exige SES.Hospedajes."),
+    )
     document_expiry = models.DateField(_("caducidad del documento"), null=True, blank=True)
 
     # --- Contacto ----------------------------------------------------------

@@ -268,3 +268,129 @@ class DamagePhoto(TimeStampedModel):
 
     def __str__(self):
         return self.caption or f"{_('Foto')} {self.pk}"
+
+
+# ---------------------------------------------------------------------------
+# Multas
+# ---------------------------------------------------------------------------
+
+
+class FineStatus(models.TextChoices):
+    RECEIVED = "received", _("Recibida")
+    MATCHED = "matched", _("Reserva localizada")
+    NO_MATCH = "no_match", _("Sin reserva")
+    IDENTIFIED = "identified", _("Conductor identificado")
+    CHARGED = "charged", _("Facturada al cliente")
+    CLOSED = "closed", _("Cerrada")
+
+
+class TrafficFineQuerySet(models.QuerySet):
+    def for_user(self, user):
+        if user is None or not getattr(user, "is_authenticated", False) or not user.is_active:
+            return self.none()
+        if user.is_superuser:
+            return self
+        return self.filter(office__in=user.offices.all())
+
+
+class TrafficFine(TimeStampedModel):
+    """Una multa que llega a nombre de la empresa por un coche de la flota.
+
+    Al registrarla se busca sola la reserva que tenia el coche en ese momento,
+    y con ella el cliente responsable. La empresa tiene un plazo para
+    identificar al conductor ante el organismo; despues se le repercute al
+    cliente con una factura libre (gestion y, si la paga la empresa, el importe
+    como suplido).
+    """
+
+    office = models.ForeignKey(
+        "offices.Office", verbose_name=_("oficina"), on_delete=models.PROTECT, related_name="fines"
+    )
+    vehicle = models.ForeignKey(
+        "fleet.Vehicle", verbose_name=_("vehiculo"), on_delete=models.PROTECT, related_name="fines"
+    )
+    offense_at = models.DateTimeField(_("fecha y hora de la infraccion"))
+    place = models.CharField(_("lugar"), max_length=200, blank=True)
+    authority = models.CharField(
+        _("organismo"),
+        max_length=120,
+        help_text=_("DGT, ayuntamiento, Servei Catala de Transit..."),
+    )
+    file_number = models.CharField(_("expediente"), max_length=60)
+    description = models.TextField(_("infraccion"), blank=True)
+    amount = models.DecimalField(_("importe"), max_digits=10, decimal_places=2)
+    notified_on = models.DateField(_("fecha de notificacion"), null=True, blank=True)
+    identify_by = models.DateField(
+        _("plazo para identificar al conductor"),
+        null=True,
+        blank=True,
+        help_text=_("Si se deja vacio: 20 dias naturales desde la notificacion."),
+    )
+
+    status = models.CharField(
+        _("estado"), max_length=20, choices=FineStatus.choices, default=FineStatus.RECEIVED
+    )
+    reservation = models.ForeignKey(
+        "reservations.Reservation",
+        verbose_name=_("reserva"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="fines",
+    )
+    customer = models.ForeignKey(
+        "customers.Customer",
+        verbose_name=_("cliente responsable"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="fines",
+    )
+    #: Datos del conductor tal como se comunican al organismo.
+    driver_name = models.CharField(_("conductor"), max_length=200, blank=True)
+    driver_document = models.CharField(_("documento del conductor"), max_length=20, blank=True)
+    driver_licence = models.CharField(_("carnet del conductor"), max_length=30, blank=True)
+    driver_address = models.CharField(_("direccion del conductor"), max_length=300, blank=True)
+    identified_on = models.DateField(_("identificado el"), null=True, blank=True)
+
+    invoice = models.ForeignKey(
+        "billing.Invoice",
+        verbose_name=_("factura al cliente"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="fines",
+    )
+    notes = models.TextField(_("notas"), blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("registrada por"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="fines_registered",
+    )
+
+    objects = TrafficFineQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = _("multa")
+        verbose_name_plural = _("multas")
+        ordering = ["-offense_at", "-id"]
+        default_permissions = ("view", "add", "change")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["authority", "file_number"], name="operations_multa_expediente_unico"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.file_number} · {self.vehicle.plate}"
+
+    @property
+    def is_overdue(self) -> bool:
+        return (
+            self.identify_by is not None
+            and self.status in (FineStatus.MATCHED, FineStatus.RECEIVED, FineStatus.NO_MATCH)
+            and self.identify_by < timezone.localdate()
+        )

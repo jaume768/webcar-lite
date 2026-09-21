@@ -244,6 +244,7 @@ def contexto_de_pestana(request, reserva: Reservation, pestana: str) -> dict:
             "cobros": reserva.payments.select_related("created_by", "office"),
             "saldo": summary(reserva),
             "facturas": invoices_of(reserva),
+            "pagos_online": reserva.online_payments.all(),
             "factura_en_vigor": en_vigor,
             "se_puede_facturar": en_vigor is None and reserva.status == ReservationStatus.FINISHED,
         }
@@ -455,6 +456,15 @@ class CustomerSearchView(CrudPermissionMixin, View):
     """
 
     permission_required = "reservations.add_reservation"
+    #: El mismo desplegable sirve a la factura libre y a las multas.
+    PERMISOS = (
+        "reservations.add_reservation",
+        "billing.add_invoice",
+        "operations.add_trafficfine",
+    )
+
+    def has_permission(self):
+        return any(self.request.user.has_perm(permiso) for permiso in self.PERMISOS)
 
     def get(self, request, *args, **kwargs):
         termino = request.GET.get("q", "").strip()

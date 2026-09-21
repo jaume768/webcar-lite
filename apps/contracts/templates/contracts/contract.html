@@ -1,7 +1,7 @@
 {% load i18n %}<!DOCTYPE html>
 {% comment %} Contrato de alquiler. Se imprime con WeasyPrint, asi que aqui no
    hay Tailwind ni JavaScript: solo CSS de impresion con @page. {% endcomment %}
-<html lang="es">
+{% get_current_language as idioma %}<html lang="{{ idioma }}">
 <head>
   <meta charset="utf-8">
   <title>{% translate "Contrato" %} {{ reservation.number }}</title>

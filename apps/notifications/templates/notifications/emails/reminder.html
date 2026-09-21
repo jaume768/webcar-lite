@@ -1,0 +1,15 @@
+{% extends "notifications/emails/_base.html" %}{% load i18n %}
+{% block titulo_visible %}{% translate "Tu alquiler empieza pronto" %}{% endblock %}
+{% block cuerpo %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% blocktranslate with fecha=reserva.pickup_at|date:"d/m/Y" hora=reserva.pickup_at|date:"H:i" %}Te esperamos el {{ fecha }} a las {{ hora }}.{% endblocktranslate %}</p>
+<p style="margin:0 0 4px;font-size:15px;line-height:1.6;"><strong>{% translate "Dónde recoger el vehículo" %}</strong></p>
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
+  {{ oficina.name }}<br>{{ oficina.address }}{% if oficina.city %}, {{ oficina.postal_code }} {{ oficina.city }}{% endif %}{% if oficina.phone %}<br>{% translate "Teléfono" %}: {{ oficina.phone }}{% endif %}
+</p>
+{% if empresa.pickup_instructions %}
+<p style="margin:0 0 4px;font-size:15px;line-height:1.6;"><strong>{% translate "Instrucciones" %}</strong></p>
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{{ empresa.pickup_instructions|linebreaksbr }}</p>
+{% endif %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% translate "No olvides tu documento de identidad, tu permiso de conducir y una tarjeta a tu nombre para la fianza." %}</p>
+{% if saldo.pending %}<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% blocktranslate with importe=saldo.pending|floatformat:2 %}Quedan {{ importe }} € pendientes de pago.{% endblocktranslate %}</p>{% endif %}
+{% endblock %}

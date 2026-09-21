@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+
+{% block title %}{% translate "Nueva factura libre" %} · RentFlow{% endblock %}
+
+{% block content %}
+  {% url 'reservations:customer_search' as url_clientes %}
+  {% comment %} Los totales de abajo son una ayuda mientras se escribe: los de
+     verdad los calcula el servidor al emitir, con el mismo redondeo que el
+     resto de facturas. {% endcomment %}
+  <form method="post" novalidate class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
+        x-data="{
+          base: 0, cuota: 0,
+          num(v) { return parseFloat(String(v || '').replace(',', '.')) || 0 },
+          recalcular() {
+            let b = 0, c = 0;
+            this.$root.querySelectorAll('[data-linea]').forEach((fila) => {
+              const q = this.num(fila.querySelector('[name$=-quantity]')?.value);
+              const p = this.num(fila.querySelector('[name$=-unit_price]')?.value);
+              const t = this.num(fila.querySelector('[name$=-tax_rate]')?.value);
+              const lb = Math.round(q * p * 100) / 100;
+              b += lb; c += Math.round(lb * t) / 100;
+            });
+            this.base = b; this.cuota = c;
+          },
+          euros(v) { return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' }
+        }"
+        x-init="recalcular()" @input="recalcular()">
+    {% csrf_token %}
+
+    <div class="min-w-0 space-y-6">
+      {% if form.non_field_errors %}
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+
+      <section class="card p-5">
+        <h2 class="card-title">{% translate "A quién se factura" %}</h2>
+        <div class="mt-4 grid gap-x-4 sm:grid-cols-2">
+          <div class="mb-4 sm:col-span-2">
+            {% include "ui/_select_search.html" with name="customer" label=_("Cliente") url=url_clientes value=cliente.pk display=cliente.full_name placeholder=_("Documento, teléfono o apellidos") only %}
+            {% for error in form.customer.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+          </div>
+          {% include "ui/_field.html" with field=form.office %}
+          {% include "ui/_field.html" with field=form.series %}
+          <div class="sm:col-span-2">{% include "ui/_field.html" with field=form.notes %}</div>
+        </div>
+      </section>
+
+      <section class="card" x-data="editorTramos()">
+        <div class="card-header">
+          <h2 class="card-title">{% translate "Líneas" %}</h2>
+          <button type="button" class="btn-secondary py-1.5 text-xs" @click="anadirFila()">
+            {% translate "Añadir línea" %}
+          </button>
+        </div>
+        {{ lineas.management_form }}
+        {% if lineas.non_form_errors %}
+          <div class="border-b border-line bg-rose-50 px-5 py-2 text-sm text-rose-800">
+            {% for error in lineas.non_form_errors %}<p>{{ error }}</p>{% endfor %}
+          </div>
+        {% endif %}
+        <div class="hidden grid-cols-[minmax(0,1fr)_6rem_8rem_6rem] gap-3 border-b border-line px-5 py-2 text-xs font-semibold tracking-wide text-slate-500 uppercase md:grid">
+          <span>{% translate "Concepto" %}</span><span>{% translate "Cantidad" %}</span>
+          <span>{% translate "Precio" %}</span><span>{% translate "IVA %" %}</span>
+        </div>
+        <div x-ref="filas" class="divide-y divide-line">
+          {% for linea in lineas %}
+            {% include "billing/_manual_line.html" with linea=linea %}
+          {% endfor %}
+        </div>
+        <template x-ref="plantilla">
+          {% include "billing/_manual_line.html" with linea=lineas.empty_form %}
+        </template>
+        <p class="border-t border-line px-5 py-3 text-xs text-slate-500">
+          {% translate "Una multa que la empresa pagó y repercute al cliente es un suplido: va con IVA 0. La gestión de la multa sí lleva IVA." %}
+        </p>
+      </section>
+    </div>
+
+    <aside class="space-y-4">
+      <section class="card p-5 xl:sticky xl:top-24">
+        <h2 class="card-title">{% translate "Total" %}</h2>
+        <dl class="mt-4 space-y-2 text-sm">
+          <div class="flex justify-between"><dt class="text-slate-500">{% translate "Base imponible" %}</dt><dd class="tabular" x-text="euros(base)"></dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">{% translate "IVA" %}</dt><dd class="tabular" x-text="euros(cuota)"></dd></div>
+          <div class="flex justify-between border-t border-line pt-2 text-lg font-bold text-brand-950"><dt>{% translate "Total" %}</dt><dd class="tabular" x-text="euros(base + cuota)"></dd></div>
+        </dl>
+        <button type="submit" class="btn-primary mt-5 w-full"
+                onclick="return confirm('{% translate "Una factura emitida no se edita ni se borra. ¿Emitirla?" %}')">
+          {% translate "Emitir factura" %}
+        </button>
+        <a class="btn-secondary mt-2 w-full" href="{% url 'billing:invoice_list' %}">{% translate "Cancelar" %}</a>
+      </section>
+    </aside>
+  </form>
+{% endblock %}

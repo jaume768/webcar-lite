@@ -1,0 +1,30 @@
+{% extends "core/crud_list.html" %}
+{% load i18n %}
+
+{% block content %}
+  {% if vencimientos %}
+    <section class="card mb-6">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Próximos vencimientos" %}</h2>
+        <span class="text-xs text-slate-500">{% translate "Lo vencido y lo que toca en los próximos 30 días o 1.000 km" %}</span>
+      </div>
+      <ul class="divide-y divide-line">
+        {% for aviso in vencimientos %}
+          <li class="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-sm">
+            <span class="size-2 rounded-full {% if aviso.overdue %}bg-rose-500{% else %}bg-amber-400{% endif %}" aria-hidden="true"></span>
+            <span class="w-24 font-mono font-semibold text-slate-900">{{ aviso.vehicle.plate }}</span>
+            <span class="min-w-32 font-medium text-slate-800">{{ aviso.label }}</span>
+            <span class="text-slate-600">
+              {% if aviso.due_date %}{{ aviso.due_date|date:"d/m/Y" }}{% endif %}
+              {% if aviso.due_km %}{% if aviso.due_date %} · {% endif %}{{ aviso.due_km }} km <span class="text-slate-400">({% blocktranslate with km=aviso.km_left %}faltan {{ km }}{% endblocktranslate %})</span>{% endif %}
+            </span>
+            <span class="ml-auto text-xs font-semibold {% if aviso.overdue %}text-rose-600{% else %}text-amber-700{% endif %}">
+              {% if aviso.overdue %}{% translate "Vencido" %}{% else %}{% translate "Pronto" %}{% endif %}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% include "ui/_table.html" %}
+{% endblock %}

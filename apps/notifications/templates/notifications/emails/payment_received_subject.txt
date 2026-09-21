@@ -1,0 +1,1 @@
+{% load i18n %}{% blocktranslate with numero=reserva.number %}Pago recibido · reserva {{ numero }}{% endblocktranslate %}

@@ -65,6 +65,25 @@ class CompanySettings(TimeStampedModel):
         help_text=_("Inscripcion en el registro mercantil, si procede. Va en el pie."),
     )
 
+    # --- correos automaticos al cliente ------------------------------------
+    email_confirmation = models.BooleanField(_("correo de confirmacion"), default=True)
+    email_reminder = models.BooleanField(_("recordatorio antes de la recogida"), default=True)
+    email_contract = models.BooleanField(_("enviar el contrato"), default=True)
+    email_return = models.BooleanField(_("correo tras la devolucion"), default=True)
+    email_invoice = models.BooleanField(_("enviar la factura"), default=True)
+    reminder_hours = models.PositiveSmallIntegerField(
+        _("horas de antelacion del recordatorio"), default=24
+    )
+    pickup_instructions = models.TextField(
+        _("instrucciones de recogida"),
+        blank=True,
+        default="",
+        help_text=_(
+            "Salen en el recordatorio: donde esta el mostrador, que traer, como llegar. "
+            "Se envian tal cual, en el idioma en que las escribas."
+        ),
+    )
+
     class Meta:
         verbose_name = _("datos de la empresa")
         verbose_name_plural = _("datos de la empresa")

@@ -17,6 +17,9 @@ from .models import (
     Invoice,
     InvoiceKind,
     InvoiceSeries,
+    OnlinePayment,
+    OnlinePurpose,
+    OnlineStatus,
     Payment,
     PaymentMethod,
     PaymentType,
@@ -135,3 +138,25 @@ class InvoiceSeriesFilter(EstadoFilterMixin):
         if not termino:
             return queryset
         return queryset.filter(Q(code__icontains=termino) | Q(name__icontains=termino))
+
+
+class OnlinePaymentFilter(filters.FilterSet):
+    q = filters.CharFilter(method="buscar", label=_("Buscar"))
+    status = filters.ChoiceFilter(
+        label=_("Estado"), choices=OnlineStatus.choices, empty_label=_("Estado: todos")
+    )
+    purpose = filters.ChoiceFilter(
+        label=_("Concepto"), choices=OnlinePurpose.choices, empty_label=_("Concepto: todos")
+    )
+
+    class Meta:
+        model = OnlinePayment
+        fields = ["q", "status", "purpose"]
+
+    def buscar(self, queryset, name, value):
+        termino = (value or "").strip()
+        if not termino:
+            return queryset
+        return queryset.filter(
+            Q(reservation__number__icontains=termino) | Q(provider_ref__icontains=termino)
+        )

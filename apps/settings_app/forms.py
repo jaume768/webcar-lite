@@ -26,8 +26,18 @@ class CompanySettingsForm(forms.ModelForm):
             "website",
             "logo",
             "registry_note",
+            "email_confirmation",
+            "email_reminder",
+            "reminder_hours",
+            "email_contract",
+            "email_return",
+            "email_invoice",
+            "pickup_instructions",
         ]
-        widgets = {"registry_note": forms.Textarea(attrs={"rows": 2})}
+        widgets = {
+            "registry_note": forms.Textarea(attrs={"rows": 2}),
+            "pickup_instructions": forms.Textarea(attrs={"rows": 4}),
+        }
 
 
 class TermsVersionForm(forms.ModelForm):

@@ -1,0 +1,16 @@
+{% extends "billing/public/base.html" %}
+{% load i18n %}
+
+{% block content %}
+  {% if pago.status == "paid" or pago.status == "authorized" or pago.status == "captured" %}
+    <h1 class="text-2xl font-bold text-emerald-700">{% translate "¡Pago recibido!" %}</h1>
+    <p class="mt-2 text-sm text-slate-600">{% blocktranslate with numero=reserva.number %}Gracias. Lo hemos apuntado en tu reserva {{ numero }}.{% endblocktranslate %}</p>
+  {% elif resultado == "ok" %}
+    <h1 class="text-2xl font-bold text-brand-950">{% translate "Estamos confirmando tu pago" %}</h1>
+    <p class="mt-2 text-sm text-slate-600">{% translate "El banco nos avisará en unos segundos. Recibirás un correo cuando quede confirmado." %}</p>
+  {% else %}
+    <h1 class="text-2xl font-bold text-rose-700">{% translate "El pago no se ha completado" %}</h1>
+    <p class="mt-2 text-sm text-slate-600">{% translate "No se ha cobrado nada. Puedes volver a intentarlo con el mismo enlace." %}</p>
+    {% if pago.is_open %}<a class="btn-primary mt-6 w-full" href="{% url 'billing:pay' pago.token %}">{% translate "Volver a intentarlo" %}</a>{% endif %}
+  {% endif %}
+{% endblock %}

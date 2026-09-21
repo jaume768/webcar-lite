@@ -1,0 +1,8 @@
+{% extends "notifications/emails/_base.html" %}{% load i18n %}
+{% block titulo_visible %}{% if pago.is_hold %}{% translate "Deja la fianza con tu tarjeta" %}{% else %}{% translate "Completa el pago de tu reserva" %}{% endif %}{% endblock %}
+{% block cuerpo %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{{ pago.get_purpose_display }}: <strong>{{ pago.amount|floatformat:2 }} €</strong></p>
+{% if pago.is_hold %}<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% translate "Es una fianza: el importe queda retenido en tu tarjeta y no se cobra. Se libera al devolver el vehículo sin incidencias." %}</p>{% endif %}
+<p style="margin:20px 0;"><a href="{{ pago.public_url }}" style="display:inline-block;background:#254deb;color:#ffffff;text-decoration:none;font-weight:bold;padding:13px 26px;border-radius:10px;font-size:15px;">{% if pago.is_hold %}{% translate "Retener la fianza con tarjeta" %}{% else %}{% translate "Pagar con tarjeta" %}{% endif %}</a></p>
+<p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#64748b;">{% blocktranslate with fecha=pago.expires_at|date:"d/m/Y H:i" %}Enlace válido hasta el {{ fecha }}.{% endblocktranslate %}</p>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% load i18n ui %}
+<div data-linea class="grid gap-3 px-5 py-3 md:grid-cols-[minmax(0,1fr)_6rem_8rem_6rem] md:items-start">
+  {% for campo in linea %}
+    <div>
+      <label class="field-label md:sr-only" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+      {{ campo|add_class:"input" }}
+      {% for error in campo.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+  {% endfor %}
+</div>

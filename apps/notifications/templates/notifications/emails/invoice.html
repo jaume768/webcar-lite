@@ -1,0 +1,5 @@
+{% extends "notifications/emails/_base.html" %}{% load i18n %}
+{% block titulo_visible %}{% blocktranslate with numero=factura.number %}Factura {{ numero }}{% endblocktranslate %}{% endblock %}
+{% block cuerpo %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% blocktranslate with total=factura.total|floatformat:2 %}Te enviamos adjunta tu factura por un total de {{ total }} €.{% endblocktranslate %}</p>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% load i18n %}
+<td>
+  <span class="font-mono font-semibold text-slate-900">{{ row.vehicle.plate }}</span>
+  <span class="block text-xs text-slate-500">{{ row.vehicle.brand }} {{ row.vehicle.model }}</span>
+</td>
+<td>
+  <span class="font-medium text-slate-900">{{ row.get_kind_display }}</span>
+  {% if row.description %}<span class="block max-w-56 truncate text-xs text-slate-500">{{ row.description }}</span>{% endif %}
+</td>
+<td class="whitespace-nowrap text-slate-600">
+  {% if row.status == "in_workshop" %}
+    {{ row.started_at|date:"d/m H:i" }} → {{ row.expected_end_at|date:"d/m H:i" }}
+  {% elif row.status == "done" %}
+    {{ row.finished_at|date:"d/m/Y" }}
+  {% else %}
+    {{ row.scheduled_for|date:"d/m/Y"|default:"—" }}
+  {% endif %}
+</td>
+<td class="text-slate-600">{{ row.workshop|default:"—" }}</td>
+<td class="whitespace-nowrap text-xs text-slate-600">
+  {% if row.next_due_date %}{{ row.next_due_date|date:"d/m/Y" }}{% endif %}
+  {% if row.next_due_km %}<span class="block">{{ row.next_due_km }} km</span>{% endif %}
+  {% if not row.next_due_date and not row.next_due_km %}—{% endif %}
+</td>
+<td class="text-right tabular whitespace-nowrap">{% if row.cost is not None %}{{ row.cost|floatformat:"2g" }} €{% else %}—{% endif %}</td>
+<td>
+  {% include "ui/_badge.html" with status=row.status label=row.get_status_display only %}
+  {% if row.status == "in_workshop" and row.immobilizes %}<span class="mt-0.5 block text-xs text-rose-600">{% translate "inmovilizado" %}</span>{% endif %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.fleet.change_maintenancerecord %}
+    {% if row.status == "scheduled" %}
+      <button type="button" class="btn-ghost px-2 py-1 text-brand-700"
+              hx-get="{% url 'fleet:maintenance_start' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+        {% translate "A taller" %}
+      </button>
+    {% endif %}
+    {% if row.status == "scheduled" or row.status == "in_workshop" %}
+      <button type="button" class="btn-ghost px-2 py-1 text-emerald-700"
+              hx-get="{% url 'fleet:maintenance_finish' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+        {% translate "Hecho" %}
+      </button>
+      <a class="btn-ghost px-2 py-1" href="{% url 'fleet:maintenance_update' row.pk %}"
+         hx-get="{% url 'fleet:maintenance_update' row.pk %}" hx-target="#modal-host" hx-swap="innerHTML">
+        {% translate "Editar" %}
+      </a>
+      <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+              hx-post="{% url 'fleet:maintenance_cancel' row.pk %}" hx-swap="none"
+              hx-confirm="{% translate 'Se anula el mantenimiento y, si estaba en taller, se quita el bloqueo.' %}"
+              data-confirm-titulo="{% translate 'Anular mantenimiento' %}"
+              data-confirm-aceptar="{% translate 'Anular' %}">
+        {% translate "Anular" %}
+      </button>
+    {% endif %}
+  {% endif %}
+</td>

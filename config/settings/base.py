@@ -6,6 +6,7 @@ from pathlib import Path
 
 import environ
 import structlog
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -55,6 +56,7 @@ LOCAL_APPS = [
     "apps.compliance",
     "apps.auditlog",
     "apps.settings_app",
+    "apps.notifications",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -63,7 +65,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
+    "apps.core.middleware.InterfaceLanguageMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -146,7 +148,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # ---------------------------------------------------------------- i18n
 LANGUAGE_CODE = "es"
-LANGUAGES = [("es", "Espanol")]
+# El panel de gestion va en espanol (lo fija InterfaceLanguageMiddleware). Los
+# otros idiomas son los del cliente: correos, factura, contrato y pago online
+# salen en el suyo con translation.override().
+LANGUAGES = [("es", "Español"), ("en", "English"), ("de", "Deutsch"), ("fr", "Français")]
 TIME_ZONE = "Europe/Madrid"
 USE_I18N = True
 USE_TZ = True
@@ -196,6 +201,22 @@ CELERY_TASK_REJECT_ON_WORKER_LOST = True
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TIME_LIMIT = 300
 CELERY_TASK_SOFT_TIME_LIMIT = 240
+
+# Tareas programadas (servicio `beat` de docker compose).
+CELERY_BEAT_SCHEDULE = {
+    "recordatorios-de-recogida": {
+        "task": "apps.notifications.tasks.send_pickup_reminders",
+        "schedule": crontab(minute=5),
+    },
+    "reintentar-partes-ses": {
+        "task": "apps.compliance.tasks.retry_pending_ses",
+        "schedule": crontab(minute="*/30"),
+    },
+    "caducar-enlaces-de-pago": {
+        "task": "apps.billing.tasks.expire_payment_links",
+        "schedule": crontab(minute=20),
+    },
+}
 
 # Un fallo de CSRF en el login de alguien que ya ha entrado es un doble envio,
 # no un ataque: ver accounts.views.csrf_failure.
@@ -259,6 +280,44 @@ RESERVATION_DEFAULT_FRANCHISE = env("RESERVATION_DEFAULT_FRANCHISE", default="60
 # coche tienen que dejar al menos este hueco. Lo consume
 # availability.services; cada reserva guarda el valor que se le aplico.
 VEHICLE_ROTATION_MINUTES = env.int("VEHICLE_ROTATION_MINUTES", default=60)
+
+# --- Correo ------------------------------------------------------------------
+# Con BREVO_API_KEY los correos al cliente salen por la API de Brevo. Sin ella,
+# consola en desarrollo y SMTP en produccion.
+BREVO_API_KEY = env("BREVO_API_KEY", default="")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@localhost")
+# Direccion a la que responde el cliente (la de la oficina, normalmente).
+EMAIL_REPLY_TO = env("EMAIL_REPLY_TO", default="")
+
+# --- Pagos online ----------------------------------------------------------
+# URL publica de la aplicacion: con ella se arman los enlaces de pago y las
+# URL de vuelta y de notificacion que se dan a las pasarelas.
+PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="http://localhost:8000").rstrip("/")
+# Horas que vale un enlace de pago antes de caducar.
+ONLINE_PAYMENT_LINK_HOURS = env.int("ONLINE_PAYMENT_LINK_HOURS", default=72)
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
+STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
+REDSYS_MERCHANT_CODE = env("REDSYS_MERCHANT_CODE", default="")
+REDSYS_TERMINAL = env("REDSYS_TERMINAL", default="1")
+REDSYS_SECRET_KEY = env("REDSYS_SECRET_KEY", default="")
+# Entorno de pruebas del banco (sis-t). En produccion, False.
+REDSYS_TEST = env.bool("REDSYS_TEST", default=True)
+
+# --- SES.Hospedajes (RD 933/2021) ------------------------------------------
+# Sin SES_ENABLED el parte se valida y se guarda con su XML, pero no se envia:
+# queda marcado como simulado. Las credenciales y el endpoint los da el
+# Ministerio del Interior al dar de alta el establecimiento en la sede.
+SES_ENABLED = env.bool("SES_ENABLED", default=False)
+SES_ENDPOINT = env("SES_ENDPOINT", default="")
+SES_USER = env("SES_USER", default="")
+SES_PASSWORD = env("SES_PASSWORD", default="")
+SES_LANDLORD_CODE = env("SES_LANDLORD_CODE", default="")
+SES_APPLICATION = env("SES_APPLICATION", default="RentFlow")
+# Horas desde la entrega del coche para comunicar el contrato.
+SES_DEADLINE_HOURS = env.int("SES_DEADLINE_HOURS", default=24)
+
+# Gestion de una multa que se repercute al cliente, sin IVA.
+FINE_ADMIN_FEE = env("FINE_ADMIN_FEE", default="30.00")
 
 # IVA por defecto de las lineas de alquiler. Los extras y los suplementos
 # llevan el suyo propio, porque no todos tributan igual.

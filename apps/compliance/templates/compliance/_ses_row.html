@@ -1,0 +1,12 @@
+{% load i18n %}
+<td><a class="font-mono text-sm font-medium text-brand-700 hover:underline" href="{% url 'compliance:ses_detail' row.pk %}">{{ row.reservation.number }}</a></td>
+<td class="text-slate-900">{{ row.reservation.customer.full_name|default:"—" }}</td>
+<td class="whitespace-nowrap {% if row.is_overdue %}font-semibold text-rose-600{% else %}text-slate-600{% endif %}">{{ row.deadline_at|date:"d/m/Y H:i"|default:"—" }}</td>
+<td>
+  {% include "ui/_badge.html" with status=row.status label=row.get_status_display only %}
+  {% if row.simulated %}<span class="mt-0.5 block text-xs text-slate-400">{% translate "simulada" %}</span>{% endif %}
+</td>
+<td class="max-w-md text-xs text-slate-500">
+  {% if row.missing %}{% blocktranslate count total=row.missing|length %}Falta {{ total }} dato{% plural %}Faltan {{ total }} datos{% endblocktranslate %}: {{ row.missing|first }}{% if row.missing|length > 1 %}…{% endif %}
+  {% elif row.lot_code %}{% translate "Lote" %} <span class="font-mono">{{ row.lot_code }}</span>{% endif %}
+</td>

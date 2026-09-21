@@ -74,6 +74,57 @@
     {% endif %}
   </section>
 
+  {# -------------------------------------------------------- pagos online #}
+  {% if perms.billing.add_onlinepayment or pagos_online %}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Pagos online" %}</h2>
+        {% if perms.billing.add_onlinepayment %}
+          <button type="button" class="btn-secondary py-1.5 text-xs"
+                  hx-get="{% url 'billing:online_payment_create' reservation.pk %}"
+                  hx-target="#modal-host" hx-swap="innerHTML">
+            {% translate "Pedir pago online" %}
+          </button>
+        {% endif %}
+      </div>
+      {% if pagos_online %}
+        <ul class="divide-y divide-line">
+          {% for pago in pagos_online %}
+            <li class="flex flex-wrap items-center gap-3 px-5 py-3 text-sm" x-data="{ copiado: false }">
+              <span class="font-medium text-slate-900">{{ pago.get_purpose_display }}</span>
+              <span class="tabular">{{ pago.amount|floatformat:"2g" }} €</span>
+              <span class="text-xs text-slate-500 capitalize">{{ pago.provider }}</span>
+              {% include "ui/_badge.html" with status=pago.status label=pago.get_status_display only %}
+              {% if pago.captured_amount %}<span class="text-xs text-slate-500">{% blocktranslate with importe=pago.captured_amount %}cobrados {{ importe }} €{% endblocktranslate %}</span>{% endif %}
+              <span class="ml-auto flex flex-wrap gap-1">
+                {% if pago.is_open %}
+                  <button type="button" class="btn-ghost px-2 py-1"
+                          @click="navigator.clipboard.writeText('{{ pago.public_url }}'); copiado = true; setTimeout(() => copiado = false, 1500)">
+                    <span x-show="!copiado">{% translate "Copiar enlace" %}</span><span x-show="copiado" x-cloak>{% translate "Copiado" %}</span>
+                  </button>
+                  {% if perms.billing.change_onlinepayment %}
+                    <button type="button" class="btn-ghost px-2 py-1 text-rose-700"
+                            hx-post="{% url 'billing:online_payment_action' pago.pk 'anular' %}" hx-swap="none">{% translate "Anular" %}</button>
+                  {% endif %}
+                {% endif %}
+                {% if pago.status == "authorized" and perms.billing.change_onlinepayment %}
+                  <button type="button" class="btn-ghost px-2 py-1 text-brand-700"
+                          hx-get="{% url 'billing:online_payment_capture' pago.pk %}" hx-target="#modal-host" hx-swap="innerHTML">{% translate "Cobrar de la fianza" %}</button>
+                  <button type="button" class="btn-ghost px-2 py-1"
+                          hx-post="{% url 'billing:online_payment_action' pago.pk 'liberar' %}" hx-swap="none"
+                          hx-confirm="{% translate 'Se libera la fianza en la tarjeta del cliente sin cobrar nada.' %}"
+                          data-confirm-titulo="{% translate 'Liberar fianza' %}" data-confirm-aceptar="{% translate 'Liberar' %}">{% translate "Liberar" %}</button>
+                {% endif %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="px-5 py-4 text-sm text-slate-500">{% translate "Envía al cliente un enlace para pagar el anticipo, el alquiler o dejar la fianza con tarjeta." %}</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
   <section class="card">
     <div class="card-header">
       <h2 class="card-title">{% translate "Movimientos" %}</h2>

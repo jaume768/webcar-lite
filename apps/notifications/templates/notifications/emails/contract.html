@@ -1,0 +1,6 @@
+{% extends "notifications/emails/_base.html" %}{% load i18n %}
+{% block titulo_visible %}{% translate "Tu contrato de alquiler" %}{% endblock %}
+{% block cuerpo %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% translate "Te enviamos adjunto el contrato de alquiler con las condiciones generales. Guárdalo durante el alquiler." %}</p>
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% translate "Si tienes cualquier problema con el vehículo, llámanos al teléfono de la oficina." %}</p>
+{% endblock %}

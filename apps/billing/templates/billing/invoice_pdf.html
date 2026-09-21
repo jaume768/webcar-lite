@@ -6,7 +6,8 @@
 
    Diseno deliberadamente sobrio: mucho aire, sin cajas, una sola linea de
    color. WeasyPrint: CSS de impresion, sin Tailwind ni JavaScript. {% endcomment %}
-<html lang="es">
+{% get_current_language as idioma %}
+<html lang="{{ idioma }}">
 <head>
   <meta charset="utf-8">
   <title>{{ invoice.number }}</title>
@@ -96,10 +97,12 @@
       <div class="label">{% translate "Fecha de expedición" %}</div>
       <div class="valor">{{ invoice.issued_at|date:"d/m/Y" }}</div>
     </div>
-    <div>
-      <div class="label">{% translate "Reserva" %}</div>
-      <div class="valor">{{ invoice.reservation.number }}</div>
-    </div>
+    {% if invoice.reservation_id %}
+      <div>
+        <div class="label">{% translate "Reserva" %}</div>
+        <div class="valor">{{ invoice.reservation.number }}</div>
+      </div>
+    {% endif %}
     {% if invoice.is_rectifying %}
       <div>
         <div class="label">{% translate "Rectifica a" %}</div>
@@ -152,6 +155,10 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% if invoice.notes %}
+    <p class="muted" style="margin-top:6mm">{{ invoice.notes|linebreaksbr }}</p>
+  {% endif %}
 
   <table class="totales">
     <tr><td class="muted">{% translate "Base imponible" %}</td><td class="num">{{ invoice.base_amount|floatformat:2 }} €</td></tr>

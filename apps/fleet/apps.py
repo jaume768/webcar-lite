@@ -29,3 +29,11 @@ class FleetConfig(AppConfig):
         }
         for estado, tono in tonos.items():
             badges.register(estado.value, tono)
+        # Mantenimiento.
+        for estado, tono in {
+            "scheduled": "info",
+            "in_workshop": "warning",
+            "done": "success",
+            "cancelled": "neutral",
+        }.items():
+            badges.register(estado, tono)

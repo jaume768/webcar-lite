@@ -8,6 +8,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.auditlog import services as audit
+from apps.auditlog.models import AuditAction
 from apps.core.services import ServiceError
 from apps.reservations.models import ChargeKind, ReservationCharge, ReservationStatus
 from apps.reservations.services import record_pickup, record_return
@@ -112,6 +114,21 @@ def perform_check_in(
     record_pickup(reservation=reservation, at=momento, actor=employee)
     transition(reservation, ReservationStatus.IN_PROGRESS, employee)
 
+    # RD 933/2021: el contrato se comunica a SES.Hospedajes. Se prepara aqui
+    # (datos del momento de la entrega) y, si esta completo, se encola.
+    from apps.compliance.services import prepare_and_queue
+
+    prepare_and_queue(reservation=reservation, actor=employee)
+
+    audit.record(
+        AuditAction.CHECK_IN,
+        _("Entrega de %(numero)s: %(matricula)s con %(km)s km")
+        % {"numero": reservation.number, "matricula": entrega.vehicle.plate, "km": mileage},
+        obj=entrega,
+        actor=employee,
+        reservation=reservation,
+        changes={"mileage": mileage, "fuel_level": fuel_level, "damages": len(damages)},
+    )
     logger.info(
         "entrega_registrada",
         reservation_number=reservation.number,
@@ -253,6 +270,15 @@ def perform_check_out(
 
     _devolver_a_flota(vehiculo, oficina, employee)
 
+    audit.record(
+        AuditAction.CHECK_OUT,
+        _("Devolución de %(numero)s: %(km)s km, %(cargos)s cargos")
+        % {"numero": reservation.number, "km": mileage, "cargos": len(lineas)},
+        obj=devolucion,
+        actor=employee,
+        reservation=reservation,
+        changes={"mileage": mileage, "fuel_level": fuel_level, "return_office": oficina.pk},
+    )
     logger.info(
         "devolucion_registrada",
         reservation_number=reservation.number,

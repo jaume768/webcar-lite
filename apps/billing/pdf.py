@@ -27,8 +27,19 @@ def invoice_context(invoice) -> dict:
     }
 
 
+def document_language(customer) -> str:
+    """Idioma de los documentos del cliente. Sin cliente, el de la instalacion."""
+    from django.conf import settings
+
+    idioma = getattr(customer, "language", "") or settings.LANGUAGE_CODE
+    return idioma if idioma in dict(settings.LANGUAGES) else settings.LANGUAGE_CODE
+
+
 def render_invoice_pdf(invoice) -> bytes:
+    """La factura en el idioma del cliente: es un documento para el."""
+    from django.utils import translation
     from weasyprint import HTML
 
-    html = render_to_string("billing/invoice_pdf.html", invoice_context(invoice))
+    with translation.override(document_language(invoice.customer)):
+        html = render_to_string("billing/invoice_pdf.html", invoice_context(invoice))
     return HTML(string=html, base_url=".").write_pdf()

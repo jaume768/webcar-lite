@@ -1,0 +1,24 @@
+{% load i18n %}
+<td class="whitespace-nowrap text-slate-600">
+  {{ row.created_at|date:"d/m/Y" }}
+  <span class="block font-mono text-xs text-slate-400">{{ row.created_at|date:"H:i:s" }}</span>
+</td>
+<td class="text-slate-900">{{ row.actor_repr|default:_("Sistema") }}</td>
+<td>{% include "ui/_badge.html" with status=row.action label=row.get_action_display only %}</td>
+<td class="max-w-xl">
+  <span class="block text-slate-900">{{ row.message }}</span>
+  {% if row.changes %}
+    <details class="mt-1 text-xs text-slate-500">
+      <summary class="cursor-pointer select-none">{% translate "Detalle" %}</summary>
+      <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono">
+        {% for campo, valor in row.changes.items %}
+          <dt class="text-slate-400">{{ campo }}</dt><dd class="break-all text-slate-700">{{ valor }}</dd>
+        {% endfor %}
+      </dl>
+    </details>
+  {% endif %}
+</td>
+<td class="text-xs text-slate-500">
+  {% if row.object_repr %}<span class="block text-slate-700">{{ row.object_repr }}</span>{% endif %}
+  {% if row.ip %}<span class="block font-mono">{{ row.ip }}</span>{% endif %}
+</td>

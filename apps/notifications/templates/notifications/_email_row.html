@@ -1,0 +1,18 @@
+{% load i18n %}
+<td class="whitespace-nowrap text-slate-600">{{ row.created_at|date:"d/m/Y H:i" }}</td>
+<td>
+  <span class="text-slate-900">{{ row.get_kind_display }}</span>
+  {% if row.subject %}<span class="block max-w-64 truncate text-xs text-slate-500">{{ row.subject }}</span>{% endif %}
+</td>
+<td class="text-slate-600">{{ row.to_email|default:"—" }}</td>
+<td>{% if row.reservation_id %}<a class="font-mono text-sm text-brand-700 hover:underline" href="{% url 'reservations:detail' row.reservation_id %}">{{ row.reservation.number }}</a>{% else %}—{% endif %}</td>
+<td class="uppercase text-slate-500">{{ row.language }}</td>
+<td>
+  {% include "ui/_badge.html" with status=row.badge_status label=row.get_status_display only %}
+  {% if row.error %}<span class="mt-0.5 block max-w-64 truncate text-xs text-rose-600" title="{{ row.error }}">{{ row.error }}</span>{% endif %}
+</td>
+<td class="text-right">
+  {% if row.status == "failed" and row.to_email %}
+    <button type="button" class="btn-ghost px-2 py-1" hx-post="{% url 'notifications:retry' row.pk %}" hx-swap="none">{% translate "Reintentar" %}</button>
+  {% endif %}
+</td>

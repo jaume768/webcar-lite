@@ -10,6 +10,9 @@ from apps.offices.models import Office
 from .models import (
     BlockReason,
     Fuel,
+    MaintenanceKind,
+    MaintenanceRecord,
+    MaintenanceStatus,
     Transmission,
     Vehicle,
     VehicleBlock,
@@ -132,4 +135,28 @@ class VehicleBlockFilter(filters.FilterSet):
             | Q(vehicle__brand__icontains=termino)
             | Q(vehicle__model__icontains=termino)
             | Q(notes__icontains=termino)
+        )
+
+
+class MaintenanceFilter(filters.FilterSet):
+    q = filters.CharFilter(method="buscar", label=_("Buscar"))
+    status = filters.ChoiceFilter(
+        label=_("Estado"), choices=MaintenanceStatus.choices, empty_label=_("Estado: todos")
+    )
+    kind = filters.ChoiceFilter(
+        label=_("Tipo"), choices=MaintenanceKind.choices, empty_label=_("Tipo: todos")
+    )
+
+    class Meta:
+        model = MaintenanceRecord
+        fields = ["q", "status", "kind"]
+
+    def buscar(self, queryset, name, value):
+        termino = (value or "").strip()
+        if not termino:
+            return queryset
+        return queryset.filter(
+            Q(vehicle__plate__icontains=termino)
+            | Q(workshop__icontains=termino)
+            | Q(description__icontains=termino)
         )

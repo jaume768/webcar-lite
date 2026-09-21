@@ -361,3 +361,99 @@ class VehicleBlock(TimeStampedModel, UserStampedModel):
     @property
     def is_past(self) -> bool:
         return self.end_at <= timezone.now()
+
+
+# ---------------------------------------------------------------------------
+# Mantenimiento y taller
+# ---------------------------------------------------------------------------
+
+
+class MaintenanceKind(models.TextChoices):
+    SERVICE = "service", _("Revisión")
+    OIL = "oil", _("Aceite y filtros")
+    ITV = "itv", _("ITV")
+    TYRES = "tyres", _("Neumáticos")
+    BRAKES = "brakes", _("Frenos")
+    BREAKDOWN = "breakdown", _("Avería")
+    BODYWORK = "bodywork", _("Chapa y pintura")
+    OTHER = "other", _("Otros")
+
+
+class MaintenanceStatus(models.TextChoices):
+    SCHEDULED = "scheduled", _("Programado")
+    IN_WORKSHOP = "in_workshop", _("En taller")
+    DONE = "done", _("Hecho")
+    CANCELLED = "cancelled", _("Anulado")
+
+
+class MaintenanceQuerySet(models.QuerySet):
+    def for_user(self, user):
+        if user is None or not getattr(user, "is_authenticated", False) or not user.is_active:
+            return self.none()
+        if user.is_superuser:
+            return self
+        return self.filter(vehicle__current_office__in=user.offices.all())
+
+
+class MaintenanceRecord(TimeStampedModel, UserStampedModel):
+    """Una intervencion en un coche: programada, en curso o hecha.
+
+    Si inmoviliza el coche, al entrar en taller se crea un bloqueo con esas
+    fechas: la disponibilidad lo resta como cualquier otro bloqueo y el coche
+    no se puede vender mientras tanto. Al terminar, el bloqueo desaparece.
+
+    `next_due_date` y `next_due_km` son el siguiente vencimiento (proximo
+    cambio de aceite, proxima ITV): con ellos se avisa antes de que toque.
+    """
+
+    vehicle = models.ForeignKey(
+        Vehicle, verbose_name=_("vehiculo"), on_delete=models.PROTECT, related_name="maintenance"
+    )
+    kind = models.CharField(_("tipo"), max_length=20, choices=MaintenanceKind.choices)
+    status = models.CharField(
+        _("estado"),
+        max_length=20,
+        choices=MaintenanceStatus.choices,
+        default=MaintenanceStatus.SCHEDULED,
+    )
+    description = models.TextField(_("descripcion"), blank=True)
+    workshop = models.CharField(_("taller"), max_length=120, blank=True)
+
+    scheduled_for = models.DateField(_("fecha prevista"), null=True, blank=True)
+    started_at = models.DateTimeField(_("entrada en taller"), null=True, blank=True)
+    expected_end_at = models.DateTimeField(_("salida prevista"), null=True, blank=True)
+    finished_at = models.DateTimeField(_("salida real"), null=True, blank=True)
+    immobilizes = models.BooleanField(
+        _("inmoviliza el coche"),
+        default=True,
+        help_text=_("Mientras este en taller no se puede alquilar: se bloquea en el calendario."),
+    )
+    block = models.OneToOneField(
+        VehicleBlock,
+        verbose_name=_("bloqueo"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="maintenance",
+    )
+
+    mileage = models.PositiveIntegerField(_("kilometros"), null=True, blank=True)
+    cost = models.DecimalField(_("coste"), max_digits=10, decimal_places=2, null=True, blank=True)
+    supplier_invoice = models.CharField(_("factura del taller"), max_length=60, blank=True)
+
+    next_due_date = models.DateField(_("proximo vencimiento"), null=True, blank=True)
+    next_due_km = models.PositiveIntegerField(_("proximo a los km"), null=True, blank=True)
+
+    objects = MaintenanceQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = _("mantenimiento")
+        verbose_name_plural = _("mantenimientos")
+        ordering = ["-scheduled_for", "-created_at"]
+        default_permissions = ("view", "add", "change")
+        indexes = [
+            models.Index(fields=["vehicle", "kind", "status"], name="fleet_mant_coche_tipo"),
+        ]
+
+    def __str__(self):
+        return f"{self.vehicle.plate}: {self.get_kind_display()}"

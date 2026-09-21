@@ -379,13 +379,25 @@ class Invoice(TimeStampedModel):
         verbose_name=_("reserva"),
         on_delete=models.PROTECT,
         related_name="invoices",
+        null=True,
+        blank=True,
+        help_text=_("Vacia en una factura libre: una multa, un cargo suelto."),
+    )
+    customer = models.ForeignKey(
+        "customers.Customer",
+        verbose_name=_("cliente"),
+        on_delete=models.PROTECT,
+        related_name="invoices",
+        null=True,
+        blank=True,
+        help_text=_("A quien se factura. Sus datos fiscales van copiados aparte."),
     )
     office = models.ForeignKey(
         "offices.Office",
         verbose_name=_("oficina"),
         on_delete=models.PROTECT,
         related_name="invoices",
-        help_text=_("La de la reserva. Decide quien puede ver la factura."),
+        help_text=_("La de la reserva o la elegida. Decide quien puede ver la factura."),
     )
     rectifies = models.ForeignKey(
         "self",
@@ -396,6 +408,9 @@ class Invoice(TimeStampedModel):
         related_name="rectifications",
     )
     rectification_reason = models.TextField(_("motivo de la rectificacion"), blank=True, default="")
+    notes = models.TextField(
+        _("observaciones"), blank=True, default="", help_text=_("Salen impresas en la factura.")
+    )
 
     # --- datos fiscales copiados al emitir ------------------------------------
     issuer_name = models.CharField(_("emisor"), max_length=160)
@@ -480,6 +495,11 @@ class Invoice(TimeStampedModel):
     def is_rectifying(self) -> bool:
         return self.kind == InvoiceKind.RECTIFYING
 
+    @property
+    def is_free(self) -> bool:
+        """Factura libre: no sale de una reserva."""
+        return self.reservation_id is None
+
 
 class InvoiceLine(models.Model):
     """Una linea de la factura, con base, impuesto y total propios."""
@@ -517,3 +537,112 @@ class InvoiceLine(models.Model):
 
     def delete(self, *args, **kwargs):
         raise InvoiceImmutable("Una linea de factura emitida no se borra.")
+
+
+# ---------------------------------------------------------------------------
+# Pagos online
+# ---------------------------------------------------------------------------
+
+
+class OnlinePurpose(models.TextChoices):
+    ADVANCE = "advance", _("Anticipo")
+    PAYMENT = "payment", _("Pago")
+    DEPOSIT = "deposit", _("Fianza (preautorización)")
+
+
+class OnlineStatus(models.TextChoices):
+    CREATED = "created", _("Enlace creado")
+    PENDING = "pending", _("En la pasarela")
+    PAID = "paid", _("Pagado")
+    AUTHORIZED = "authorized", _("Fianza retenida")
+    CAPTURED = "captured", _("Fianza cobrada")
+    RELEASED = "released", _("Fianza liberada")
+    FAILED = "failed", _("Rechazado")
+    CANCELLED = "cancelled", _("Anulado")
+    EXPIRED = "expired", _("Caducado")
+
+
+class OnlinePaymentQuerySet(models.QuerySet):
+    def for_user(self, user):
+        if user is None or not getattr(user, "is_authenticated", False) or not user.is_active:
+            return self.none()
+        if user.is_superuser:
+            return self
+        return self.filter(reservation__pickup_office__in=user.offices.all())
+
+
+class OnlinePayment(TimeStampedModel):
+    """Un enlace de pago enviado al cliente, y lo que paso con el.
+
+    El token es lo unico que viaja en la URL publica: no dice nada de la
+    reserva ni del cliente. El cobro (`payment`) solo se crea cuando la
+    pasarela lo confirma con una notificacion firmada, nunca porque el cliente
+    vuelva a la pagina de "pago correcto".
+    """
+
+    token = models.CharField(_("token"), max_length=64, unique=True, editable=False)
+    reservation = models.ForeignKey(
+        "reservations.Reservation",
+        verbose_name=_("reserva"),
+        on_delete=models.PROTECT,
+        related_name="online_payments",
+    )
+    provider = models.CharField(_("pasarela"), max_length=20)
+    purpose = models.CharField(_("concepto"), max_length=20, choices=OnlinePurpose.choices)
+    amount = models.DecimalField(_("importe"), max_digits=10, decimal_places=2)
+    status = models.CharField(
+        _("estado"), max_length=20, choices=OnlineStatus.choices, default=OnlineStatus.CREATED
+    )
+    expires_at = models.DateTimeField(_("caduca"))
+    #: Id de la sesion o del pedido en la pasarela.
+    provider_ref = models.CharField(_("referencia en la pasarela"), max_length=120, blank=True)
+    #: PaymentIntent de Stripe: hace falta para cobrar o liberar la fianza.
+    provider_intent = models.CharField(_("operacion"), max_length=120, blank=True)
+    captured_amount = models.DecimalField(
+        _("cobrado de la fianza"), max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    payment = models.ForeignKey(
+        Payment,
+        verbose_name=_("cobro"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="online_payments",
+    )
+    last_event = models.JSONField(_("ultima notificacion"), default=dict, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("creado por"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="online_payments_created",
+    )
+
+    objects = OnlinePaymentQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = _("pago online")
+        verbose_name_plural = _("pagos online")
+        ordering = ["-created_at"]
+        default_permissions = ("view", "add", "change")
+
+    def __str__(self):
+        return f"{self.get_purpose_display()} {self.amount} EUR ({self.provider})"
+
+    @property
+    def is_hold(self) -> bool:
+        return self.purpose == OnlinePurpose.DEPOSIT
+
+    @property
+    def is_open(self) -> bool:
+        """Todavia se puede pagar con este enlace."""
+        return self.status in (OnlineStatus.CREATED, OnlineStatus.PENDING) and (
+            self.expires_at > timezone.now()
+        )
+
+    @property
+    def public_url(self) -> str:
+        from django.urls import reverse
+
+        return settings.PUBLIC_BASE_URL + reverse("billing:pay", args=[self.token])

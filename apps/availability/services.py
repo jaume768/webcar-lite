@@ -662,6 +662,17 @@ def assign_vehicle(
     reservation.needs_reassignment = False
     reservation.save(update_fields=["vehicle", "needs_reassignment", "updated_at"])
 
+    from apps.auditlog import services as audit
+    from apps.auditlog.models import AuditAction
+
+    audit.record(
+        AuditAction.VEHICLE,
+        _("%(matricula)s asignado a %(numero)s")
+        % {"matricula": vehicle.plate, "numero": reservation.number},
+        obj=reservation,
+        actor=actor,
+        changes={"vehicle": vehicle.plate},
+    )
     logger.info(
         "vehiculo_asignado_a_reserva",
         reservation_number=reservation.number,

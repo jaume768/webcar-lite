@@ -18,3 +18,16 @@ class BillingConfig(AppConfig):
         badges.register("series_ordinary", "accent")
         badges.register("series_rectifying", "warning")
         badges.register("series_default", "info")
+        # Pagos online.
+        for estado, tono in {
+            "created": "neutral",
+            "pending": "info",
+            "paid": "success",
+            "authorized": "accent",
+            "captured": "success",
+            "released": "neutral",
+            "failed": "danger",
+            "cancelled": "neutral",
+            "expired": "neutral",
+        }.items():
+            badges.register(estado, tono)

@@ -4,11 +4,18 @@ from django import forms
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.forms import DateInput, DateTimeField
+from apps.core.forms import DateField, DateInput, DateTimeField
 from apps.offices.models import Office
 from apps.offices.selectors import offices_for_user
 
-from .models import MANUAL_STATUSES, Vehicle, VehicleBlock, VehicleCategory, VehicleStatus
+from .models import (
+    MANUAL_STATUSES,
+    MaintenanceRecord,
+    Vehicle,
+    VehicleBlock,
+    VehicleCategory,
+    VehicleStatus,
+)
 from .selectors import selectable_categories
 
 
@@ -193,3 +200,62 @@ class VehicleBlockForm(forms.ModelForm):
                     },
                 )
         return datos
+
+
+class MaintenanceRecordForm(forms.ModelForm):
+    """Programar o editar un mantenimiento. Entrar y salir de taller van aparte."""
+
+    scheduled_for = DateField(label=_("Fecha prevista"), required=False)
+    next_due_date = DateField(label=_("Próximo vencimiento"), required=False)
+
+    class Meta:
+        model = MaintenanceRecord
+        fields = [
+            "vehicle",
+            "kind",
+            "scheduled_for",
+            "workshop",
+            "immobilizes",
+            "description",
+            "next_due_date",
+            "next_due_km",
+        ]
+        widgets = {"description": forms.Textarea(attrs={"rows": 2})}
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        consulta = Vehicle.objects.active()
+        if user is not None:
+            consulta = consulta.for_user(user)
+        self.fields["vehicle"].queryset = consulta.order_by("plate")
+        self.fields["vehicle"].label_from_instance = lambda v: f"{v.plate} · {v.brand} {v.model}"
+
+
+class StartWorkshopForm(forms.Form):
+    started_at = DateTimeField(label=_("Entra en taller"))
+    expected_end_at = DateTimeField(label=_("Salida prevista"))
+
+    def clean(self):
+        datos = super().clean()
+        if (
+            datos.get("started_at")
+            and datos.get("expected_end_at")
+            and datos["expected_end_at"] <= datos["started_at"]
+        ):
+            self.add_error("expected_end_at", _("Tiene que ser posterior a la entrada."))
+        return datos
+
+
+class FinishWorkshopForm(forms.Form):
+    finished_at = DateTimeField(label=_("Sale del taller"))
+    mileage = forms.IntegerField(label=_("Kilómetros"), min_value=0, required=False)
+    cost = forms.DecimalField(
+        label=_("Coste"), max_digits=10, decimal_places=2, min_value=0, required=False
+    )
+    supplier_invoice = forms.CharField(label=_("Factura del taller"), max_length=60, required=False)
+    next_due_date = DateField(
+        label=_("Próximo vencimiento"),
+        required=False,
+        help_text=_("En una ITV, la nueva caducidad: se apunta en la ficha del coche."),
+    )
+    next_due_km = forms.IntegerField(label=_("Próximo a los km"), min_value=0, required=False)

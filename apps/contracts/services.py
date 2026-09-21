@@ -46,8 +46,15 @@ def render_contract_pdf(contract: Contract) -> bytes:
     """HTML del contrato pasado por WeasyPrint."""
     from weasyprint import HTML
 
-    contexto = contract_context(contract.reservation, terms=contract.terms_version)
-    html = render_to_string("contracts/contract.html", contexto)
+    from django.utils import translation
+
+    from apps.billing.pdf import document_language
+
+    # El contrato sale en el idioma del cliente. Las condiciones generales son
+    # texto de la empresa y van tal cual se publicaron.
+    with translation.override(document_language(contract.reservation.customer)):
+        contexto = contract_context(contract.reservation, terms=contract.terms_version)
+        html = render_to_string("contracts/contract.html", contexto)
     return HTML(string=html, base_url=".").write_pdf()
 
 
@@ -114,6 +121,14 @@ def build_contract(contract: Contract) -> Contract:
     contract.generated_at = timezone.now()
     contract.save(update_fields=["file", "status", "error", "generated_at", "updated_at"])
 
+    from apps.notifications.models import EmailKind
+    from apps.notifications.services import queue_email
+
+    queue_email(
+        kind=EmailKind.CONTRACT,
+        reservation=contract.reservation,
+        context={"contract_id": contract.pk},
+    )
     logger.info(
         "contrato_generado",
         contract_id=contract.pk,

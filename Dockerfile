@@ -53,6 +53,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         libffi8 \
         shared-mime-info \
         fonts-dejavu-core \
+        gettext \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -72,11 +73,13 @@ RUN mkdir -p /app/staticfiles /app/media
 # El manifiesto de whitenoise se genera en el build: la imagen arranca ya servible
 # y un fallo de estaticos se ve aqui, no en el primer request de produccion.
 # Estos valores solo existen durante el build; collectstatic no toca la base de datos.
-RUN DJANGO_SECRET_KEY=solo-para-collectstatic-en-build \
+# Las traducciones del cliente (correos, factura) se compilan aqui tambien.
+RUN export DJANGO_SECRET_KEY=solo-para-collectstatic-en-build \
     DJANGO_ALLOWED_HOSTS=localhost \
     DATABASE_URL=postgres://build:build@localhost:5432/build \
     REDIS_URL=redis://localhost:6379/0 \
-    python manage.py collectstatic --noinput \
+    && python manage.py compilemessages --ignore=.venv \
+    && python manage.py collectstatic --noinput \
     && chown -R app:app /app/staticfiles /app/media
 
 USER app

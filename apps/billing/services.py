@@ -10,6 +10,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.auditlog import services as audit
+from apps.auditlog.models import AuditAction
 from apps.core.services import ServiceError
 
 from .models import DEPOSIT_TYPES, OUTGOING_TYPES, Payment, PaymentType
@@ -53,6 +55,7 @@ def register_payment(
     notes: str = "",
     allow_overpayment: bool = False,
     actor=None,
+    from_gateway: bool = False,
 ) -> Payment:
     """Registra un movimiento de dinero de una reserva.
 
@@ -72,7 +75,18 @@ def register_payment(
 
     # La fianza no toca el saldo del alquiler, asi que no se compara con el
     # pendiente: es dinero retenido, no cobrado.
-    if payment_type not in DEPOSIT_TYPES and importe > 0:
+    # Un cobro que confirma una pasarela ya se ha cobrado de verdad: negarse a
+    # apuntarlo no lo deshace, solo lo esconde. Se apunta y se avisa.
+    if payment_type not in DEPOSIT_TYPES and importe > 0 and from_gateway:
+        pendiente = pending_amount(reservation)
+        if importe > pendiente:
+            logger.warning(
+                "pago_online_por_encima_del_pendiente",
+                reservation_number=reservation.number,
+                importe=str(importe),
+                pendiente=str(pendiente),
+            )
+    elif payment_type not in DEPOSIT_TYPES and importe > 0:
         pendiente = pending_amount(reservation)
         if importe > pendiente:
             if not allow_overpayment:
@@ -113,6 +127,20 @@ def register_payment(
     pago.full_clean(exclude=["reservation", "office", "created_by"])
     pago.save()
 
+    audit.record(
+        AuditAction.PAYMENT,
+        _("%(concepto)s de %(importe)s € en %(numero)s (%(medio)s)")
+        % {
+            "concepto": pago.get_payment_type_display(),
+            "importe": pago.amount,
+            "numero": reservation.number,
+            "medio": pago.get_method_display(),
+        },
+        obj=pago,
+        actor=actor,
+        reservation=reservation,
+        changes={"amount": pago.amount, "method": method, "type": payment_type},
+    )
     logger.info(
         "cobro_registrado",
         reservation_number=reservation.number,
@@ -320,8 +348,15 @@ def _crear_factura(
     rectifies=None,
     reason: str = "",
     actor=None,
+    customer=None,
+    office=None,
+    notes: str = "",
 ):
-    """Numera, encadena y guarda la factura con sus lineas. Todo o nada."""
+    """Numera, encadena y guarda la factura con sus lineas. Todo o nada.
+
+    De una reserva salen el cliente y la oficina; una factura libre los trae
+    aparte.
+    """
     from apps.settings_app.models import policies_for_invoice
 
     from . import verifactu
@@ -332,7 +367,8 @@ def _crear_factura(
     base, cuota, total = totals_of(lineas)
     anterior = _huella_anterior()
     fecha_expedicion = timezone.localdate(ahora)
-    cliente = reservation.customer
+    cliente = customer or reservation.customer
+    oficina = office or reservation.pickup_office
 
     factura = Invoice(
         series=series,
@@ -342,9 +378,11 @@ def _crear_factura(
         kind=kind,
         issued_at=ahora,
         reservation=reservation,
-        office=reservation.pickup_office,
+        customer=cliente,
+        office=oficina,
         rectifies=rectifies,
         rectification_reason=reason,
+        notes=notes,
         issuer_name=empresa.legal_name,
         issuer_tax_id=empresa.tax_id,
         issuer_address=empresa.full_address,
@@ -392,6 +430,20 @@ def _crear_factura(
         for posicion, linea in enumerate(lineas, start=1)
     )
     return factura
+
+
+def _enviar_factura(factura, actor=None) -> None:
+    """La factura al cliente por correo, con el PDF, si esta activado."""
+    from apps.notifications.models import EmailKind
+    from apps.notifications.services import queue_email
+
+    queue_email(
+        kind=EmailKind.INVOICE,
+        reservation=factura.reservation,
+        customer=factura.customer,
+        context={"invoice_id": factura.pk},
+        actor=actor,
+    )
 
 
 def _exigir_permiso(actor, permiso: str, mensaje) -> None:
@@ -470,6 +522,16 @@ def issue_invoice(*, reservation, series=None, actor=None):
         empresa=_empresa_facturable(),
         actor=actor,
     )
+    audit.record(
+        AuditAction.INVOICE,
+        _("Factura %(numero)s emitida (%(total)s €)")
+        % {"numero": factura.number, "total": factura.total},
+        obj=factura,
+        actor=actor,
+        reservation=factura.reservation,
+        office_id=factura.office_id,
+    )
+    _enviar_factura(factura, actor)
     logger.info(
         "factura_emitida",
         invoice_number=factura.number,
@@ -499,7 +561,7 @@ def rectify_invoice(*, invoice, reason: str, series=None, actor=None):
 
     original = (
         Invoice.objects.select_for_update(of=("self",))
-        .select_related("reservation__customer", "reservation__pickup_office")
+        .select_related("customer", "office")
         .get(pk=invoice.pk)
     )
     if original.is_rectifying:
@@ -538,6 +600,17 @@ def rectify_invoice(*, invoice, reason: str, series=None, actor=None):
         rectifies=original,
         reason=motivo,
         actor=actor,
+        customer=original.customer,
+        office=original.office,
+    )
+    audit.record(
+        AuditAction.INVOICE,
+        _("Rectificativa %(rectificativa)s anula %(numero)s: %(motivo)s")
+        % {"rectificativa": rectificativa.number, "numero": original.number, "motivo": motivo},
+        obj=rectificativa,
+        actor=actor,
+        reservation=rectificativa.reservation,
+        office_id=rectificativa.office_id,
     )
     logger.warning(
         "factura_rectificada",
@@ -547,6 +620,94 @@ def rectify_invoice(*, invoice, reason: str, series=None, actor=None):
         actor_id=getattr(actor, "pk", None),
     )
     return rectificativa
+
+
+def free_line(*, concept: str, quantity, unit_price, tax_rate) -> LineaFactura:
+    """Linea de una factura libre, con base, cuota y total ya redondeados.
+
+    Mismo criterio que el motor de tarifas: se redondea la base y la cuota por
+    separado (ROUND_HALF_UP a centimos) y el total es su suma.
+    """
+    from decimal import ROUND_HALF_UP
+
+    centimos = Decimal("0.01")
+    cantidad = Decimal(str(quantity))
+    precio = Decimal(str(unit_price)).quantize(centimos, rounding=ROUND_HALF_UP)
+    tipo = Decimal(str(tax_rate))
+    base = (cantidad * precio).quantize(centimos, rounding=ROUND_HALF_UP)
+    cuota = (base * tipo / Decimal("100")).quantize(centimos, rounding=ROUND_HALF_UP)
+    return LineaFactura(
+        concept=(concept or "").strip(),
+        quantity=cantidad,
+        unit_price=precio,
+        tax_rate=tipo,
+        base_amount=base,
+        tax_amount=cuota,
+        total=base + cuota,
+    )
+
+
+@transaction.atomic
+def issue_manual_invoice(
+    *, customer, office, lines: list[LineaFactura], series=None, notes: str = "", actor=None
+):
+    """Factura a un cliente sin reserva detras: una multa, un dano, un cargo suelto.
+
+    Mismas reglas que cualquier factura: numeracion sin huecos, huella
+    encadenada, datos fiscales copiados e inmutable desde que existe.
+    """
+    from apps.offices.selectors import offices_for_user
+
+    from .models import InvoiceKind
+
+    _exigir_permiso(actor, PERMISO_EMITIR, _("Tu usuario no puede emitir facturas (%(permiso)s)."))
+    if customer is None:
+        raise InvoiceServiceError(_("Una factura necesita un cliente con sus datos fiscales."))
+    if not customer.document_number:
+        raise InvoiceServiceError(_("El cliente no tiene NIF ni documento: complétalo antes."))
+    if office is None or not offices_for_user(actor).filter(pk=office.pk).exists():
+        raise PermissionDenied(_("No puedes facturar en esa oficina."))
+    lineas = [linea for linea in lines if linea.concept]
+    if not lineas:
+        raise InvoiceServiceError(_("Añade al menos una línea con concepto."))
+    _base, _cuota, total = totals_of(lineas)
+    if total <= 0:
+        raise InvoiceServiceError(_("No se emite una factura de importe cero o negativo."))
+
+    serie = series or default_series(InvoiceKind.ORDINARY)
+    if serie is None or not serie.is_active or serie.kind != InvoiceKind.ORDINARY:
+        raise InvoiceServiceError(
+            _("No hay una serie de facturas ordinarias activa. Crea una en Series.")
+        )
+
+    factura = _crear_factura(
+        reservation=None,
+        series=serie,
+        kind=InvoiceKind.ORDINARY,
+        lineas=lineas,
+        empresa=_empresa_facturable(),
+        actor=actor,
+        customer=customer,
+        office=office,
+        notes=notes.strip(),
+    )
+    audit.record(
+        AuditAction.INVOICE,
+        _("Factura libre %(numero)s a %(cliente)s (%(total)s €)")
+        % {"numero": factura.number, "cliente": customer.full_name, "total": factura.total},
+        obj=factura,
+        actor=actor,
+        office_id=office.pk,
+    )
+    _enviar_factura(factura, actor)
+    logger.info(
+        "factura_libre_emitida",
+        invoice_number=factura.number,
+        customer_id=customer.pk,
+        total=str(factura.total),
+        actor_id=getattr(actor, "pk", None),
+    )
+    return factura
 
 
 # ---------------------------------------------------------------------------

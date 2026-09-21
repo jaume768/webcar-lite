@@ -1,0 +1,14 @@
+{% extends "notifications/emails/_base.html" %}{% load i18n %}
+{% block titulo_visible %}{% translate "Hemos recibido tu vehículo" %}{% endblock %}
+{% block cuerpo %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% translate "Gracias por confiar en nosotros. Este es el resumen de la devolución." %}</p>
+{% if devolucion %}<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% translate "Kilómetros a la devolución" %}: {{ devolucion.mileage }}</p>{% endif %}
+{% if cargos %}
+<p style="margin:0 0 4px;font-size:15px;line-height:1.6;"><strong>{% translate "Cargos de la devolución" %}</strong></p>
+<ul style="margin:0 0 12px;padding-left:20px;font-size:15px;line-height:1.6;">
+  {% for cargo in cargos %}<li>{{ cargo.concept }}: {{ cargo.total|floatformat:2 }} €</li>{% endfor %}
+</ul>
+{% endif %}
+{% if saldo.pending %}<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% blocktranslate with importe=saldo.pending|floatformat:2 %}Quedan {{ importe }} € pendientes de pago.{% endblocktranslate %}</p>{% endif %}
+<p style="margin:0 0 12px;font-size:15px;line-height:1.6;">{% translate "Recibirás la factura por correo en cuanto la emitamos. ¡Esperamos verte pronto!" %}</p>
+{% endblock %}

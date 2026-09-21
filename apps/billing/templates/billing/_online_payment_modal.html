@@ -1,0 +1,24 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Pedir pago online" %}{% endblock %}
+
+{% block modal_body %}
+  {% if sin_pasarelas %}
+    <p class="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      {% translate "No hay ninguna pasarela configurada. Pon las claves de Stripe (STRIPE_SECRET_KEY) o de Redsys (REDSYS_MERCHANT_CODE y REDSYS_SECRET_KEY) en el entorno." %}
+    </p>
+  {% else %}
+    <p class="mb-4 text-sm text-slate-600">
+      {% translate "El cliente recibe un enlace para pagar con tarjeta. El cobro se apunta solo cuando la pasarela lo confirma. La fianza se retiene en la tarjeta sin cobrarla; después se libera o se cobra una parte." %}
+    </p>
+    {% include "ui/_form_body.html" %}
+  {% endif %}
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  {% if not sin_pasarelas %}
+    <button type="submit" form="{{ form_id }}" class="btn-primary">{{ submit_label }}</button>
+  {% endif %}
+{% endblock %}
