@@ -5,7 +5,7 @@
     <section class="card">
       <div class="card-header">
         <h2 class="card-title">{% translate "Condiciones" %}</h2>
-        {% if perms.reservations.change_reservation %}
+        {% if puede_editar %}
           <div class="flex gap-2">
             <button type="button" class="btn-secondary py-1.5 text-xs"
                     hx-get="{% url 'reservations:change_dates' reservation.pk %}"

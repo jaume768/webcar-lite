@@ -56,7 +56,7 @@
   <section class="card">
     <div class="card-header">
       <h2 class="card-title">{% translate "Conductores adicionales" %}</h2>
-      {% if perms.reservations.change_reservation %}
+      {% if puede_editar %}
         <button type="button" class="btn-secondary py-1.5 text-xs"
                 hx-get="{% url 'reservations:driver_create' reservation.pk %}"
                 hx-target="#modal-host" hx-swap="innerHTML">
@@ -81,7 +81,7 @@
               </p>
             {% endif %}
           </div>
-          {% if perms.reservations.change_reservation %}
+          {% if puede_editar %}
             <button type="button" class="btn-ghost px-2 py-1 text-xs text-rose-700"
                     hx-post="{% url 'reservations:driver_delete' reservation.pk conductor.pk %}"
                     hx-swap="none"

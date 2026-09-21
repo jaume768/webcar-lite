@@ -2,7 +2,7 @@
 <section class="card">
   <div class="card-header">
     <h2 class="card-title">{% translate "Extras vendidos" %}</h2>
-    {% if perms.reservations.change_reservation %}
+    {% if puede_editar %}
       <button type="button" class="btn-secondary py-1.5 text-xs"
               hx-get="{% url 'reservations:extra_add' reservation.pk %}"
               hx-target="#modal-host" hx-swap="innerHTML">
@@ -35,7 +35,7 @@
           <tr>
             <td class="font-medium text-slate-900">{{ linea.concept }}</td>
             <td class="text-right">
-              {% if perms.reservations.change_reservation %}
+              {% if puede_editar %}
                 <form method="post" action="{% url 'reservations:extra_line' reservation.pk linea.pk %}"
                       hx-post="{% url 'reservations:extra_line' reservation.pk linea.pk %}"
                       hx-target="#modal-host" hx-swap="innerHTML" class="inline-flex items-center gap-1">
@@ -62,7 +62,7 @@
             <td class="text-right tabular">{{ linea.base_amount }} €</td>
             <td class="text-right tabular font-medium">{{ linea.total }} €</td>
             <td class="text-right">
-              {% if perms.reservations.change_reservation %}
+              {% if puede_editar %}
                 <form method="post" action="{% url 'reservations:extra_line' reservation.pk linea.pk %}"
                       hx-post="{% url 'reservations:extra_line' reservation.pk linea.pk %}"
                       hx-target="#modal-host" hx-swap="innerHTML" class="inline">

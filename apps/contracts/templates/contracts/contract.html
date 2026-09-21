@@ -1,6 +1,6 @@
 {% load i18n %}<!DOCTYPE html>
-{% comment %} Contrato de alquiler. Se imprime con WeasyPrint, asi que aqui no
-   hay Tailwind ni JavaScript: solo CSS de impresion con @page. {% endcomment %}
+{% comment %} Contrato de alquiler. Se imprime con WeasyPrint, con los mismos
+   estilos que la factura: solo lo que el cliente necesita leer y firmar. {% endcomment %}
 {% get_current_language as idioma %}<html lang="{{ idioma }}">
 <head>
   <meta charset="utf-8">
@@ -8,64 +8,24 @@
   <style>
     @page {
       size: A4;
-      margin: 14mm 14mm 18mm 14mm;
-      @bottom-center {
-        content: "{{ empresa.legal_name }} · {% translate 'Contrato' %} {{ reservation.number }} · {% translate 'pagina' %} " counter(page) " {% translate 'de' %} " counter(pages);
-        font-size: 7pt;
-        color: #64748b;
+      margin: 16mm 18mm 18mm 18mm;
+      @bottom-left {
+        content: "{{ empresa.legal_name }} · {{ empresa.tax_id }}";
+        font-family: "DejaVu Sans", sans-serif; font-size: 6.5pt; color: #94a3b8;
+      }
+      @bottom-right {
+        content: "{% translate 'Contrato' %} {{ reservation.number }} · {% translate 'página' %} " counter(page) " {% translate 'de' %} " counter(pages);
+        font-family: "DejaVu Sans", sans-serif; font-size: 6.5pt; color: #94a3b8;
       }
     }
-
-    * { box-sizing: border-box; }
-    body {
-      font-family: "Inter", "DejaVu Sans", sans-serif;
-      font-size: 8.5pt;
-      line-height: 1.35;
-      color: #0f172a;
-      margin: 0;
-    }
-    h1 { font-size: 13pt; margin: 0; }
-    h2 {
-      font-size: 8pt; text-transform: uppercase; letter-spacing: .06em;
-      color: #475569; margin: 0 0 3px; padding-bottom: 2px;
-      border-bottom: .6pt solid #cbd5e1;
-    }
-    table { width: 100%; border-collapse: collapse; }
-    .cabecera { display: flex; justify-content: space-between; align-items: flex-start;
-                border-bottom: 1.2pt solid #1d3bd8; padding-bottom: 6px; margin-bottom: 8px; }
-    .cabecera .logo { max-height: 18mm; max-width: 45mm; }
-    .empresa { font-size: 7.5pt; color: #475569; text-align: right; }
-    .ref { font-family: "DejaVu Sans Mono", monospace; font-size: 11pt; font-weight: bold; }
-
-    .bloques { display: flex; gap: 6mm; margin-bottom: 7px; }
-    .bloque { flex: 1; }
-    .campo { margin-bottom: 2.5px; }
-    .campo .etiqueta { color: #64748b; font-size: 7pt; display: block; }
-    .campo .valor { font-weight: 600; }
-
-    .rejilla { display: flex; flex-wrap: wrap; gap: 0 6mm; }
-    .rejilla .campo { width: calc(33.333% - 4mm); }
-
-    .lineas th { text-align: left; font-size: 7pt; color: #475569; text-transform: uppercase;
-                 border-bottom: .6pt solid #cbd5e1; padding: 2px 3px; }
-    .lineas td { padding: 2.5px 3px; border-bottom: .4pt solid #e2e8f0; }
-    .num { text-align: right; font-variant-numeric: tabular-nums; }
-    .total td { font-weight: bold; border-top: .8pt solid #94a3b8; border-bottom: none;
-                font-size: 9.5pt; }
-
-    .avisos { display: flex; gap: 4mm; margin: 7px 0; }
-    .aviso { flex: 1; border: .6pt solid #cbd5e1; border-radius: 2mm; padding: 4px 6px; }
-    .aviso .etiqueta { font-size: 7pt; color: #64748b; display: block; }
-    .aviso .valor { font-size: 10pt; font-weight: bold; }
-
-    .condiciones { margin-top: 8px; }
-    .condiciones ol { margin: 0; padding-left: 12px; }
-    .condiciones li { margin-bottom: 2px; text-align: justify; font-size: 7pt; color: #334155; }
-
-    .firmas { display: flex; gap: 8mm; margin-top: 10mm; page-break-inside: avoid; }
-    .firma { flex: 1; }
-    .firma .hueco { height: 22mm; border-bottom: .8pt solid #334155; }
-    .firma .pie { font-size: 7pt; color: #475569; padding-top: 2px; }
+    {% include "core/_pdf_estilos.html" %}
+    .datos { display: flex; flex-wrap: wrap; gap: 3mm 0; }
+    .datos > div { width: 33.333%; padding-right: 4mm; }
+    .datos.cuatro > div { width: 25%; }
+    .condiciones ol { margin: 0; padding-left: 4mm; }
+    .condiciones li { margin-bottom: 1mm; text-align: justify; }
+    .firmas { display: flex; gap: 12mm; margin-top: 14mm; page-break-inside: avoid; }
+    .firma { flex: 1; border-top: .5pt solid #334155; padding-top: 2mm; font-size: 7pt; color: #475569; }
   </style>
 </head>
 <body>
@@ -75,203 +35,175 @@
       {% if empresa.logo %}
         <img class="logo" src="{{ empresa.logo.path }}" alt="{{ empresa.display_name }}">
       {% else %}
-        <h1>{{ empresa.display_name }}</h1>
+        <div class="marca">{{ empresa.display_name }}</div>
       {% endif %}
-      <div style="margin-top:4px">
-        <span style="font-size:7pt;color:#64748b">{% translate "Contrato de alquiler n.º" %}</span><br>
-        <span class="ref">{{ reservation.number }}</span>
+    </div>
+    <div class="titulo">
+      <div class="tipo">{% translate "Contrato de alquiler" %}</div>
+      <div class="numero">{{ reservation.number }}</div>
+      <div class="muted">{{ emitido_el|date:"d/m/Y" }} · {{ reservation.pickup_office.name }}</div>
+    </div>
+  </div>
+
+  <div class="fila">
+    <div>
+      <div class="label">{% translate "Arrendador" %}</div>
+      <p class="fuerte">{{ empresa.legal_name }}</p>
+      <p class="muted">{% translate "NIF" %} {{ empresa.tax_id }}</p>
+      <p class="muted">{{ empresa.full_address }}</p>
+      <p class="muted">{{ empresa.phone }}{% if empresa.phone and empresa.email %} · {% endif %}{{ empresa.email }}</p>
+    </div>
+    <div>
+      <div class="label">{% translate "Arrendatario" %}</div>
+      {% if cliente %}
+        <p class="fuerte">{{ cliente.full_name }}</p>
+        <p class="muted">{{ cliente.get_document_type_display }} {{ cliente.document_number }}</p>
+        {% if cliente.address or cliente.city %}
+          <p class="muted">{{ cliente.address }}{% if cliente.address and cliente.city %}, {% endif %}{% if cliente.postal_code %}{{ cliente.postal_code }} {% endif %}{{ cliente.city }}</p>
+        {% endif %}
+        <p class="muted">{{ cliente.phone }}{% if cliente.phone and cliente.email %} · {% endif %}{{ cliente.email }}</p>
+        {% if cliente.licence_number %}
+          <p class="muted">{% translate "Carnet" %} {{ cliente.licence_number }}{% if cliente.licence_expiry %} · {% translate "caduca" %} {{ cliente.licence_expiry|date:"d/m/Y" }}{% endif %}</p>
+        {% endif %}
+      {% else %}
+        <p class="muted">{% translate "Sin titular asignado." %}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <section>
+    <div class="datos">
+      <div>
+        <div class="label">{% translate "Vehículo" %}</div>
+        {% if vehiculo %}
+          <p class="fuerte">{{ vehiculo.brand }} {{ vehiculo.model }}</p>
+          <p class="muted">{{ vehiculo.plate }} · {{ reservation.category.name }}</p>
+        {% else %}
+          <p class="fuerte">{{ reservation.category.name }}</p>
+          <p class="muted">{% translate "Por asignar" %}</p>
+        {% endif %}
+      </div>
+      <div>
+        <div class="label">{% translate "Recogida" %}</div>
+        <p class="fuerte">{{ reservation.pickup_at|date:"d/m/Y H:i" }}</p>
+        <p class="muted">{{ reservation.pickup_office.name }}</p>
+      </div>
+      <div>
+        <div class="label">{% translate "Devolución" %}</div>
+        <p class="fuerte">{{ reservation.return_at|date:"d/m/Y H:i" }}</p>
+        <p class="muted">{{ reservation.return_office.name }}</p>
+      </div>
+      <div>
+        <div class="label">{% translate "Kilómetros a la entrega" %}</div>
+        <p>{% if entrega %}{{ entrega.mileage }} km{% else %}—{% endif %}</p>
+      </div>
+      <div>
+        <div class="label">{% translate "Combustible a la entrega" %}</div>
+        <p>{% if entrega %}{{ entrega.get_fuel_level_display }}{% else %}—{% endif %}</p>
+      </div>
+      <div>
+        <div class="label">{% translate "Kilometraje" %}</div>
+        <p>{% if reservation.has_unlimited_km %}{% translate "Ilimitado" %}{% else %}{{ reservation.included_km }} km {% translate "incluidos" %}{% endif %}</p>
       </div>
     </div>
-    <div class="empresa">
-      <strong>{{ empresa.legal_name }}</strong><br>
-      {% translate "CIF" %} {{ empresa.tax_id }}<br>
-      {{ empresa.full_address }}<br>
-      {% if empresa.phone %}{{ empresa.phone }}{% endif %}
-      {% if empresa.email %} · {{ empresa.email }}{% endif %}
-    </div>
-  </div>
-
-  <div class="bloques">
-    <div class="bloque">
-      <h2>{% translate "Arrendatario" %}</h2>
-      {% if cliente %}
-        <div class="campo"><span class="etiqueta">{% translate "Nombre" %}</span>
-          <span class="valor">{{ cliente.full_name }}</span></div>
-        <div class="campo"><span class="etiqueta">{% translate "Documento" %}</span>
-          <span class="valor">{{ cliente.get_document_type_display }} {{ cliente.document_number }}</span></div>
-        <div class="campo"><span class="etiqueta">{% translate "Carnet" %}</span>
-          <span class="valor">{{ cliente.licence_number|default:"—" }}
-            {% if cliente.licence_expiry %}({% translate "caduca" %} {{ cliente.licence_expiry|date:"d/m/Y" }}){% endif %}
-          </span></div>
-        <div class="campo"><span class="etiqueta">{% translate "Domicilio" %}</span>
-          <span class="valor">{{ cliente.address|default:"—" }}{% if cliente.city %}, {{ cliente.city }}{% endif %}</span></div>
-        <div class="campo"><span class="etiqueta">{% translate "Contacto" %}</span>
-          <span class="valor">{{ cliente.phone|default:"—" }}{% if cliente.email %} · {{ cliente.email }}{% endif %}</span></div>
-      {% else %}
-        <p>{% translate "Sin titular asignado." %}</p>
-      {% endif %}
-    </div>
-
-    <div class="bloque">
-      <h2>{% translate "Vehiculo" %}</h2>
-      {% if vehiculo %}
-        <div class="campo"><span class="etiqueta">{% translate "Matricula" %}</span>
-          <span class="valor ref" style="font-size:10pt">{{ vehiculo.plate }}</span></div>
-        <div class="campo"><span class="etiqueta">{% translate "Marca y modelo" %}</span>
-          <span class="valor">{{ vehiculo.brand }} {{ vehiculo.model }} {{ vehiculo.version }}</span></div>
-      {% else %}
-        <div class="campo"><span class="etiqueta">{% translate "Vehiculo" %}</span>
-          <span class="valor">{% translate "Por asignar" %}</span></div>
-      {% endif %}
-      <div class="campo"><span class="etiqueta">{% translate "Categoria" %}</span>
-        <span class="valor">{{ reservation.category.name }}</span></div>
-      <div class="campo"><span class="etiqueta">{% translate "Kilometros a la entrega" %}</span>
-        <span class="valor">{% if entrega %}{{ entrega.mileage }} km{% else %}—{% endif %}</span></div>
-      <div class="campo"><span class="etiqueta">{% translate "Combustible a la entrega" %}</span>
-        <span class="valor">{% if entrega %}{{ entrega.get_fuel_level_display }}{% else %}—{% endif %}</span></div>
-    </div>
-  </div>
-
-  <h2>{% translate "Periodo y oficinas" %}</h2>
-  <div class="rejilla" style="margin-bottom:7px">
-    <div class="campo"><span class="etiqueta">{% translate "Recogida" %}</span>
-      <span class="valor">{{ reservation.pickup_at|date:"d/m/Y H:i" }}</span></div>
-    <div class="campo"><span class="etiqueta">{% translate "Oficina de recogida" %}</span>
-      <span class="valor">{{ reservation.pickup_office.name }}</span></div>
-    <div class="campo"><span class="etiqueta">{% translate "Dias facturados" %}</span>
-      <span class="valor">{{ desglose.rental_days|default:"—" }}</span></div>
-    <div class="campo"><span class="etiqueta">{% translate "Devolucion" %}</span>
-      <span class="valor">{{ reservation.return_at|date:"d/m/Y H:i" }}</span></div>
-    <div class="campo"><span class="etiqueta">{% translate "Oficina de devolucion" %}</span>
-      <span class="valor">{{ reservation.return_office.name }}</span></div>
-    <div class="campo"><span class="etiqueta">{% translate "Kilometraje" %}</span>
-      <span class="valor">
-        {% if reservation.has_unlimited_km %}{% translate "Ilimitado" %}
-        {% else %}{{ reservation.included_km }} km {% translate "incluidos" %}{% endif %}
-      </span></div>
-  </div>
+  </section>
 
   {% if conductores %}
-    <h2>{% translate "Conductores adicionales autorizados" %}</h2>
-    <table class="lineas" style="margin-bottom:7px">
+    <section>
+      <h2>{% translate "Conductores adicionales autorizados" %}</h2>
+      {% for conductor in conductores %}
+        <p>
+          <span class="fuerte">{{ conductor.first_name }} {{ conductor.last_name }}</span>
+          <span class="muted">· {% translate "Carnet" %} {{ conductor.licence_number }} ({{ conductor.licence_country }}){% if conductor.licence_expiry %} · {% translate "caduca" %} {{ conductor.licence_expiry|date:"d/m/Y" }}{% endif %}</span>
+        </p>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <section>
+    <table class="tabla">
       <thead>
         <tr>
-          <th>{% translate "Nombre" %}</th>
-          <th>{% translate "Documento" %}</th>
-          <th>{% translate "Carnet" %}</th>
-          <th>{% translate "Caducidad" %}</th>
+          <th>{% translate "Concepto" %}</th>
+          <th class="num">{% translate "Cant." %}</th>
+          <th class="num">{% translate "Importe" %}</th>
         </tr>
       </thead>
       <tbody>
-        {% for conductor in conductores %}
+        {% for linea in lineas %}
           <tr>
-            <td>{{ conductor.first_name }} {{ conductor.last_name }}</td>
-            <td>{{ conductor.document_number|default:"—" }}</td>
-            <td>{{ conductor.licence_number }} ({{ conductor.licence_country }})</td>
-            <td>{{ conductor.licence_expiry|date:"d/m/Y"|default:"—" }}</td>
+            <td>{{ linea.concept }}</td>
+            <td class="num muted">{{ linea.quantity }}</td>
+            <td class="num">{{ linea.total|floatformat:2 }} €</td>
+          </tr>
+        {% endfor %}
+        {% for cargo in cargos %}
+          <tr>
+            <td>{{ cargo.concept }}</td>
+            <td class="num muted">{{ cargo.quantity|floatformat:"-2" }}</td>
+            <td class="num">{{ cargo.total|floatformat:2 }} €</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
-  {% endif %}
+    <table class="totales">
+      <tr class="total"><td>{% translate "Total del alquiler" %}</td><td class="num">{{ reservation.grand_total|floatformat:2 }} €</td></tr>
+      <tr><td class="muted" colspan="2" style="text-align:right">{% translate "IVA incluido" %}</td></tr>
+    </table>
+  </section>
 
-  <h2>{% translate "Precio" %}</h2>
-  <table class="lineas">
-    <thead>
-      <tr>
-        <th>{% translate "Concepto" %}</th>
-        <th class="num">{% translate "Cant." %}</th>
-        <th class="num">{% translate "Base" %}</th>
-        <th class="num">{% translate "IVA" %}</th>
-        <th class="num">{% translate "Total" %}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for linea in lineas %}
-        <tr>
-          <td>{{ linea.concept }}</td>
-          <td class="num">{{ linea.quantity }}</td>
-          <td class="num">{{ linea.base }} €</td>
-          <td class="num">{{ linea.tax_amount }} €</td>
-          <td class="num">{{ linea.total }} €</td>
-        </tr>
-      {% endfor %}
-      {% for cargo in cargos %}
-        <tr>
-          <td>{{ cargo.concept }}</td>
-          <td class="num">{{ cargo.quantity }}</td>
-          <td class="num">{{ cargo.base_amount }} €</td>
-          <td class="num">{{ cargo.tax_amount }} €</td>
-          <td class="num">{{ cargo.total }} €</td>
-        </tr>
-      {% endfor %}
-      <tr class="total">
-        <td colspan="4">{% translate "Total del alquiler" %}</td>
-        <td class="num">{{ reservation.grand_total }} €</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="avisos">
-    <div class="aviso">
-      <span class="etiqueta">{% translate "Fianza" %}</span>
-      <span class="valor">{{ reservation.deposit_amount }} €</span>
+  <section>
+    <div class="datos cuatro">
+      <div>
+        <div class="label">{% translate "Fianza" %}</div>
+        <p class="fuerte">{{ reservation.deposit_amount|floatformat:2 }} €</p>
+      </div>
+      <div>
+        <div class="label">{% translate "Franquicia" %}</div>
+        <p class="fuerte">{{ reservation.franchise_amount|floatformat:2 }} €</p>
+      </div>
+      <div>
+        <div class="label">{% translate "Política de combustible" %}</div>
+        <p>{{ reservation.get_fuel_policy_display }}</p>
+      </div>
+      <div>
+        <div class="label">{% translate "Cancelación" %}</div>
+        <p>{{ reservation.get_cancellation_policy_display }}</p>
+      </div>
     </div>
-    <div class="aviso">
-      <span class="etiqueta">{% translate "Franquicia" %}</span>
-      <span class="valor">{{ reservation.franchise_amount }} €</span>
-    </div>
-    <div class="aviso">
-      <span class="etiqueta">{% translate "Politica de combustible" %}</span>
-      <span class="valor" style="font-size:8.5pt">{{ reservation.get_fuel_policy_display }}</span>
-    </div>
-    <div class="aviso">
-      <span class="etiqueta">{% translate "Cancelacion" %}</span>
-      <span class="valor" style="font-size:8.5pt">{{ reservation.get_cancellation_policy_display }}</span>
-    </div>
-  </div>
+  </section>
 
   {% if danos %}
-    <h2>{% translate "Danos existentes en la entrega" %}</h2>
-    <table class="lineas" style="margin-bottom:7px">
-      <tbody>
-        {% for dano in danos %}
-          <tr>
-            <td>{{ dano.get_zone_display }}</td>
-            <td>{{ dano.get_damage_type_display }}</td>
-            <td>{{ dano.get_severity_display }}</td>
-            <td>{{ dano.description|default:"" }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <section>
+      <h2>{% translate "Daños existentes en la entrega" %}</h2>
+      {% for dano in danos %}
+        <p>
+          <span class="fuerte">{{ dano.get_zone_display }}</span>
+          <span class="muted">· {{ dano.get_damage_type_display }}, {{ dano.get_severity_display|lower }}{% if dano.description %}. {{ dano.description }}{% endif %}</span>
+        </p>
+      {% endfor %}
+    </section>
   {% endif %}
 
-  <div class="condiciones">
-    <h2>{{ condiciones.title }} (v{{ condiciones.version }})</h2>
-    <ol>
+  <section class="condiciones">
+    <h2>{{ condiciones.title }} · v{{ condiciones.version }}</h2>
+    <ol class="letra-pequena">
       {% for clausula in condiciones.clauses %}<li>{{ clausula }}</li>{% endfor %}
     </ol>
-  </div>
+  </section>
 
-  {% comment %} Espacio de firma preparado. La firma digital no entra en la v1:
-     el contrato se firma a mano sobre el papel impreso. {% endcomment %}
+  {% comment %} La firma digital no entra en la v1: el contrato se firma a
+     mano sobre el papel impreso. {% endcomment %}
   <div class="firmas">
     <div class="firma">
-      <div class="hueco"></div>
-      <div class="pie">
-        {% translate "El arrendatario" %}<br>
-        {{ cliente.full_name|default:"" }}<br>
-        {% translate "Declara conocer y aceptar las condiciones generales" %}
-      </div>
+      <p class="fuerte">{% translate "El arrendatario" %}</p>
+      <p>{{ cliente.full_name|default:"" }}</p>
+      <p>{% translate "Declara conocer y aceptar las condiciones generales" %}</p>
     </div>
     <div class="firma">
-      <div class="hueco"></div>
-      <div class="pie">
-        {% translate "Por la empresa" %}<br>
-        {{ empresa.display_name }}<br>
-        {{ reservation.pickup_office.name }} · {{ emitido_el|date:"d/m/Y H:i" }}
-      </div>
+      <p class="fuerte">{% translate "Por la empresa" %}</p>
+      <p>{{ empresa.display_name }}</p>
+      <p>{{ reservation.pickup_office.name }} · {{ emitido_el|date:"d/m/Y H:i" }}</p>
     </div>
   </div>
 

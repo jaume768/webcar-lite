@@ -2,10 +2,7 @@
 {% comment %} Factura impresa. Solo usa los datos copiados en la factura al
    emitirla (emisor, cliente, lineas, politicas): si la empresa o el cliente
    cambian despues, esto no cambia. El logo es lo unico que sale de la
-   configuracion actual, porque es decorativo.
-
-   Diseno deliberadamente sobrio: mucho aire, sin cajas, una sola linea de
-   color. WeasyPrint: CSS de impresion, sin Tailwind ni JavaScript. {% endcomment %}
+   configuracion actual, porque es decorativo. {% endcomment %}
 {% get_current_language as idioma %}
 <html lang="{{ idioma }}">
 <head>
@@ -14,64 +11,22 @@
   <style>
     @page {
       size: A4;
-      margin: 20mm 20mm 22mm 20mm;
+      margin: 18mm 18mm 20mm 18mm;
       @bottom-left {
         content: "{{ invoice.issuer_name }} · {{ invoice.issuer_tax_id }}";
-        font-size: 7pt; color: #94a3b8;
+        font-family: "DejaVu Sans", sans-serif; font-size: 6.5pt; color: #94a3b8;
       }
       @bottom-right {
         content: "{{ invoice.number }} · {% translate 'página' %} " counter(page) " {% translate 'de' %} " counter(pages);
-        font-size: 7pt; color: #94a3b8;
+        font-family: "DejaVu Sans", sans-serif; font-size: 6.5pt; color: #94a3b8;
       }
     }
-    * { box-sizing: border-box; }
-    body { font-family: "Inter", "DejaVu Sans", sans-serif; font-size: 9.5pt; line-height: 1.55;
-           color: #1e293b; margin: 0; }
-    .muted { color: #64748b; }
-    .label { font-size: 7pt; letter-spacing: .12em; text-transform: uppercase; color: #94a3b8;
-             margin-bottom: 3px; }
-    .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-
-    .cabecera { display: flex; justify-content: space-between; align-items: flex-start; }
-    .logo { max-height: 16mm; max-width: 55mm; }
-    .marca { font-size: 14pt; font-weight: 700; color: #172054; }
-    .titulo { text-align: right; }
-    .titulo .tipo { font-size: 8pt; letter-spacing: .14em; text-transform: uppercase; color: #254deb;
-                    font-weight: 600; }
-    .titulo .numero { font-size: 20pt; font-weight: 700; color: #172054; line-height: 1.2; }
-    .raya { height: 1.5pt; background: #254deb; width: 18mm; margin: 9mm 0 7mm; }
-
-    .datos { display: flex; gap: 14mm; margin-bottom: 11mm; }
-    .datos .valor { font-weight: 600; }
-
-    .partes { display: flex; gap: 14mm; margin-bottom: 12mm; }
-    .parte { flex: 1; }
-    .parte .nombre { font-size: 11pt; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
-
-    .rectifica { border-left: 2pt solid #f59e0b; background: #fffbeb; padding: 8px 12px;
-                 margin-bottom: 10mm; }
-
-    table { width: 100%; border-collapse: collapse; }
-    .lineas th { font-size: 7pt; letter-spacing: .12em; text-transform: uppercase; color: #94a3b8;
-                 font-weight: 600; text-align: left; padding: 0 0 8px; border-bottom: .8pt solid #cbd5e1; }
-    .lineas td { padding: 9px 0; border-bottom: .5pt solid #eef2f7; vertical-align: top; }
-    .lineas th + th, .lineas td + td { padding-left: 10px; }
-
-    .totales { width: 72mm; margin: 8mm 0 0 auto; }
-    .totales td { padding: 4px 0; }
-    .totales .total td { font-size: 13pt; font-weight: 700; color: #172054;
-                         border-top: 1pt solid #172054; padding-top: 9px; }
-
-    .pie { margin-top: 14mm; page-break-inside: avoid; }
-    .politicas { margin-bottom: 9mm; }
-    .politica { margin-bottom: 6px; font-size: 7.5pt; color: #475569; line-height: 1.5; }
-    .politica strong { color: #1e293b; }
-
-    .registro { display: flex; align-items: center; gap: 5mm; padding-top: 6mm;
-                border-top: .5pt solid #e2e8f0; font-size: 7pt; color: #64748b; }
-    .registro svg { width: 22mm; height: 22mm; }
-    .huella { font-family: "DejaVu Sans Mono", monospace; font-size: 6.5pt; word-break: break-all;
-              color: #475569; }
+    {% include "core/_pdf_estilos.html" %}
+    .rectifica { padding: 3mm 0 3mm 4mm; border-left: 1.5pt solid #f59e0b; margin-bottom: 7mm; }
+    .registro { display: flex; align-items: center; gap: 5mm; padding-top: 5mm;
+                border-top: .5pt solid #e2e8f0; font-size: 6.5pt; color: #64748b; }
+    .registro svg { width: 20mm; height: 20mm; }
+    .huella { font-family: "DejaVu Sans Mono", monospace; font-size: 6pt; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -87,53 +42,34 @@
     <div class="titulo">
       <div class="tipo">{% if invoice.is_rectifying %}{% translate "Factura rectificativa" %}{% else %}{% translate "Factura" %}{% endif %}</div>
       <div class="numero">{{ invoice.number }}</div>
+      <div class="muted">{% translate "Fecha de expedición" %}: {{ invoice.issued_at|date:"d/m/Y" }}</div>
+      {% if invoice.reservation_id %}<div class="muted">{% translate "Reserva" %} {{ invoice.reservation.number }}</div>{% endif %}
     </div>
   </div>
 
-  <div class="raya"></div>
-
-  <div class="datos">
+  <div class="fila">
     <div>
-      <div class="label">{% translate "Fecha de expedición" %}</div>
-      <div class="valor">{{ invoice.issued_at|date:"d/m/Y" }}</div>
-    </div>
-    {% if invoice.reservation_id %}
-      <div>
-        <div class="label">{% translate "Reserva" %}</div>
-        <div class="valor">{{ invoice.reservation.number }}</div>
-      </div>
-    {% endif %}
-    {% if invoice.is_rectifying %}
-      <div>
-        <div class="label">{% translate "Rectifica a" %}</div>
-        <div class="valor">{{ invoice.rectifies.number }}</div>
-      </div>
-    {% endif %}
-  </div>
-
-  <div class="partes">
-    <div class="parte">
       <div class="label">{% translate "Emisor" %}</div>
-      <div class="nombre">{{ invoice.issuer_name }}</div>
-      <div class="muted">{% translate "NIF" %} {{ invoice.issuer_tax_id }}</div>
-      <div class="muted">{{ invoice.issuer_address }}</div>
+      <p class="fuerte">{{ invoice.issuer_name }}</p>
+      <p class="muted">{% translate "NIF" %} {{ invoice.issuer_tax_id }}</p>
+      <p class="muted">{{ invoice.issuer_address }}</p>
     </div>
-    <div class="parte">
+    <div>
       <div class="label">{% translate "Cliente" %}</div>
-      <div class="nombre">{{ invoice.customer_name }}</div>
-      <div class="muted">{% translate "NIF" %} {{ invoice.customer_tax_id }}</div>
-      {% if invoice.customer_address %}<div class="muted">{{ invoice.customer_address }}</div>{% endif %}
+      <p class="fuerte">{{ invoice.customer_name }}</p>
+      <p class="muted">{% translate "NIF" %} {{ invoice.customer_tax_id }}</p>
+      {% if invoice.customer_address %}<p class="muted">{{ invoice.customer_address }}</p>{% endif %}
     </div>
   </div>
 
   {% if invoice.is_rectifying %}
     <div class="rectifica">
       {% blocktranslate with numero=invoice.rectifies.number fecha=invoice.rectifies.issued_at|date:"d/m/Y" %}Esta factura rectifica y anula la {{ numero }} del {{ fecha }}.{% endblocktranslate %}
-      <span class="muted">{% translate "Motivo" %}: {{ invoice.rectification_reason }}</span>
+      <p class="muted">{% translate "Motivo" %}: {{ invoice.rectification_reason }}</p>
     </div>
   {% endif %}
 
-  <table class="lineas">
+  <table class="tabla">
     <thead>
       <tr>
         <th>{% translate "Concepto" %}</th>
@@ -156,24 +92,24 @@
     </tbody>
   </table>
 
-  {% if invoice.notes %}
-    <p class="muted" style="margin-top:6mm">{{ invoice.notes|linebreaksbr }}</p>
-  {% endif %}
-
   <table class="totales">
     <tr><td class="muted">{% translate "Base imponible" %}</td><td class="num">{{ invoice.base_amount|floatformat:2 }} €</td></tr>
     <tr><td class="muted">{% translate "IVA" %}</td><td class="num">{{ invoice.tax_amount|floatformat:2 }} €</td></tr>
     <tr class="total"><td>{% translate "Total" %}</td><td class="num">{{ invoice.total|floatformat:2 }} €</td></tr>
   </table>
 
-  <div class="pie">
+  {% if invoice.notes %}
+    <p class="muted" style="margin-top:6mm">{{ invoice.notes|linebreaksbr }}</p>
+  {% endif %}
+
+  <div style="margin-top:12mm; page-break-inside: avoid">
     {% if invoice.policies %}
-      <div class="politicas">
-        <div class="label">{% translate "Condiciones" %}</div>
+      <section>
+        <h2>{% translate "Condiciones" %}</h2>
         {% for politica in invoice.policies %}
-          <p class="politica"><strong>{{ politica.title }}.</strong> {{ politica.body|linebreaksbr }}</p>
+          <p class="letra-pequena" style="margin-bottom:1.5mm"><strong>{{ politica.title }}.</strong> {{ politica.body|linebreaksbr }}</p>
         {% endfor %}
-      </div>
+      </section>
     {% endif %}
 
     <div class="registro">
@@ -182,10 +118,10 @@
          el envio todavia no esta. El QR y la huella si van ya. {% endcomment %}
       {{ qr|safe }}
       <div>
-        <div>{% translate "Código QR tributario" %}</div>
-        <div style="margin-top:3px">{% translate "Huella del registro" %}</div>
-        <div class="huella">{{ invoice.hash_actual }}</div>
-        {% if nota_registral %}<div style="margin-top:5px">{{ nota_registral }}</div>{% endif %}
+        <p>{% translate "Código QR tributario" %}</p>
+        <p style="margin-top:1mm">{% translate "Huella del registro" %}</p>
+        <p class="huella">{{ invoice.hash_actual }}</p>
+        {% if nota_registral %}<p style="margin-top:1.5mm">{{ nota_registral }}</p>{% endif %}
       </div>
     </div>
   </div>

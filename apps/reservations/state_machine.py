@@ -30,8 +30,10 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.billing.selectors import issued_invoice_for
 from apps.core.services import ServiceError
 
+from .invoiced import ensure_not_invoiced
 from .models import (
     CancellationPolicy,
     Reservation,
@@ -312,7 +314,7 @@ def allowed_targets(from_status: str) -> dict[str, Transition]:
 def can_transition(reservation: Reservation, to_status: str, user) -> bool:
     """Solo para pintar botones. Nunca sustituye a `transition()`."""
     salto = allowed_targets(reservation.status).get(to_status)
-    if salto is None:
+    if salto is None or issued_invoice_for(reservation) is not None:
         return False
     if salto.permission and not user.has_perm(salto.permission):
         return False
@@ -321,6 +323,8 @@ def can_transition(reservation: Reservation, to_status: str, user) -> bool:
 
 def available_transitions(reservation: Reservation, user) -> list[Transition]:
     """Transiciones que este usuario puede hacer ahora mismo."""
+    if issued_invoice_for(reservation) is not None:
+        return []
     return [
         salto
         for salto in allowed_targets(reservation.status).values()
@@ -344,6 +348,7 @@ def transition(
     # Se recarga con bloqueo: entre que la pantalla se pinto y llega el POST,
     # otro pudo mover la reserva.
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    ensure_not_invoiced(reservation)
     desde = reservation.status
 
     salto = allowed_targets(desde).get(to_status)

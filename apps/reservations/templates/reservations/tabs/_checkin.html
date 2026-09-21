@@ -6,7 +6,7 @@
       {% comment %} Sin coche asignado no se ofrece entregar: el servicio lo
          rechazaria igual, pero un boton que siempre falla no ayuda a nadie.
       {% endcomment %}
-      {% if not entrega and reservation.vehicle and perms.reservations.change_reservation %}
+      {% if not entrega and reservation.vehicle and puede_editar %}
         <button type="button" class="btn-primary py-1.5 text-xs"
                 hx-get="{% url 'operations:check_in' reservation.pk %}"
                 hx-target="#modal-host" hx-swap="innerHTML">

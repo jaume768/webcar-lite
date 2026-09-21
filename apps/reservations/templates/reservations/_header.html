@@ -36,6 +36,14 @@
     </div>
   </div>
 
+  {% if facturada %}
+    <p class="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-line bg-sky-50 px-4 py-2 text-sm text-sky-900">
+      <svg class="size-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd"/></svg>
+      {% blocktranslate with numero=facturada.number %}Reserva facturada en {{ numero }}: no se puede modificar.{% endblocktranslate %}
+      <span class="text-sky-700">{% translate "Para corregirla, emite una factura rectificativa." %}</span>
+    </p>
+  {% endif %}
+
   <dl class="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3 text-sm sm:grid-cols-4 lg:grid-cols-8">
     <div class="min-w-0">
       <dt class="text-xs text-slate-500">{% translate "Cliente" %}</dt>

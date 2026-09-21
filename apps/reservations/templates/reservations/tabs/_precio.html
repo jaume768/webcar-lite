@@ -6,14 +6,14 @@
       <div class="card-header">
         <h2 class="card-title">{% translate "Desglose" %}</h2>
         <div class="flex gap-2">
-          {% if perms.reservations.change_reservation %}
+          {% if puede_editar %}
             <button type="button" class="btn-secondary py-1.5 text-xs"
                     hx-get="{% url 'reservations:recalculate_price' reservation.pk %}"
                     hx-target="#modal-host" hx-swap="innerHTML">
               {% translate "Recalcular" %}
             </button>
           {% endif %}
-          {% if perms.reservations.change_reservation_price %}
+          {% if puede_editar_precio %}
             <button type="button" class="btn-secondary py-1.5 text-xs"
                     hx-get="{% url 'reservations:manual_price' reservation.pk %}"
                     hx-target="#modal-host" hx-swap="innerHTML">

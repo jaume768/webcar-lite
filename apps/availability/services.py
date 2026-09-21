@@ -642,7 +642,10 @@ def assign_vehicle(
     actor=None,
 ) -> Reservation:
     """Pone un coche concreto a una reserva que iba contra la categoria."""
+    from apps.reservations.invoiced import ensure_not_invoiced
+
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
+    ensure_not_invoiced(reservation)
 
     if vehicle.category_id != reservation.category_id:
         raise VehicleNotAvailableError(

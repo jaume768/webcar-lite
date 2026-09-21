@@ -11,6 +11,7 @@ from apps.core.crud import CrudListView, CrudPermissionMixin, ModalCreateView, M
 from apps.core.htmx import trigger_event, trigger_toast
 from apps.core.services import ServiceError
 from apps.core.tables import Column
+from apps.reservations.invoiced import InvoicedReservationError, ensure_not_invoiced
 from apps.reservations.models import Reservation
 
 from .filters import TrafficFineFilter
@@ -169,6 +170,11 @@ class DamageCreateView(CrudPermissionMixin, FormView):
 
     def form_valid(self, form):
         reserva = self.get_reservation()
+        try:
+            ensure_not_invoiced(reserva)
+        except InvoicedReservationError as exc:
+            form.add_error(None, str(exc))
+            return self.form_invalid(form)
         if reserva.vehicle_id is None:
             form.add_error(None, _("Sin vehiculo asignado no se puede anotar un dano."))
             return self.form_invalid(form)

@@ -1,0 +1,42 @@
+{% comment %} Estilos comunes de los documentos impresos (factura y contrato).
+   WeasyPrint: CSS de impresion, sin Tailwind ni JavaScript. Una sola tinta,
+   lineas finas y aire; nada de cajas ni adornos. {% endcomment %}
+    * { box-sizing: border-box; }
+    body { font-family: "DejaVu Sans", sans-serif; font-size: 8.5pt; line-height: 1.5;
+           color: #1e293b; margin: 0; }
+    p { margin: 0; }
+    .muted { color: #64748b; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .label { font-size: 6.5pt; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8;
+             margin-bottom: 2px; }
+    .fuerte { font-weight: 700; color: #0f172a; }
+
+    .cabecera { display: flex; justify-content: space-between; align-items: flex-end;
+                padding-bottom: 5mm; border-bottom: .75pt solid #0f172a; margin-bottom: 7mm; }
+    .logo { max-height: 14mm; max-width: 50mm; }
+    .marca { font-size: 13pt; font-weight: 700; color: #0f172a; }
+    .titulo { text-align: right; }
+    .titulo .tipo { font-size: 8pt; color: #64748b; }
+    .titulo .numero { font-size: 16pt; font-weight: 700; color: #0f172a; line-height: 1.2; }
+
+    .fila { display: flex; gap: 10mm; margin-bottom: 7mm; }
+    .fila > div { flex: 1; }
+
+    h2 { font-size: 6.5pt; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8;
+         font-weight: 400; margin: 0 0 2mm; }
+    section { margin-bottom: 7mm; page-break-inside: avoid; }
+
+    table { width: 100%; border-collapse: collapse; }
+    .tabla th { font-size: 6.5pt; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8;
+                font-weight: 400; text-align: left; padding: 0 0 2mm;
+                border-bottom: .5pt solid #cbd5e1; }
+    .tabla th.num { text-align: right; }
+    .tabla td { padding: 2mm 0; border-bottom: .5pt solid #eef2f7; vertical-align: top; }
+    .tabla th + th, .tabla td + td { padding-left: 4mm; }
+
+    .totales { width: 70mm; margin: 4mm 0 0 auto; }
+    .totales td { padding: 1mm 0; }
+    .totales .total td { font-size: 11pt; font-weight: 700; color: #0f172a;
+                         border-top: .75pt solid #0f172a; padding-top: 2.5mm; }
+
+    .letra-pequena { font-size: 7pt; color: #475569; line-height: 1.45; }

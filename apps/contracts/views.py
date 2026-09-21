@@ -9,6 +9,7 @@ from django.views.generic import View
 from apps.core.crud import CrudPermissionMixin
 from apps.core.htmx import trigger_event, trigger_toast
 from apps.core.services import ServiceError
+from apps.reservations.invoiced import edit_flags
 from apps.reservations.models import Reservation
 
 from .models import Contract
@@ -129,5 +130,6 @@ class DocumentsPanelView(ReservationScopedView):
                 "reservation": reserva,
                 "documentos": documentos,
                 "generando": any(doc.status == "pending" for doc in documentos),
+                **edit_flags(reserva, request.user),
             },
         )

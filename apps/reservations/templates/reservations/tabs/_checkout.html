@@ -3,7 +3,7 @@
   <section class="card lg:col-span-2">
     <div class="card-header">
       <h2 class="card-title">{% translate "Devolucion" %}</h2>
-      {% if entrega and not devolucion and perms.reservations.change_reservation %}
+      {% if entrega and not devolucion and puede_editar %}
         <button type="button" class="btn-primary py-1.5 text-xs"
                 hx-get="{% url 'operations:check_out' reservation.pk %}"
                 hx-target="#modal-host" hx-swap="innerHTML">

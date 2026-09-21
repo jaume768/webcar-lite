@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.services import ServiceError
+from apps.reservations.invoiced import ensure_not_invoiced
 from apps.settings_app.models import CompanySettings, TermsVersion
 
 from .models import Contract, ContractStatus
@@ -66,6 +67,7 @@ def request_contract(*, reservation, actor=None) -> Contract:
     estado "generandose", se manda la tarea a Celery y la pantalla avisa en
     cuanto esta listo.
     """
+    ensure_not_invoiced(reservation)
     condiciones = TermsVersion.current()
     if condiciones is None:
         raise ContractServiceError(

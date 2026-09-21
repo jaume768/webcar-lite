@@ -11,7 +11,7 @@
   <section class="card">
     <div class="card-header">
       <h2 class="card-title">{% translate "Documentos" %}</h2>
-      {% if perms.reservations.change_reservation %}
+      {% if puede_editar %}
         <button type="button" class="btn-secondary py-1.5 text-xs"
                 hx-post="{% url 'contracts:create' reservation.pk %}"
                 hx-swap="none">

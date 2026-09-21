@@ -22,7 +22,6 @@ from apps.availability.services import (
     update_reservation_period,
     vehicle_conflicts,
 )
-from apps.billing.selectors import has_issued_invoice
 from apps.core.services import ServiceError
 from apps.pricing.dto import ExtraRequest, PriceBreakdown, PriceQuoteInput
 from apps.pricing.models import Channel
@@ -32,6 +31,7 @@ from apps.pricing.services import (
     calculate_reservation_price,
 )
 
+from .invoiced import InvoicedReservationError, ensure_not_invoiced
 from .models import (
     CancellationPolicy,
     FuelPolicy,
@@ -276,6 +276,7 @@ def record_pickup(*, reservation: Reservation, at=None, actor=None) -> Reservati
     Provisional: cuando exista `operations`, quien escribe esto es el check-in.
     La precondicion de la maquina de estados no cambia.
     """
+    _comprobar_factura(reservation)
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
     reservation.actual_pickup_at = at or timezone.now()
     reservation.save(update_fields=["actual_pickup_at", "updated_at"])
@@ -291,6 +292,7 @@ def record_pickup(*, reservation: Reservation, at=None, actor=None) -> Reservati
 @transaction.atomic
 def record_return(*, reservation: Reservation, at=None, actor=None) -> Reservation:
     """Deja constancia de la hora real de devolucion (futuro check-out)."""
+    _comprobar_factura(reservation)
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
     reservation.actual_return_at = at or timezone.now()
     reservation.save(update_fields=["actual_return_at", "updated_at"])
@@ -348,35 +350,9 @@ def mark_for_reassignment(*, vehicle, actor=None) -> list[Reservation]:
 # ---------------------------------------------------------------------------
 
 
-class InvoicedReservationError(ReservationServiceError):
-    """La reserva ya tiene factura emitida y quien lo intenta no puede tocarla."""
-
-
-PERMISO_FACTURADA = "reservations.change_invoiced_reservation"
-
-
-def _comprobar_factura(reservation: Reservation, actor) -> None:
-    """Una factura emitida es inmutable: lo facturado no se mueve.
-
-    Quien tenga el permiso puede seguir adelante, y entonces le toca emitir la
-    rectificativa. Sin permiso, se corta aqui.
-    """
-    if not has_issued_invoice(reservation):
-        return
-    if actor is not None and actor.has_perm(PERMISO_FACTURADA):
-        logger.warning(
-            "cambio_sobre_reserva_facturada",
-            reservation_number=reservation.number,
-            actor_id=actor.pk,
-        )
-        return
-    raise InvoicedReservationError(
-        _(
-            "La reserva %(numero)s ya esta facturada. Modificarla obliga a emitir "
-            "una rectificativa y tu usuario no tiene ese permiso."
-        )
-        % {"numero": reservation.number}
-    )
+def _comprobar_factura(reservation: Reservation) -> None:
+    """Lo facturado no se mueve: ni con permisos. Se corrige con rectificativa."""
+    ensure_not_invoiced(reservation)
 
 
 @dataclass(frozen=True)
@@ -441,7 +417,7 @@ def preview_change(
 
     bloqueo = ""
     try:
-        _comprobar_factura(reservation, actor)
+        _comprobar_factura(reservation)
     except InvoicedReservationError as exc:
         bloqueo = str(exc)
 
@@ -546,7 +522,7 @@ def apply_change(
     deja de encajar con la categoria nueva. Todo en una transaccion: si la
     disponibilidad dice que no, no se ha movido nada.
     """
-    _comprobar_factura(reservation, actor)
+    _comprobar_factura(reservation)
 
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
     antes = {
@@ -642,6 +618,7 @@ def apply_change(
 @transaction.atomic
 def release_vehicle(*, reservation: Reservation, actor=None) -> Reservation:
     """Suelta el coche asignado. La reserva sigue viva contra su categoria."""
+    _comprobar_factura(reservation)
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
     if not reservation.vehicle_id:
         return reservation
@@ -703,6 +680,7 @@ def validate_licence(*, driver, reservation: Reservation) -> None:
 @transaction.atomic
 def add_driver(*, reservation: Reservation, driver, actor=None):
     """Autoriza a un conductor adicional."""
+    _comprobar_factura(reservation)
     driver.reservation = reservation
     validate_licence(driver=driver, reservation=reservation)
     driver.full_clean(exclude=["reservation"])
@@ -725,6 +703,7 @@ def remove_driver(*, driver, actor=None) -> None:
     Se borra de verdad: es un permiso vivo, no un dato historico. Quien
     condujo cuando se entrego el coche queda en el contrato firmado.
     """
+    _comprobar_factura(driver.reservation)
     datos = {
         "reservation_number": driver.reservation.number,
         "driver": f"{driver.first_name} {driver.last_name}".strip(),
@@ -859,7 +838,7 @@ def add_extra(
 ) -> Reservation:
     """Anade un extra y recalcula el precio con el tope que tenga."""
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
-    _comprobar_factura(reservation, actor)
+    _comprobar_factura(reservation)
     _comprobar_precio_manual(reservation, confirm_manual_override)
 
     if reservation.extras.filter(extra=extra).exists():
@@ -901,7 +880,7 @@ def set_extra_quantity(
 ) -> Reservation:
     """Cambia la cantidad de un extra ya vendido."""
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
-    _comprobar_factura(reservation, actor)
+    _comprobar_factura(reservation)
     _comprobar_precio_manual(reservation, confirm_manual_override)
 
     if quantity < 1:
@@ -942,7 +921,7 @@ def remove_extra(
 ) -> Reservation:
     """Quita un extra de la reserva y recalcula."""
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
-    _comprobar_factura(reservation, actor)
+    _comprobar_factura(reservation)
     _comprobar_precio_manual(reservation, confirm_manual_override)
 
     nombre = line.concept
@@ -993,7 +972,7 @@ def set_manual_price(
         raise ReservationServiceError(_("El precio por dia no puede ser negativo."))
 
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
-    _comprobar_factura(reservation, actor)
+    _comprobar_factura(reservation)
 
     anterior = reservation.total
     peticiones = _extras_como_peticion(reservation)
@@ -1019,7 +998,7 @@ def recalculate_price(
 ) -> Reservation:
     """Rehace el precio desde la tarifa, olvidando cualquier acuerdo manual."""
     reservation = Reservation.objects.select_for_update().get(pk=reservation.pk)
-    _comprobar_factura(reservation, actor)
+    _comprobar_factura(reservation)
     _comprobar_precio_manual(reservation, confirm_manual_override)
 
     anterior = reservation.total

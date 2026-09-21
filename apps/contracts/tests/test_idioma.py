@@ -20,7 +20,7 @@ def test_el_contrato_sale_en_ingles_para_un_cliente_ingles(
 
     texto = _texto(emitir(reserva, empleado))
 
-    assert "Rental agreement no." in texto
+    assert "Rental agreement" in texto
     # Los titulos de bloque van en mayusculas por CSS.
     assert "renter" in texto.lower()
     assert "Full to full" in texto  # politica de combustible

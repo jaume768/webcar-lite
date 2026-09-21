@@ -289,42 +289,41 @@ def test_el_preview_avisa_de_que_soltara_el_coche(reserva, premium, coche, agent
 # ---------------------------------------------------------------------------
 
 
+def _simular_factura(monkeypatch):
+    """La factura real se prueba en billing; aqui basta con que exista una."""
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        "apps.reservations.invoiced.issued_invoice_for",
+        lambda r: SimpleNamespace(number="F2026-00001"),
+    )
+
+
 def test_una_reserva_facturada_se_bloquea(reserva, agente, monkeypatch):
-    """Facturacion todavia no existe: se simula que ya emitio."""
-    monkeypatch.setattr("apps.reservations.services.has_issued_invoice", lambda r: True)
+    _simular_factura(monkeypatch)
 
     with pytest.raises(InvoicedReservationError) as fallo:
         apply_change(reservation=reserva, return_at=en(6), actor=agente)
 
     assert reserva.number in str(fallo.value)
+    assert "F2026-00001" in str(fallo.value)
     reserva.refresh_from_db()
     assert reserva.return_at == en(4)
 
 
-def test_con_permiso_si_se_puede_tocar_lo_facturado(reserva, monkeypatch, centro):
-    from apps.accounts.tests.factories import RoleFactory, UserFactory
+def test_ni_con_todos_los_permisos_se_toca_lo_facturado(reserva, monkeypatch, centro):
+    """Se corrige con rectificativa, no hay puerta de atras."""
+    from apps.accounts.tests.factories import UserFactory
 
-    monkeypatch.setattr("apps.reservations.services.has_issued_invoice", lambda r: True)
-    administracion = UserFactory(
-        email="admin@ejemplo.es",
-        role=RoleFactory(
-            code="admin-fact",
-            name="Administracion",
-            permissions=[
-                "reservations.change_reservation",
-                "reservations.change_invoiced_reservation",
-            ],
-        ),
-        offices=[centro],
-    )
+    _simular_factura(monkeypatch)
+    jefe = UserFactory(email="jefe@ejemplo.es", is_superuser=True, offices=[centro])
 
-    cambiada = apply_change(reservation=reserva, return_at=en(6), actor=administracion)
-
-    assert cambiada.return_at == en(6)
+    with pytest.raises(InvoicedReservationError):
+        apply_change(reservation=reserva, return_at=en(6), actor=jefe)
 
 
 def test_el_preview_avisa_de_la_factura_en_vez_de_reventar(reserva, agente, monkeypatch):
-    monkeypatch.setattr("apps.reservations.services.has_issued_invoice", lambda r: True)
+    _simular_factura(monkeypatch)
 
     preview = preview_change(reservation=reserva, return_at=en(6), actor=agente)
 

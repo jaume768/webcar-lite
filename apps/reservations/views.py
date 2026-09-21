@@ -36,6 +36,7 @@ from .forms import (
     QuickReservationForm,
     TransitionForm,
 )
+from .invoiced import edit_flags
 from .models import Reservation, ReservationStatus
 from .selectors import header_data, timeline
 from .services import (
@@ -140,6 +141,7 @@ class ReservationBaseView(CrudPermissionMixin):
             "reservation": reserva,
             "header": header_data(reserva),
             "transiciones": available_transitions(reserva, self.request.user),
+            **edit_flags(reserva, self.request.user),
         }
         datos.update(extra)
         return datos
@@ -703,7 +705,10 @@ class ReleaseVehicleView(ReservationBaseView, View):
             return _respuesta_de_cambio(_("La reserva ya no tenia coche."), "info")
 
         matricula = reserva.vehicle.plate
-        release_vehicle(reservation=reserva, actor=request.user)
+        try:
+            release_vehicle(reservation=reserva, actor=request.user)
+        except ServiceError as exc:
+            return _respuesta_de_cambio(str(exc), "warning")
         return _respuesta_de_cambio(
             _("%(matricula)s liberado. La reserva sigue viva contra su categoria.")
             % {"matricula": matricula}
@@ -751,7 +756,10 @@ class DriverDeleteView(ReservationBaseView, View):
     def post(self, request, *args, **kwargs):
         reserva = self.get_reservation()
         conductor = get_object_or_404(reserva.drivers, pk=kwargs["driver_pk"])
-        remove_driver(driver=conductor, actor=request.user)
+        try:
+            remove_driver(driver=conductor, actor=request.user)
+        except ServiceError as exc:
+            return _respuesta_de_cambio(str(exc), "warning")
         return _respuesta_de_cambio(_("Conductor retirado."))
 
 

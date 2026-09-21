@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.auditlog import services as audit
 from apps.auditlog.models import AuditAction
 from apps.core.services import ServiceError
+from apps.reservations.invoiced import ensure_not_invoiced
 from apps.reservations.models import ChargeKind, ReservationCharge, ReservationStatus
 from apps.reservations.services import record_pickup, record_return
 from apps.reservations.state_machine import transition
@@ -79,6 +80,7 @@ def perform_check_in(
     Sin vehiculo asignado no hay entrega posible, y sin los documentos
     comprobados tampoco: son las dos cosas que no se pueden arreglar despues.
     """
+    ensure_not_invoiced(reservation)
     if reservation.vehicle_id is None:
         raise OperationsServiceError(
             _("La reserva %(numero)s no tiene vehiculo asignado: asignalo antes de entregar.")
@@ -220,6 +222,7 @@ def perform_check_out(
     employee=None,
 ) -> CheckOut:
     """Devuelve el coche: calcula los cargos, cierra la reserva y mueve la flota."""
+    ensure_not_invoiced(reservation)
     entrega = getattr(reservation, "check_in", None)
     if entrega is None:
         raise OperationsServiceError(
@@ -347,6 +350,7 @@ def add_manual_charge(
     *, reservation, kind: str, concept: str, amount: Decimal, notes: str = "", employee=None
 ) -> ReservationCharge:
     """Cargo escrito a mano despues de la devolucion (limpieza, danos...)."""
+    ensure_not_invoiced(reservation)
     if not concept.strip():
         raise OperationsServiceError(_("Un cargo sin concepto no se puede cobrar."))
     if Decimal(amount) <= 0:
