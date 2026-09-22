@@ -26,7 +26,9 @@ def test_seed_crea_las_oficinas_y_los_roles(settings):
     from apps.accounts.models import Role
 
     assert Office.objects.count() == 3
-    assert Role.objects.filter(is_system=True).count() == 4
+    from apps.accounts.roles import ROLE_SPECS
+
+    assert Role.objects.filter(is_system=True).count() == len(ROLE_SPECS)
 
 
 def test_seed_es_idempotente(settings):

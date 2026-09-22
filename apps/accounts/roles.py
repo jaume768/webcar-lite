@@ -131,6 +131,18 @@ ADMINISTRACION = [
 ]
 
 
+#: Usuario tecnico de la API de reservas web (uno por web). Crea reservas y
+#: clientes, cancela las suyas y pide enlaces de pago. No entra a la aplicacion:
+#: no tiene contrasena utilizable. Que reservas puede tocar lo limita la propia
+#: API (solo las que ella creo); en que oficinas, sus oficinas asignadas.
+API_WEB = [
+    CREAR_RESERVAS,
+    CANCELAR_RESERVA,
+    CREAR_CLIENTES,
+    "billing.add_onlinepayment",
+]
+
+
 #: Lo que ve de mas la cuenta de demostracion, encima de su rol de mostrador:
 #: todo lo de administracion, para que en la demo se pueda abrir cualquier
 #: opcion del menu. No se toca el rol de mostrador, que es el que usan los
@@ -170,6 +182,12 @@ ROLE_SPECS: list[RoleSpec] = [
         name="Administracion",
         description="Gestiona usuarios, tarifas y configuracion. No es superusuario.",
         permissions=ADMINISTRACION,
+    ),
+    RoleSpec(
+        code="api_web",
+        name="API de reservas web",
+        description="Usuario tecnico de una web que reserva por la API. No entra a la aplicacion.",
+        permissions=API_WEB,
     ),
 ]
 

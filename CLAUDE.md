@@ -8,7 +8,9 @@ Uso real en mostrador, no demo. Multi-oficina.
 - Python 3.12, Django 5.x
 - PostgreSQL 16 (obligatorio: usamos rangos y constraints de exclusión)
 - Docker + Docker Compose
-- Frontend: plantillas Django + HTMX + Alpine.js + Tailwind. NO hay SPA. NO hay API REST pública.
+- Frontend: plantillas Django + HTMX + Alpine.js + Tailwind. NO hay SPA.
+- Única API: la de reservas para la web del cliente (`booking_api`, JSON, clave por web,
+  servidor a servidor). Ver `docs/api-reservas.md`. No se abren más endpoints públicos.
 - Redis + Celery para tareas asíncronas (PDFs, envíos a SES.Hospedajes, emails)
 - WeasyPrint para PDFs
 - pytest + pytest-django + factory-boy
@@ -47,6 +49,8 @@ apps/
   compliance/      SES.Hospedajes (RD 933/2021)
   auditlog/        AuditLog
   settings_app/    CompanySettings y configuración editable
+  notifications/   correos al cliente
+  booking_api/     API de reservas para la web del cliente (claves, idempotencia)
 ```
 
 ## Reglas de dominio invariables
@@ -113,7 +117,7 @@ asignación de vehículo, cobros, facturas, cancelaciones, check-in, check-out, 
 
 ## Fuera de alcance en v1 (no lo implementes aunque parezca útil)
 
-- Portal web público de reservas para clientes finales.
+- Portal web público de reservas alojado en el CRM (la web del cliente usa `booking_api`).
 - Integración con OTAs / brokers.
 - App móvil.
 - Firma digital biométrica.

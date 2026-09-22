@@ -181,8 +181,12 @@ def create_quick_reservation(
     vehicle=None,
     override=None,
     actor=None,
+    origin: str = "",
 ) -> Reservation:
     """Alta rapida de mostrador: nace ya PENDIENTE y con precio cerrado.
+
+    `origin` es el motivo que queda en el historico de estados; por defecto,
+    el del mostrador. La API de reservas web pone el suyo.
 
     Todo ocurre dentro de una transaccion: se calcula el precio, se recuenta la
     disponibilidad con el grupo bloqueado y se crea la reserva. Si no hay hueco,
@@ -236,7 +240,7 @@ def create_quick_reservation(
         reservation=reservation,
         from_status=ReservationStatus.DRAFT,
         to_status=ReservationStatus.PENDING,
-        reason=str(_("Alta rapida de mostrador")),
+        reason=origin or str(_("Alta rapida de mostrador")),
         changed_by=actor if getattr(actor, "pk", None) else None,
     )
 

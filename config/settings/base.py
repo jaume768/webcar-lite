@@ -57,6 +57,7 @@ LOCAL_APPS = [
     "apps.auditlog",
     "apps.settings_app",
     "apps.notifications",
+    "apps.booking_api",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -302,6 +303,12 @@ REDSYS_TERMINAL = env("REDSYS_TERMINAL", default="1")
 REDSYS_SECRET_KEY = env("REDSYS_SECRET_KEY", default="")
 # Entorno de pruebas del banco (sis-t). En produccion, False.
 REDSYS_TEST = env.bool("REDSYS_TEST", default=True)
+
+# --- API de reservas para la web del cliente -------------------------------
+# Minutos minimos entre el momento de reservar y la recogida.
+BOOKING_API_MIN_LEAD_MINUTES = env.int("BOOKING_API_MIN_LEAD_MINUTES", default=120)
+# Peticiones por minuto y cliente de la API. 0 desactiva el limite.
+BOOKING_API_RATE_LIMIT_PER_MINUTE = env.int("BOOKING_API_RATE_LIMIT_PER_MINUTE", default=120)
 
 # --- SES.Hospedajes (RD 933/2021) ------------------------------------------
 # Sin SES_ENABLED el parte se valida y se guarda con su XML, pero no se envia:

@@ -58,7 +58,11 @@ class UserForm(OfficeScopedFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["role"].queryset = Role.objects.order_by("name")
+        # El rol de la API es de usuarios tecnicos: no se reparte a personas.
+        roles = Role.objects.order_by("name")
+        if getattr(self.instance.role, "code", None) != "api_web":
+            roles = roles.exclude(code="api_web")
+        self.fields["role"].queryset = roles
         self.fields["role"].empty_label = _("Sin rol")
 
     def clean_email(self):

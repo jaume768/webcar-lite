@@ -24,6 +24,7 @@ urlpatterns = [
     path("", include("apps.auditlog.urls")),
     path("", include("apps.compliance.urls")),
     path("", include("apps.notifications.urls")),
+    path("", include("apps.booking_api.urls")),
     path("", include("apps.core.urls")),
 ]
 
