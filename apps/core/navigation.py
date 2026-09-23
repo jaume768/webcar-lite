@@ -20,6 +20,9 @@ class NavItem:
 class NavSection:
     label: str
     items: list[NavItem] = field(default_factory=list)
+    #: Identificador estable de la seccion. La etiqueta se traduce, asi que no
+    #: sirve para recordar que secciones dejo plegadas el usuario.
+    code: str = ""
 
 
 ICON_HOME = "M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.5a1.125 1.125 0 001.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21.375h4.125A1.125 1.125 0 0019.5 20.25V9.75"  # noqa: E501
@@ -51,15 +54,19 @@ ICON_PERCENT = "M9 15l6-6M9.75 9.75h.008v.008H9.75V9.75zm4.5 4.5h.008v.008h-.008
 ICON_USER_CIRCLE = "M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"  # noqa: E501
 ICON_DOC = "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"  # noqa: E501
 
+ICON_CHART = "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"  # noqa: E501
+
 MAIN_NAV: list[NavSection] = [
     NavSection(
         label=_("General"),
+        code="general",
         items=[
             NavItem(label=_("Inicio"), url_name="core:home", icon=ICON_HOME),
         ],
     ),
     NavSection(
         label=_("Operativa"),
+        code="operativa",
         items=[
             NavItem(
                 label=_("Reservas"),
@@ -83,6 +90,7 @@ MAIN_NAV: list[NavSection] = [
     ),
     NavSection(
         label=_("Flota"),
+        code="flota",
         items=[
             NavItem(
                 label=_("Vehículos"),
@@ -106,6 +114,7 @@ MAIN_NAV: list[NavSection] = [
     ),
     NavSection(
         label=_("Tarifas"),
+        code="tarifas",
         items=[
             NavItem(
                 label=_("Tarifas"),
@@ -152,7 +161,20 @@ MAIN_NAV: list[NavSection] = [
         ],
     ),
     NavSection(
+        label=_("Informes"),
+        code="informes",
+        items=[
+            NavItem(
+                label=_("Informes"),
+                url_name="reports:reports",
+                icon=ICON_CHART,
+                permission="reports.view_reports",
+            ),
+        ],
+    ),
+    NavSection(
         label=_("Facturación"),
+        code="facturacion",
         items=[
             NavItem(
                 label=_("Pendiente de facturar"),
@@ -189,6 +211,7 @@ MAIN_NAV: list[NavSection] = [
     ),
     NavSection(
         label=_("Administración"),
+        code="administracion",
         items=[
             NavItem(
                 label=_("Oficinas"),
@@ -207,6 +230,12 @@ MAIN_NAV: list[NavSection] = [
                 url_name="accounts:user_list",
                 icon=ICON_USERS,
                 permission="accounts.manage_users",
+            ),
+            NavItem(
+                label=_("Contactos web"),
+                url_name="core:lead_list",
+                icon=ICON_INBOX,
+                permission="core.view_lead",
             ),
             NavItem(
                 label=_("Configuración"),
@@ -242,5 +271,5 @@ def sections_for(user) -> list[NavSection]:
             if not item.permission or (user and user.has_perm(item.permission))
         ]
         if items:
-            visibles.append(NavSection(label=section.label, items=items))
+            visibles.append(NavSection(label=section.label, code=section.code, items=items))
     return visibles

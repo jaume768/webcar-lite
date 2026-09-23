@@ -38,6 +38,17 @@
           <dd class="font-medium text-slate-900">{{ entrega.employee.get_short_name|default:"—" }}</dd>
         </div>
         <div>
+          <dt class="text-slate-500">{% translate "Firma del cliente" %}</dt>
+          <dd class="font-medium">
+            {% if entrega.is_signed %}
+              <span class="text-emerald-700">{% translate "Firmada" %}</span>
+              <span class="text-slate-400">· {{ entrega.signed_at|date:"d/m/Y H:i" }}</span>
+            {% else %}
+              <span class="text-amber-700">{% translate "Pendiente" %}</span>
+            {% endif %}
+          </dd>
+        </div>
+        <div>
           <dt class="text-slate-500">{% translate "Documentos" %}</dt>
           <dd class="font-medium">
             {% if entrega.documents_verified %}
@@ -53,9 +64,30 @@
           {{ entrega.observations|linebreaksbr }}
         </p>
       {% endif %}
-      <p class="border-t border-line px-4 py-2 text-xs text-slate-400">
-        {% translate "La firma del cliente se recoge en el contrato en papel. La firma digital no entra en la v1." %}
-      </p>
+      {% comment %} La firma es parte del acta: se ensena tal cual la dejo el
+         cliente y sale impresa en el contrato. {% endcomment %}
+      <div class="border-t border-line px-4 py-3">
+        {% if entrega.is_signed %}
+          <p class="text-xs text-slate-500">
+            {% translate "Firmado por el cliente. Sale impreso en el contrato." %}
+          </p>
+          <img src="{{ entrega.customer_signature }}" alt="{% translate 'Firma del cliente' %}"
+               class="mt-2 h-24 rounded-lg border border-line bg-white p-1">
+        {% else %}
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-xs text-amber-800">
+              {% translate "La entrega salio sin firmar. Recoge la firma en cuanto puedas." %}
+            </p>
+            {% if puede_editar %}
+              <button type="button" class="btn-secondary py-1.5 text-xs"
+                      hx-get="{% url 'operations:check_in_signature' reservation.pk %}"
+                      hx-target="#modal-host" hx-swap="innerHTML">
+                {% translate "Firmar ahora" %}
+              </button>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
     {% else %}
       <div class="p-6 text-center">
         {% if not reservation.vehicle %}

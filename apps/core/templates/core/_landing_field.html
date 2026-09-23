@@ -1,0 +1,14 @@
+{% comment %} Campo del formulario de contacto de la portada.
+
+   No se reutiliza `ui/_field.html`: la portada no carga el sistema de interfaz
+   de la aplicacion (ni Alpine ni las clases de formulario del panel), y aqui
+   los estilos van escritos a mano como en el resto de la landing. {% endcomment %}
+<div class="mb-4 {% if field.name == 'message' %}sm:col-span-2{% endif %}">
+  <label class="block text-sm font-medium text-slate-700" for="{{ field.id_for_label }}">
+    {{ field.label }}{% if field.field.required %}<span class="text-rose-600" aria-hidden="true"> *</span>{% endif %}
+  </label>
+  {{ field }}
+  {% for error in field.errors %}
+    <p class="mt-1 text-sm text-rose-700">{{ error }}</p>
+  {% endfor %}
+</div>

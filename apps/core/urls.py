@@ -7,6 +7,9 @@ app_name = "core"
 urlpatterns = [
     path("", views.home, name="home"),
     path("demo/", views.demo_login, name="demo_login"),
+    path("contacto/", views.lead_create, name="lead_create"),
+    path("contactos/", views.LeadListView.as_view(), name="lead_list"),
+    path("contactos/<int:pk>/", views.LeadUpdateView.as_view(), name="lead_update"),
     path("oficina-activa/", views.set_active_office, name="set_active_office"),
     path("avisos/", views.alerts_menu, name="alerts_menu"),
     # Demostracion de componentes. Fuera cuando haya pantallas reales.

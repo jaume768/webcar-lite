@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-22 16:22+0200\n"
+"POT-Creation-Date: 2026-09-23 10:35+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: apps/accounts/apps.py:9 apps/core/views.py:81
+#: apps/accounts/apps.py:9 apps/core/views.py:86
 msgid "Usuarios y permisos"
 msgstr ""
 
@@ -55,8 +55,8 @@ msgstr ""
 
 #: apps/accounts/models.py:24 apps/accounts/models.py:82
 #: apps/billing/models.py:253 apps/booking_api/models.py:18
-#: apps/customers/models.py:104 apps/fleet/models.py:113
-#: apps/offices/models.py:31 apps/offices/models.py:51
+#: apps/core/models.py:153 apps/customers/models.py:104
+#: apps/fleet/models.py:113 apps/offices/models.py:31 apps/offices/models.py:51
 #: apps/pricing/models.py:59 apps/pricing/models.py:138
 #: apps/pricing/models.py:199 apps/pricing/models.py:396
 #: apps/pricing/models.py:482 apps/reservations/models.py:545
@@ -65,7 +65,7 @@ msgstr ""
 
 #: apps/accounts/models.py:25 apps/customers/models.py:302
 #: apps/fleet/models.py:114 apps/fleet/models.py:419 apps/offices/models.py:32
-#: apps/operations/models.py:207 apps/pricing/models.py:60
+#: apps/operations/models.py:212 apps/pricing/models.py:60
 msgid "descripcion"
 msgstr ""
 
@@ -111,8 +111,9 @@ msgstr ""
 msgid "apellidos"
 msgstr ""
 
-#: apps/accounts/models.py:84 apps/customers/models.py:145
-#: apps/offices/models.py:74 apps/settings_app/models.py:50
+#: apps/accounts/models.py:84 apps/core/models.py:155
+#: apps/customers/models.py:145 apps/offices/models.py:74
+#: apps/settings_app/models.py:50
 msgid "telefono"
 msgstr ""
 
@@ -155,7 +156,7 @@ msgstr ""
 
 #: apps/accounts/scoping.py:56 apps/auditlog/models.py:82
 #: apps/billing/models.py:139 apps/billing/models.py:397
-#: apps/offices/models.py:78 apps/operations/models.py:307
+#: apps/offices/models.py:78 apps/operations/models.py:312
 msgid "oficina"
 msgstr ""
 
@@ -309,7 +310,7 @@ msgstr ""
 #: apps/accounts/templates/accounts/login.html:85
 #: apps/accounts/templates/accounts/password_reset_complete.html:9
 #: apps/core/templates/core/landing.html:47
-#: apps/core/templates/core/landing.html:465
+#: apps/core/templates/core/landing.html:587
 #: apps/core/templates/shell/_topbar.html:84
 msgid "Entrar"
 msgstr ""
@@ -380,9 +381,10 @@ msgstr ""
 #: apps/core/templates/ui/_confirm_dialog.html:39
 #: apps/core/templates/ui/_form_page.html:17
 #: apps/core/templates/ui/_modal_form.html:17
-#: apps/operations/templates/operations/_check_in_modal.html:57
+#: apps/operations/templates/operations/_check_in_modal.html:64
 #: apps/operations/templates/operations/_check_out_modal.html:67
 #: apps/operations/templates/operations/_damage_modal.html:43
+#: apps/operations/templates/operations/_signature_modal.html:34
 #: apps/reservations/state_machine.py:246
 #: apps/reservations/state_machine.py:262
 #: apps/reservations/templates/reservations/_assign_vehicle_modal.html:56
@@ -476,7 +478,7 @@ msgstr ""
 
 #: apps/accounts/templates/accounts/user_list.html:4 apps/accounts/views.py:192
 #: apps/accounts/views.py:195 apps/accounts/views.py:222
-#: apps/core/navigation.py:206
+#: apps/core/navigation.py:219
 msgid "Usuarios"
 msgstr ""
 
@@ -490,10 +492,11 @@ msgid ""
 msgstr ""
 
 #: apps/accounts/views.py:158 apps/auditlog/views.py:21
+#: apps/reports/exports.py:167
 msgid "Usuario"
 msgstr ""
 
-#: apps/accounts/views.py:159 apps/auditlog/models.py:36
+#: apps/accounts/views.py:159 apps/auditlog/models.py:36 apps/core/forms.py:64
 #: apps/customers/templates/customers/customer_detail.html:56
 #: apps/reservations/templates/reservations/tabs/_cliente.html:31
 msgid "Correo"
@@ -503,7 +506,7 @@ msgstr ""
 msgid "Rol"
 msgstr ""
 
-#: apps/accounts/views.py:161 apps/core/navigation.py:194
+#: apps/accounts/views.py:161 apps/core/navigation.py:207
 #: apps/offices/apps.py:9 apps/offices/views.py:41 apps/offices/views.py:108
 msgid "Oficinas"
 msgstr ""
@@ -512,16 +515,18 @@ msgstr ""
 #: apps/billing/filters.py:146 apps/billing/views.py:262
 #: apps/billing/views.py:509 apps/billing/views.py:817
 #: apps/compliance/views.py:23 apps/compliance/views.py:51
-#: apps/core/filters.py:15 apps/core/templates/core/_dashboard_panels.html:391
+#: apps/core/filters.py:18 apps/core/filters.py:33
+#: apps/core/templates/core/_dashboard_panels.html:391
 #: apps/core/templates/core/_dashboard_panels.html:480
 #: apps/core/templates/core/_ui_kit_modal.html:17
-#: apps/core/templates/core/landing.html:178 apps/core/views.py:282
-#: apps/core/views.py:298 apps/customers/views.py:54 apps/fleet/filters.py:144
-#: apps/fleet/views.py:63 apps/fleet/views.py:262 apps/fleet/views.py:355
-#: apps/notifications/views.py:23 apps/notifications/views.py:53
-#: apps/offices/views.py:35 apps/offices/views.py:109
-#: apps/operations/filters.py:13 apps/operations/views.py:223
-#: apps/pricing/views.py:84 apps/pricing/views.py:156 apps/pricing/views.py:240
+#: apps/core/templates/core/landing.html:178 apps/core/views.py:330
+#: apps/core/views.py:346 apps/core/views.py:481 apps/customers/views.py:54
+#: apps/fleet/filters.py:144 apps/fleet/views.py:63 apps/fleet/views.py:262
+#: apps/fleet/views.py:355 apps/notifications/views.py:23
+#: apps/notifications/views.py:53 apps/offices/views.py:35
+#: apps/offices/views.py:109 apps/operations/filters.py:13
+#: apps/operations/views.py:260 apps/pricing/views.py:84
+#: apps/pricing/views.py:156 apps/pricing/views.py:240
 #: apps/pricing/views.py:411 apps/pricing/views.py:486
 #: apps/reservations/filters.py:16
 #: apps/reservations/templates/reservations/tabs/_vehiculo.html:21
@@ -530,11 +535,12 @@ msgid "Estado"
 msgstr ""
 
 #: apps/accounts/views.py:163 apps/billing/views.py:263
-#: apps/billing/views.py:510 apps/customers/views.py:55 apps/fleet/views.py:64
-#: apps/fleet/views.py:137 apps/fleet/views.py:263 apps/fleet/views.py:356
-#: apps/notifications/views.py:54 apps/offices/views.py:36
-#: apps/offices/views.py:110 apps/pricing/templates/pricing/conflicts.html:34
-#: apps/pricing/views.py:85 apps/pricing/views.py:157 apps/pricing/views.py:241
+#: apps/billing/views.py:510 apps/core/views.py:482 apps/customers/views.py:55
+#: apps/fleet/views.py:64 apps/fleet/views.py:137 apps/fleet/views.py:263
+#: apps/fleet/views.py:356 apps/notifications/views.py:54
+#: apps/offices/views.py:36 apps/offices/views.py:110
+#: apps/pricing/templates/pricing/conflicts.html:34 apps/pricing/views.py:85
+#: apps/pricing/views.py:157 apps/pricing/views.py:241
 #: apps/pricing/views.py:412 apps/pricing/views.py:487
 #: apps/reservations/templates/reservations/tabs/_cobros.html:150
 #: apps/reservations/templates/reservations/tabs/_extras.html:30
@@ -546,11 +552,11 @@ msgstr ""
 msgid "Nombre o correo..."
 msgstr ""
 
-#: apps/accounts/views.py:184 apps/core/filters.py:8
+#: apps/accounts/views.py:184 apps/core/filters.py:11
 msgid "Activos"
 msgstr ""
 
-#: apps/accounts/views.py:185 apps/core/filters.py:8
+#: apps/accounts/views.py:185 apps/core/filters.py:11
 msgid "Desactivados"
 msgstr ""
 
@@ -558,8 +564,8 @@ msgstr ""
 msgid "Ningun usuario coincide"
 msgstr ""
 
-#: apps/accounts/views.py:190 apps/core/views.py:304 apps/fleet/views.py:68
-#: apps/fleet/views.py:141 apps/offices/views.py:40
+#: apps/accounts/views.py:190 apps/core/views.py:352 apps/core/views.py:486
+#: apps/fleet/views.py:68 apps/fleet/views.py:141 apps/offices/views.py:40
 #: apps/reservations/views.py:87
 msgid "Cambia la busqueda o quita algun filtro."
 msgstr ""
@@ -567,10 +573,10 @@ msgstr ""
 #: apps/accounts/views.py:194 apps/accounts/views.py:221
 #: apps/billing/views.py:203 apps/billing/views.py:319
 #: apps/billing/views.py:665 apps/compliance/views.py:90 apps/core/crud.py:123
-#: apps/core/crud.py:198 apps/core/navigation.py:58
-#: apps/core/templates/shell/_bottom_nav.html:20 apps/core/views.py:324
-#: apps/customers/views.py:84 apps/operations/views.py:324
-#: apps/pricing/views.py:590 apps/pricing/views.py:615
+#: apps/core/crud.py:198 apps/core/navigation.py:60
+#: apps/core/templates/shell/_bottom_nav.html:20 apps/core/views.py:372
+#: apps/customers/views.py:84 apps/operations/views.py:361
+#: apps/pricing/views.py:590 apps/pricing/views.py:615 apps/reports/views.py:74
 #: apps/reservations/views.py:163 apps/reservations/views.py:370
 #: apps/reservations/views.py:1012 apps/settings_app/views.py:47
 msgid "Inicio"
@@ -606,15 +612,15 @@ msgstr ""
 #: apps/auditlog/filters.py:16 apps/billing/filters.py:34
 #: apps/billing/filters.py:68 apps/billing/filters.py:104
 #: apps/billing/filters.py:127 apps/billing/filters.py:144
-#: apps/compliance/views.py:21 apps/core/templates/ui/_table.html:29
-#: apps/customers/filters.py:15 apps/fleet/filters.py:31
-#: apps/fleet/filters.py:55 apps/fleet/filters.py:101 apps/fleet/filters.py:142
-#: apps/notifications/views.py:18 apps/offices/filters.py:18
-#: apps/offices/filters.py:59 apps/operations/filters.py:11
-#: apps/pricing/filters.py:30 apps/pricing/filters.py:46
-#: apps/pricing/filters.py:71 apps/pricing/filters.py:93
-#: apps/pricing/filters.py:107 apps/reservations/filters.py:14
-#: apps/settings_app/filters.py:13
+#: apps/compliance/views.py:21 apps/core/filters.py:31
+#: apps/core/templates/ui/_table.html:29 apps/customers/filters.py:15
+#: apps/fleet/filters.py:31 apps/fleet/filters.py:55 apps/fleet/filters.py:101
+#: apps/fleet/filters.py:142 apps/notifications/views.py:18
+#: apps/offices/filters.py:18 apps/offices/filters.py:59
+#: apps/operations/filters.py:11 apps/pricing/filters.py:30
+#: apps/pricing/filters.py:46 apps/pricing/filters.py:71
+#: apps/pricing/filters.py:93 apps/pricing/filters.py:107
+#: apps/reservations/filters.py:14 apps/settings_app/filters.py:13
 msgid "Buscar"
 msgstr ""
 
@@ -632,6 +638,7 @@ msgstr ""
 #: apps/auditlog/filters.py:23 apps/auditlog/filters.py:24
 #: apps/billing/filters.py:44 apps/billing/filters.py:81
 #: apps/fleet/views.py:259 apps/pricing/views.py:152
+#: apps/reports/templates/reports/reports.html:20
 #: apps/reservations/forms.py:262
 msgid "Desde"
 msgstr ""
@@ -639,6 +646,7 @@ msgstr ""
 #: apps/auditlog/filters.py:29 apps/auditlog/filters.py:30
 #: apps/billing/filters.py:47 apps/billing/filters.py:84
 #: apps/fleet/views.py:260 apps/pricing/views.py:153
+#: apps/reports/templates/reports/reports.html:24
 msgid "Hasta"
 msgstr ""
 
@@ -655,9 +663,9 @@ msgid "Cambio de estado"
 msgstr ""
 
 #: apps/auditlog/models.py:26
-#: apps/contracts/templates/contracts/contract.html:171
+#: apps/contracts/templates/contracts/contract.html:173
 msgid "Cancelación"
-msgstr ""
+msgstr "Cancellation"
 
 #: apps/auditlog/models.py:27
 msgid "Cambio de precio"
@@ -685,7 +693,7 @@ msgid "Entrega"
 msgstr ""
 
 #: apps/auditlog/models.py:32 apps/billing/views.py:233
-#: apps/contracts/templates/contracts/contract.html:93
+#: apps/contracts/templates/contracts/contract.html:95
 #: apps/notifications/models.py:13
 #: apps/notifications/templates/notifications/emails/_base.html:23
 msgid "Devolución"
@@ -736,7 +744,7 @@ msgstr ""
 #: apps/auditlog/models.py:75 apps/billing/models.py:255
 #: apps/billing/models.py:374 apps/customers/models.py:291
 #: apps/fleet/models.py:412 apps/notifications/models.py:36
-#: apps/operations/models.py:203 apps/pricing/models.py:398
+#: apps/operations/models.py:208 apps/pricing/models.py:398
 #: apps/reservations/models.py:692
 msgid "tipo"
 msgstr ""
@@ -753,8 +761,8 @@ msgstr ""
 #: apps/billing/models.py:379 apps/billing/models.py:586
 #: apps/booking_api/models.py:54 apps/compliance/models.py:41
 #: apps/contracts/models.py:32 apps/notifications/models.py:42
-#: apps/operations/models.py:70 apps/operations/models.py:129
-#: apps/operations/models.py:191 apps/operations/models.py:335
+#: apps/operations/models.py:70 apps/operations/models.py:134
+#: apps/operations/models.py:196 apps/operations/models.py:340
 #: apps/reservations/models.py:384 apps/reservations/models.py:475
 #: apps/reservations/models.py:531 apps/reservations/models.py:577
 #: apps/reservations/models.py:628 apps/reservations/models.py:688
@@ -819,7 +827,7 @@ msgstr ""
 msgid "Auditoría"
 msgstr ""
 
-#: apps/availability/apps.py:9 apps/core/views.py:74
+#: apps/availability/apps.py:9 apps/core/views.py:79
 #: apps/reservations/templates/reservations/_change_preview.html:14
 #: apps/reservations/templates/reservations/_preview.html:14
 msgid "Disponibilidad"
@@ -950,7 +958,7 @@ msgstr ""
 #: apps/billing/templates/billing/invoice_detail.html:174
 #: apps/billing/views.py:505 apps/fleet/filters.py:147 apps/fleet/views.py:350
 #: apps/notifications/views.py:20 apps/notifications/views.py:49
-#: apps/pricing/filters.py:95
+#: apps/pricing/filters.py:95 apps/reports/exports.py:102
 msgid "Tipo"
 msgstr ""
 
@@ -961,7 +969,7 @@ msgid "Tipo: todos"
 msgstr ""
 
 #: apps/billing/filters.py:39 apps/billing/forms.py:49 apps/billing/forms.py:68
-#: apps/billing/forms.py:109
+#: apps/billing/forms.py:109 apps/reports/exports.py:101
 msgid "Serie"
 msgstr ""
 
@@ -986,8 +994,9 @@ msgstr ""
 #: apps/billing/templates/billing/invoice_pdf.html:76
 #: apps/billing/templates/billing/manual_invoice.html:66
 #: apps/billing/views.py:472 apps/billing/views.py:814
-#: apps/contracts/templates/contracts/contract.html:128
+#: apps/contracts/templates/contracts/contract.html:130
 #: apps/pricing/templates/pricing/_simulator_result.html:61
+#: apps/reports/exports.py:162
 #: apps/reservations/templates/reservations/tabs/_checkout.html:72
 #: apps/reservations/templates/reservations/tabs/_cobros.html:146
 #: apps/reservations/templates/reservations/tabs/_extras.html:25
@@ -1005,9 +1014,10 @@ msgstr ""
 #: apps/billing/templates/billing/invoice_detail.html:183
 #: apps/billing/views.py:234 apps/billing/views.py:475
 #: apps/core/templates/core/_ui_kit_modal.html:13
-#: apps/core/templates/core/home.html:42 apps/core/views.py:281
-#: apps/fleet/filters.py:62 apps/fleet/views.py:133
-#: apps/reservations/filters.py:24 apps/reservations/forms.py:270
+#: apps/core/templates/core/home.html:42 apps/core/views.py:329
+#: apps/fleet/filters.py:62 apps/fleet/views.py:133 apps/reports/exports.py:111
+#: apps/reports/exports.py:166 apps/reservations/filters.py:24
+#: apps/reservations/forms.py:270
 #: apps/reservations/templates/reservations/tabs/_checkout.html:22
 msgid "Oficina"
 msgstr ""
@@ -1019,7 +1029,7 @@ msgid "Oficina: todas"
 msgstr ""
 
 #: apps/billing/filters.py:146 apps/compliance/views.py:23
-#: apps/core/filters.py:18 apps/fleet/filters.py:144
+#: apps/core/filters.py:21 apps/core/filters.py:35 apps/fleet/filters.py:144
 #: apps/notifications/views.py:23 apps/operations/filters.py:13
 #: apps/reservations/filters.py:16
 msgid "Estado: todos"
@@ -1029,11 +1039,11 @@ msgstr ""
 #: apps/billing/templates/billing/_cash_register_panel.html:39
 #: apps/billing/templates/billing/invoice_pdf.html:80 apps/billing/views.py:476
 #: apps/billing/views.py:816
-#: apps/contracts/templates/contracts/contract.html:130
+#: apps/contracts/templates/contracts/contract.html:132
 #: apps/core/templates/core/_dashboard_panels.html:392
 #: apps/operations/templates/operations/fine_detail.html:30
-#: apps/operations/views.py:221 apps/pricing/views.py:410
-#: apps/pricing/views.py:483
+#: apps/operations/views.py:258 apps/pricing/views.py:410
+#: apps/pricing/views.py:483 apps/reports/exports.py:164
 #: apps/reservations/templates/reservations/tabs/_cobros.html:149
 msgid "Importe"
 msgstr "Amount"
@@ -1042,11 +1052,12 @@ msgstr "Amount"
 msgid "Siempre en positivo: el concepto decide si entra o sale."
 msgstr ""
 
-#: apps/billing/forms.py:22
+#: apps/billing/forms.py:22 apps/reports/exports.py:163
 msgid "Medio de pago"
 msgstr ""
 
 #: apps/billing/forms.py:27 apps/billing/views.py:474
+#: apps/reports/exports.py:165
 #: apps/reservations/templates/reservations/tabs/_cobros.html:148
 msgid "Referencia"
 msgstr ""
@@ -1081,10 +1092,11 @@ msgstr ""
 #: apps/billing/templates/billing/manual_invoice.html:43
 #: apps/billing/views.py:232 apps/billing/views.py:257
 #: apps/billing/views.py:471 apps/compliance/views.py:49
-#: apps/core/templates/core/_dashboard_panels.html:388
+#: apps/core/models.py:141 apps/core/templates/core/_dashboard_panels.html:388
 #: apps/core/templates/core/_dashboard_panels.html:477
 #: apps/core/templates/core/landing.html:175 apps/customers/forms.py:124
-#: apps/customers/views.py:50 apps/reservations/forms.py:25
+#: apps/customers/views.py:50 apps/reports/exports.py:103
+#: apps/reports/exports.py:160 apps/reservations/forms.py:25
 #: apps/reservations/templates/reservations/_header.html:50
 #: apps/reservations/templates/reservations/quick_reservation.html:24
 #: apps/reservations/views.py:78 apps/reservations/views.py:109
@@ -1095,8 +1107,8 @@ msgstr "Customer"
 msgid "Elige el cliente al que se factura."
 msgstr ""
 
-#: apps/billing/forms.py:111 apps/operations/forms.py:22
-#: apps/operations/forms.py:51
+#: apps/billing/forms.py:111 apps/operations/forms.py:40
+#: apps/operations/forms.py:85
 msgid "Observaciones"
 msgstr ""
 
@@ -1189,7 +1201,7 @@ msgid "Pago"
 msgstr "Payment"
 
 #: apps/billing/models.py:51
-#: apps/contracts/templates/contracts/contract.html:159
+#: apps/contracts/templates/contracts/contract.html:161
 #: apps/notifications/templates/notifications/emails/confirmation.html:8
 #: apps/reservations/templates/reservations/tabs/_resumen.html:40
 msgid "Fianza"
@@ -1208,7 +1220,7 @@ msgid "Reembolso"
 msgstr ""
 
 #: apps/billing/models.py:119 apps/billing/models.py:592
-#: apps/operations/models.py:321 apps/pricing/models.py:410
+#: apps/operations/models.py:326 apps/pricing/models.py:410
 #: apps/pricing/models.py:490
 msgid "importe"
 msgstr ""
@@ -1249,7 +1261,7 @@ msgstr ""
 
 #: apps/billing/models.py:152 apps/billing/models.py:271
 #: apps/fleet/models.py:254 apps/fleet/models.py:321
-#: apps/operations/models.py:364 apps/reservations/models.py:322
+#: apps/operations/models.py:369 apps/reservations/models.py:322
 #: apps/reservations/models.py:708
 msgid "notas"
 msgstr ""
@@ -1367,7 +1379,7 @@ msgid "motivo de la rectificacion"
 msgstr ""
 
 #: apps/billing/models.py:412 apps/operations/models.py:91
-#: apps/operations/models.py:156
+#: apps/operations/models.py:161
 msgid "observaciones"
 msgstr ""
 
@@ -1535,15 +1547,15 @@ msgid "pasarela"
 msgstr ""
 
 #: apps/billing/models.py:594 apps/compliance/models.py:46
-#: apps/contracts/models.py:45 apps/fleet/models.py:246
+#: apps/contracts/models.py:45 apps/core/models.py:163 apps/fleet/models.py:246
 #: apps/fleet/models.py:414 apps/notifications/models.py:38
-#: apps/operations/models.py:331 apps/reservations/models.py:158
+#: apps/operations/models.py:336 apps/reservations/models.py:158
 msgid "estado"
 msgstr ""
 
 #: apps/billing/models.py:596
-#: apps/contracts/templates/contracts/contract.html:67
-#: apps/contracts/templates/contracts/contract.html:118
+#: apps/contracts/templates/contracts/contract.html:69
+#: apps/contracts/templates/contracts/contract.html:120
 #: apps/reservations/templates/reservations/tabs/_cliente.html:75
 msgid "caduca"
 msgstr "expires"
@@ -1680,6 +1692,7 @@ msgstr ""
 #: apps/core/templates/core/landing.html:200
 #: apps/core/templates/core/landing.html:205 apps/operations/dashboard.py:458
 #: apps/reservations/models.py:28 apps/reservations/planning.py:45
+#: apps/reservations/templates/reservations/tabs/_checkin.html:48
 #: apps/reservations/templates/reservations/tabs/_cobros.html:14
 msgid "Pendiente"
 msgstr ""
@@ -1872,7 +1885,7 @@ msgstr ""
 #: apps/billing/templates/billing/_cash_register_panel.html:35
 #: apps/core/templates/core/_dashboard_panels.html:386
 #: apps/core/templates/core/_dashboard_panels.html:475
-#: apps/core/templates/core/landing.html:174
+#: apps/core/templates/core/landing.html:174 apps/reports/exports.py:158
 msgid "Hora"
 msgstr ""
 
@@ -1883,11 +1896,13 @@ msgstr ""
 #: apps/core/templates/core/_dashboard_panels.html:387
 #: apps/core/templates/core/_dashboard_panels.html:476
 #: apps/notifications/templates/notifications/emails/_base.html:21
-#: apps/notifications/views.py:51
+#: apps/notifications/views.py:51 apps/reports/exports.py:110
+#: apps/reports/exports.py:159
 msgid "Reserva"
 msgstr "Booking"
 
 #: apps/billing/templates/billing/_cash_register_panel.html:38
+#: apps/core/views.py:478
 msgid "Quien"
 msgstr ""
 
@@ -1943,6 +1958,7 @@ msgstr "Net"
 #: apps/billing/templates/billing/manual_invoice.html:88
 #: apps/billing/views.py:260
 #: apps/pricing/templates/pricing/_simulator_result.html:65
+#: apps/reports/exports.py:107
 #: apps/reservations/templates/reservations/tabs/_precio.html:63
 #: apps/reservations/templates/reservations/tabs/_resumen.html:63
 msgid "IVA"
@@ -1958,6 +1974,7 @@ msgstr "VAT"
 #: apps/billing/views.py:235 apps/billing/views.py:261
 #: apps/pricing/templates/pricing/_simulator_result.html:66
 #: apps/pricing/templates/pricing/_simulator_result.html:99
+#: apps/reports/exports.py:108
 #: apps/reservations/templates/reservations/_header.html:78
 #: apps/reservations/templates/reservations/tabs/_checkout.html:74
 #: apps/reservations/templates/reservations/tabs/_cobros.html:6
@@ -1974,6 +1991,7 @@ msgstr "Total"
 #: apps/billing/templates/billing/invoice_pdf.html:97
 #: apps/billing/templates/billing/manual_invoice.html:87
 #: apps/pricing/templates/pricing/_simulator_result.html:91
+#: apps/reports/exports.py:106
 #: apps/reservations/templates/reservations/tabs/_precio.html:86
 msgid "Base imponible"
 msgstr "Taxable base"
@@ -2031,6 +2049,7 @@ msgstr ""
 #: apps/core/templates/core/_dashboard_panels.html:441
 #: apps/core/templates/core/_dashboard_panels.html:530
 #: apps/core/templates/core/home.html:53
+#: apps/reports/templates/reports/reports.html:27
 #: apps/reservations/templates/reservations/planning.html:62
 #: apps/reservations/templates/reservations/tabs/_cobros.html:64
 msgid "Ver"
@@ -2147,7 +2166,7 @@ msgstr ""
 
 #: apps/billing/templates/billing/cash_register.html:4
 #: apps/billing/views.py:201 apps/billing/views.py:204
-#: apps/core/navigation.py:176
+#: apps/core/navigation.py:189
 msgid "Arqueo de caja"
 msgstr ""
 
@@ -2190,7 +2209,8 @@ msgstr "Issuer"
 #: apps/billing/templates/billing/invoice_detail.html:83
 #: apps/billing/templates/billing/invoice_pdf.html:55
 #: apps/billing/templates/billing/invoice_pdf.html:61
-#: apps/contracts/templates/contracts/contract.html:53
+#: apps/contracts/templates/contracts/contract.html:55
+#: apps/reports/exports.py:104
 msgid "NIF"
 msgstr "Tax ID"
 
@@ -2219,7 +2239,7 @@ msgstr ""
 
 #: apps/billing/templates/billing/invoice_detail.html:106
 #: apps/billing/templates/billing/invoice_pdf.html:77
-#: apps/contracts/templates/contracts/contract.html:129
+#: apps/contracts/templates/contracts/contract.html:131
 #: apps/pricing/templates/pricing/_simulator_result.html:62
 #: apps/reservations/templates/reservations/tabs/_extras.html:26
 #: apps/reservations/templates/reservations/tabs/_precio.html:60
@@ -2259,6 +2279,7 @@ msgid "Fecha del registro"
 msgstr ""
 
 #: apps/billing/templates/billing/invoice_detail.html:166
+#: apps/reports/exports.py:113
 msgid "Huella"
 msgstr ""
 
@@ -2279,6 +2300,7 @@ msgid "Emitida por"
 msgstr ""
 
 #: apps/billing/templates/billing/invoice_detail.html:185
+#: apps/reports/exports.py:109
 msgid "Moneda"
 msgstr ""
 
@@ -2444,7 +2466,7 @@ msgstr ""
 msgid "No queda ninguna reserva finalizada sin su factura."
 msgstr ""
 
-#: apps/billing/views.py:241 apps/core/navigation.py:158
+#: apps/billing/views.py:241 apps/core/navigation.py:171
 msgid "Pendiente de facturar"
 msgstr ""
 
@@ -2453,6 +2475,7 @@ msgid "Número"
 msgstr ""
 
 #: apps/billing/views.py:256 apps/billing/views.py:469 apps/fleet/views.py:351
+#: apps/reports/exports.py:100 apps/reports/exports.py:157
 #: apps/reservations/templates/reservations/tabs/_cobros.html:145
 msgid "Fecha"
 msgstr ""
@@ -2466,7 +2489,7 @@ msgid "Ninguna factura coincide"
 msgstr ""
 
 #: apps/billing/views.py:272 apps/billing/views.py:320
-#: apps/billing/views.py:666 apps/core/navigation.py:164
+#: apps/billing/views.py:666 apps/core/navigation.py:177
 msgid "Facturas"
 msgstr ""
 
@@ -2488,7 +2511,7 @@ msgstr ""
 msgid "Ningún cobro coincide"
 msgstr ""
 
-#: apps/billing/views.py:481 apps/core/navigation.py:170
+#: apps/billing/views.py:481 apps/core/navigation.py:183
 #: apps/reservations/views.py:113
 msgid "Cobros"
 msgstr ""
@@ -2976,7 +2999,7 @@ msgid "Datos completos."
 msgstr ""
 
 #: apps/compliance/templates/compliance/ses_detail.html:51
-#: apps/compliance/views.py:50 apps/operations/views.py:222
+#: apps/compliance/views.py:50 apps/operations/views.py:259
 msgid "Plazo"
 msgstr ""
 
@@ -3004,7 +3027,7 @@ msgstr ""
 msgid "Datos revisados."
 msgstr ""
 
-#: apps/contracts/apps.py:9 apps/core/views.py:80
+#: apps/contracts/apps.py:9 apps/core/views.py:85
 msgid "Contratos"
 msgstr ""
 
@@ -3084,19 +3107,19 @@ msgstr ""
 msgid "Factura %(numero)s"
 msgstr "Invoice %(numero)s"
 
-#: apps/contracts/services.py:75
+#: apps/contracts/services.py:74
 msgid ""
 "No hay condiciones generales publicadas. Publica una version en "
 "Configuracion antes de emitir contratos."
 msgstr ""
 
-#: apps/contracts/services.py:80
+#: apps/contracts/services.py:79
 msgid "La reserva no tiene titular: no se puede emitir contrato."
 msgstr ""
 
 #: apps/contracts/templates/contracts/_documents_panel.html:14
 #: apps/customers/templates/customers/customer_detail.html:89
-#: apps/reservations/templates/reservations/tabs/_checkin.html:42
+#: apps/reservations/templates/reservations/tabs/_checkin.html:53
 #: apps/reservations/views.py:116
 msgid "Documentos"
 msgstr ""
@@ -3130,46 +3153,42 @@ msgstr ""
 msgid "Contrato"
 msgstr "Agreement"
 
-#: apps/contracts/templates/contracts/contract.html:43
-#, fuzzy
-#| msgid "Contrato de alquiler n.º"
+#: apps/contracts/templates/contracts/contract.html:45
 msgid "Contrato de alquiler"
-msgstr "Rental agreement no."
+msgstr "Rental agreement"
 
-#: apps/contracts/templates/contracts/contract.html:51
-#, fuzzy
-#| msgid "Arrendatario"
+#: apps/contracts/templates/contracts/contract.html:53
 msgid "Arrendador"
-msgstr "Renter"
+msgstr "Lessor"
 
-#: apps/contracts/templates/contracts/contract.html:58
+#: apps/contracts/templates/contracts/contract.html:60
 msgid "Arrendatario"
 msgstr "Renter"
 
-#: apps/contracts/templates/contracts/contract.html:67
-#: apps/contracts/templates/contracts/contract.html:118
+#: apps/contracts/templates/contracts/contract.html:69
+#: apps/contracts/templates/contracts/contract.html:120
 #: apps/reservations/templates/reservations/tabs/_cliente.html:35
 #: apps/reservations/templates/reservations/tabs/_cliente.html:73
 msgid "Carnet"
 msgstr "Driving licence"
 
-#: apps/contracts/templates/contracts/contract.html:70
+#: apps/contracts/templates/contracts/contract.html:72
 msgid "Sin titular asignado."
 msgstr "No main renter assigned."
 
-#: apps/contracts/templates/contracts/contract.html:78
+#: apps/contracts/templates/contracts/contract.html:80
 #: apps/core/templates/core/landing.html:176 apps/fleet/views.py:349
 #: apps/notifications/templates/notifications/emails/_base.html:24
 #: apps/operations/templates/operations/fine_detail.html:29
-#: apps/operations/views.py:219
+#: apps/operations/views.py:256
 msgid "Vehículo"
 msgstr "Vehicle"
 
-#: apps/contracts/templates/contracts/contract.html:84
+#: apps/contracts/templates/contracts/contract.html:86
 msgid "Por asignar"
 msgstr "To be assigned"
 
-#: apps/contracts/templates/contracts/contract.html:88
+#: apps/contracts/templates/contracts/contract.html:90
 #: apps/notifications/templates/notifications/emails/_base.html:22
 #: apps/pricing/forms.py:295 apps/reservations/forms.py:45
 #: apps/reservations/templates/reservations/_header.html:56
@@ -3177,69 +3196,65 @@ msgstr "To be assigned"
 msgid "Recogida"
 msgstr "Pick-up"
 
-#: apps/contracts/templates/contracts/contract.html:98
-#, fuzzy
-#| msgid "Kilometros a la entrega"
+#: apps/contracts/templates/contracts/contract.html:100
 msgid "Kilómetros a la entrega"
 msgstr "Mileage at pick-up"
 
-#: apps/contracts/templates/contracts/contract.html:102
+#: apps/contracts/templates/contracts/contract.html:104
 msgid "Combustible a la entrega"
 msgstr "Fuel at pick-up"
 
-#: apps/contracts/templates/contracts/contract.html:106
+#: apps/contracts/templates/contracts/contract.html:108
 msgid "Kilometraje"
 msgstr "Mileage allowance"
 
-#: apps/contracts/templates/contracts/contract.html:107
+#: apps/contracts/templates/contracts/contract.html:109
 msgid "Ilimitado"
 msgstr "Unlimited"
 
-#: apps/contracts/templates/contracts/contract.html:107
+#: apps/contracts/templates/contracts/contract.html:109
 msgid "incluidos"
 msgstr "included"
 
-#: apps/contracts/templates/contracts/contract.html:114
+#: apps/contracts/templates/contracts/contract.html:116
 msgid "Conductores adicionales autorizados"
 msgstr "Authorised additional drivers"
 
-#: apps/contracts/templates/contracts/contract.html:151
+#: apps/contracts/templates/contracts/contract.html:153
 #: apps/notifications/templates/notifications/emails/confirmation.html:6
 msgid "Total del alquiler"
 msgstr "Rental total"
 
-#: apps/contracts/templates/contracts/contract.html:152
-#, fuzzy
-#| msgid "incluidos"
+#: apps/contracts/templates/contracts/contract.html:154
 msgid "IVA incluido"
-msgstr "included"
+msgstr "VAT included"
 
-#: apps/contracts/templates/contracts/contract.html:163
+#: apps/contracts/templates/contracts/contract.html:165
 #: apps/reservations/templates/reservations/tabs/_resumen.html:44
 msgid "Franquicia"
 msgstr "Excess"
 
-#: apps/contracts/templates/contracts/contract.html:167
-#, fuzzy
-#| msgid "Politica de combustible"
+#: apps/contracts/templates/contracts/contract.html:169
 msgid "Política de combustible"
 msgstr "Fuel policy"
 
-#: apps/contracts/templates/contracts/contract.html:179
-#, fuzzy
-#| msgid "Danos existentes en la entrega"
+#: apps/contracts/templates/contracts/contract.html:181
 msgid "Daños existentes en la entrega"
 msgstr "Existing damage at pick-up"
 
-#: apps/contracts/templates/contracts/contract.html:201
+#: apps/contracts/templates/contracts/contract.html:206
 msgid "El arrendatario"
 msgstr "The renter"
 
-#: apps/contracts/templates/contracts/contract.html:203
+#: apps/contracts/templates/contracts/contract.html:208
 msgid "Declara conocer y aceptar las condiciones generales"
 msgstr "Declares having read and accepted the general terms and conditions"
 
-#: apps/contracts/templates/contracts/contract.html:206
+#: apps/contracts/templates/contracts/contract.html:210
+msgid "Firmado el"
+msgstr "Signed on"
+
+#: apps/contracts/templates/contracts/contract.html:214
 msgid "Por la empresa"
 msgstr "For the company"
 
@@ -3255,7 +3270,7 @@ msgstr ""
 msgid "Nucleo"
 msgstr ""
 
-#: apps/core/crud.py:62
+#: apps/core/crud.py:62 apps/core/models.py:139
 msgid "Nuevo"
 msgstr ""
 
@@ -3267,6 +3282,53 @@ msgstr ""
 #: apps/core/crud.py:293
 #, python-format
 msgid "%(objeto)s desactivado."
+msgstr ""
+
+#: apps/core/forms.py:61
+#, fuzzy
+#| msgid "Nombre"
+msgid "Tu nombre"
+msgstr "Name"
+
+#: apps/core/forms.py:62
+msgid "Empresa"
+msgstr ""
+
+#: apps/core/forms.py:63
+msgid "Telefono o WhatsApp"
+msgstr ""
+
+#: apps/core/forms.py:66
+#, fuzzy
+#| msgid "Vehiculo"
+msgid "Vehiculos en flota"
+msgstr "Vehicle"
+
+#: apps/core/forms.py:69
+msgid "Cuentanos"
+msgstr ""
+
+#: apps/core/forms.py:80
+#, fuzzy
+#| msgid "No reembolsable"
+msgid "No rellenar"
+msgstr "Non-refundable"
+
+#: apps/core/forms.py:99
+msgid "Dejanos un telefono o un correo: si no, no podemos contestarte."
+msgstr ""
+
+#: apps/core/leads.py:83
+msgid "Nuevo contacto desde la web de RentFlow."
+msgstr ""
+
+#: apps/core/leads.py:91
+msgid "(sin mensaje)"
+msgstr ""
+
+#: apps/core/leads.py:94
+#, python-format
+msgid "Contacto web: %(empresa)s"
 msgstr ""
 
 #: apps/core/models.py:22 apps/reservations/models.py:710
@@ -3281,55 +3343,110 @@ msgstr ""
 msgid "modificado por"
 msgstr ""
 
-#: apps/core/navigation.py:56
+#: apps/core/models.py:140
+#, fuzzy
+#| msgid "Contacto"
+msgid "Contactado"
+msgstr "Contact"
+
+#: apps/core/models.py:142
+msgid "Descartado"
+msgstr ""
+
+#: apps/core/models.py:154
+#, fuzzy
+#| msgid "Por la empresa"
+msgid "empresa"
+msgstr "For the company"
+
+#: apps/core/models.py:156
+msgid "correo"
+msgstr ""
+
+#: apps/core/models.py:158 apps/fleet/models.py:260
+msgid "vehiculos"
+msgstr ""
+
+#: apps/core/models.py:158
+msgid "Tamano aproximado de la flota."
+msgstr ""
+
+#: apps/core/models.py:160
+msgid "mensaje"
+msgstr ""
+
+#: apps/core/models.py:165 apps/customers/models.py:176
+#: apps/reservations/models.py:328
+msgid "notas internas"
+msgstr ""
+
+#: apps/core/models.py:168
+#, fuzzy
+#| msgid "Tu contrato de alquiler"
+msgid "contacto de la web"
+msgstr "Your rental agreement"
+
+#: apps/core/models.py:169
+#, fuzzy
+#| msgid "Tu contrato de alquiler"
+msgid "contactos de la web"
+msgstr "Your rental agreement"
+
+#: apps/core/models.py:177
+#, fuzzy
+#| msgid "Por la empresa"
+msgid "Sin empresa"
+msgstr "For the company"
+
+#: apps/core/navigation.py:58
 msgid "General"
 msgstr ""
 
-#: apps/core/navigation.py:62
+#: apps/core/navigation.py:64
 msgid "Operativa"
 msgstr ""
 
-#: apps/core/navigation.py:65
+#: apps/core/navigation.py:67
 #: apps/core/templates/core/_dashboard_panels.html:208
-#: apps/core/templates/shell/_bottom_nav.html:32 apps/core/views.py:73
+#: apps/core/templates/shell/_bottom_nav.html:32 apps/core/views.py:78
 #: apps/reservations/apps.py:9 apps/reservations/views.py:88
 #: apps/reservations/views.py:164 apps/reservations/views.py:371
 msgid "Reservas"
 msgstr ""
 
-#: apps/core/navigation.py:71
+#: apps/core/navigation.py:73
 #: apps/reservations/templates/reservations/planning.html:4
 #: apps/reservations/views.py:1010 apps/reservations/views.py:1013
 msgid "Planning"
 msgstr ""
 
-#: apps/core/navigation.py:77
-#: apps/core/templates/core/_dashboard_panels.html:216 apps/core/views.py:77
+#: apps/core/navigation.py:79
+#: apps/core/templates/core/_dashboard_panels.html:216 apps/core/views.py:82
 #: apps/customers/apps.py:9 apps/customers/views.py:60
 #: apps/customers/views.py:85
 msgid "Clientes"
 msgstr ""
 
-#: apps/core/navigation.py:85 apps/core/templates/shell/_bottom_nav.html:60
-#: apps/core/views.py:76 apps/fleet/apps.py:9
+#: apps/core/navigation.py:87 apps/core/templates/shell/_bottom_nav.html:60
+#: apps/core/views.py:81 apps/core/views.py:480 apps/fleet/apps.py:9
 msgid "Flota"
 msgstr ""
 
-#: apps/core/navigation.py:88
+#: apps/core/navigation.py:90
 #: apps/core/templates/core/_dashboard_panels.html:200
 msgid "Vehículos"
 msgstr ""
 
-#: apps/core/navigation.py:94
+#: apps/core/navigation.py:96
 msgid "Categorías"
 msgstr ""
 
-#: apps/core/navigation.py:100
+#: apps/core/navigation.py:102
 msgid "Bloqueos"
 msgstr ""
 
-#: apps/core/navigation.py:108 apps/core/navigation.py:111
-#: apps/core/views.py:75 apps/pricing/apps.py:9
+#: apps/core/navigation.py:110 apps/core/navigation.py:113
+#: apps/core/views.py:80 apps/pricing/apps.py:9
 #: apps/pricing/templates/pricing/conflicts.html:8
 #: apps/pricing/templates/pricing/simulator.html:7 apps/pricing/views.py:155
 #: apps/pricing/views.py:246 apps/pricing/views.py:591
@@ -3337,60 +3454,72 @@ msgstr ""
 msgid "Tarifas"
 msgstr ""
 
-#: apps/core/navigation.py:117 apps/pricing/views.py:162
+#: apps/core/navigation.py:119 apps/pricing/views.py:162
 msgid "Temporadas"
 msgstr ""
 
-#: apps/core/navigation.py:123 apps/pricing/forms.py:306
+#: apps/core/navigation.py:125 apps/pricing/forms.py:306
 #: apps/pricing/views.py:90 apps/reservations/forms.py:56
 #: apps/reservations/views.py:111
 msgid "Extras"
 msgstr ""
 
-#: apps/core/navigation.py:129 apps/pricing/views.py:417
+#: apps/core/navigation.py:131 apps/pricing/views.py:417
 msgid "Suplementos"
 msgstr ""
 
-#: apps/core/navigation.py:135 apps/pricing/views.py:492
+#: apps/core/navigation.py:137 apps/pricing/views.py:492
 msgid "Descuentos"
 msgstr ""
 
-#: apps/core/navigation.py:141 apps/pricing/templates/pricing/conflicts.html:7
+#: apps/core/navigation.py:143 apps/pricing/templates/pricing/conflicts.html:7
 #: apps/pricing/views.py:592
 msgid "Simulador"
 msgstr ""
 
-#: apps/core/navigation.py:147 apps/pricing/templates/pricing/simulator.html:8
+#: apps/core/navigation.py:149 apps/pricing/templates/pricing/simulator.html:8
 #: apps/pricing/views.py:617
 msgid "Conflictos"
 msgstr ""
 
-#: apps/core/navigation.py:155
+#: apps/core/navigation.py:157 apps/core/navigation.py:160
+#: apps/reports/apps.py:9 apps/reports/templates/reports/reports.html:4
+#: apps/reports/views.py:72 apps/reports/views.py:75
+msgid "Informes"
+msgstr ""
+
+#: apps/core/navigation.py:168
 msgid "Facturación"
 msgstr ""
 
-#: apps/core/navigation.py:183
+#: apps/core/navigation.py:196
 msgid "Series"
 msgstr ""
 
-#: apps/core/navigation.py:191
+#: apps/core/navigation.py:204
 msgid "Administración"
 msgstr ""
 
-#: apps/core/navigation.py:200 apps/offices/views.py:115
+#: apps/core/navigation.py:213 apps/offices/views.py:115
 msgid "Grupos de oficinas"
 msgstr ""
 
-#: apps/core/navigation.py:212
+#: apps/core/navigation.py:225 apps/core/views.py:487
+#, fuzzy
+#| msgid "Contacto"
+msgid "Contactos web"
+msgstr "Contact"
+
+#: apps/core/navigation.py:231
 msgid "Configuración"
 msgstr ""
 
-#: apps/core/navigation.py:218 apps/settings_app/views.py:144
+#: apps/core/navigation.py:237 apps/settings_app/views.py:144
 msgid "Políticas"
 msgstr ""
 
-#: apps/core/navigation.py:225 apps/core/templates/core/ui_kit.html:4
-#: apps/core/views.py:321 apps/core/views.py:325
+#: apps/core/navigation.py:244 apps/core/templates/core/ui_kit.html:4
+#: apps/core/views.py:369 apps/core/views.py:373
 msgid "Componentes"
 msgstr ""
 
@@ -3625,6 +3754,7 @@ msgid "Reservas que vuelven en el periodo"
 msgstr ""
 
 #: apps/core/templates/core/_dashboard_panels.html:478
+#: apps/reports/templates/reports/reports.html:78
 msgid "Coche"
 msgstr ""
 
@@ -3731,6 +3861,12 @@ msgstr ""
 msgid "Actualizado a las %(hora)s"
 msgstr ""
 
+#: apps/core/templates/core/_lead_row.html:21
+#, fuzzy
+#| msgid "Documento"
+msgid "Seguimiento"
+msgstr "ID document"
+
 #: apps/core/templates/core/_ui_kit_modal.html:21
 msgid "Tarifa por dia"
 msgstr ""
@@ -3744,7 +3880,7 @@ msgstr ""
 msgid "Cerrar"
 msgstr ""
 
-#: apps/core/templates/core/home.html:4 apps/core/views.py:210
+#: apps/core/templates/core/home.html:4 apps/core/views.py:258
 #: apps/pricing/models.py:170
 msgid "Mostrador"
 msgstr ""
@@ -3783,6 +3919,7 @@ msgid "Ir"
 msgstr ""
 
 #: apps/core/templates/core/home.html:83
+#: apps/reports/templates/reports/reports.html:12
 msgid "Periodo"
 msgstr ""
 
@@ -3817,8 +3954,11 @@ msgid "Preguntas"
 msgstr ""
 
 #: apps/core/templates/core/landing.html:42
-msgid "Empezar"
-msgstr ""
+#: apps/core/templates/core/landing.html:622 apps/core/views.py:479
+#: apps/customers/templates/customers/customer_detail.html:50
+#: apps/customers/views.py:52 apps/offices/views.py:34
+msgid "Contacto"
+msgstr "Contact"
 
 #: apps/core/templates/core/landing.html:66
 msgid "El CRM para empresas de alquiler de coches"
@@ -3839,12 +3979,12 @@ msgid ""
 msgstr ""
 
 #: apps/core/templates/core/landing.html:84
-#: apps/core/templates/core/landing.html:446
+#: apps/core/templates/core/landing.html:568
 msgid "Entrar en la demo"
 msgstr ""
 
 #: apps/core/templates/core/landing.html:96
-#: apps/core/templates/core/landing.html:500
+#: apps/core/templates/core/landing.html:623
 msgid "Acceso de empleado"
 msgstr ""
 
@@ -4021,43 +4161,99 @@ msgstr ""
 msgid "Ver todas las preguntas"
 msgstr ""
 
+#: apps/core/templates/core/landing.html:432
+msgid "Hablemos"
+msgstr ""
+
 #: apps/core/templates/core/landing.html:434
-msgid "Tu negocio, un paso por delante"
+msgid "Te enseñamos RentFlow en 20 minutos"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:436
-msgid "Lleva tu empresa de alquiler al siguiente nivel"
+#: apps/core/templates/core/landing.html:437
+msgid ""
+"Cuéntanos cómo trabajáis y te decimos sin rodeos si RentFlow os encaja. Sin "
+"compromiso y sin presentaciones eternas."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:438
-msgid "Menos tareas, más tiempo para lo importante."
+#: apps/core/templates/core/landing.html:449
+msgid "Escríbenos por WhatsApp"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:455
-msgid "Datos de ejemplo"
+#: apps/core/templates/core/landing.html:463
+msgid "Llámanos"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:459
-msgid "Entras con un clic"
+#: apps/core/templates/core/landing.html:477
+msgid "Escríbenos un correo"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:475
-msgid "O desde el formulario:"
-msgstr ""
-
-#: apps/core/templates/core/landing.html:482
-msgid "Mismo equipo."
-msgstr ""
-
-#: apps/core/templates/core/landing.html:483
-msgid "Más posibilidades."
+#: apps/core/templates/core/landing.html:493
+msgid "Recibido. Gracias."
 msgstr ""
 
 #: apps/core/templates/core/landing.html:495
+msgid ""
+"Te contestamos en menos de 24 horas laborables. Si tienes prisa, escríbenos "
+"por WhatsApp."
+msgstr ""
+
+#: apps/core/templates/core/landing.html:500
+msgid "Abrir WhatsApp"
+msgstr ""
+
+#: apps/core/templates/core/landing.html:508
+msgid "Pide información"
+msgstr ""
+
+#: apps/core/templates/core/landing.html:510
+msgid "Rellena esto y te llamamos. Nada de cuentas ni tarjetas."
+msgstr ""
+
+#: apps/core/templates/core/landing.html:535
+msgid "Quiero que me llaméis"
+msgstr ""
+
+#: apps/core/templates/core/landing.html:538
+msgid "Usamos tus datos solo para contestarte. Ni spam ni terceros."
+msgstr ""
+
+#: apps/core/templates/core/landing.html:556
+msgid "Tu negocio, un paso por delante"
+msgstr ""
+
+#: apps/core/templates/core/landing.html:558
+msgid "Lleva tu empresa de alquiler al siguiente nivel"
+msgstr ""
+
+#: apps/core/templates/core/landing.html:560
+msgid "Menos tareas, más tiempo para lo importante."
+msgstr ""
+
+#: apps/core/templates/core/landing.html:577
+msgid "Datos de ejemplo"
+msgstr ""
+
+#: apps/core/templates/core/landing.html:581
+msgid "Entras con un clic"
+msgstr ""
+
+#: apps/core/templates/core/landing.html:597
+msgid "O desde el formulario:"
+msgstr ""
+
+#: apps/core/templates/core/landing.html:604
+msgid "Mismo equipo."
+msgstr ""
+
+#: apps/core/templates/core/landing.html:605
+msgid "Más posibilidades."
+msgstr ""
+
+#: apps/core/templates/core/landing.html:617
 msgid "Módulos"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:499
+#: apps/core/templates/core/landing.html:621
 msgid "Alquiler de vehículos sin conductor"
 msgstr ""
 
@@ -4323,154 +4519,156 @@ msgid ""
 "          "
 msgstr ""
 
-#: apps/core/views.py:78
+#: apps/core/views.py:83
 msgid "Cobros y caja"
 msgstr ""
 
-#: apps/core/views.py:79
+#: apps/core/views.py:84
 msgid "Entregas y devoluciones"
 msgstr ""
 
-#: apps/core/views.py:86
+#: apps/core/views.py:91
 msgid "Se reserva"
 msgstr ""
 
-#: apps/core/views.py:86
+#: apps/core/views.py:91
 msgid "En mostrador o por teléfono, con precio al momento."
 msgstr ""
 
-#: apps/core/views.py:87
+#: apps/core/views.py:92
 msgid "Se entrega"
 msgstr ""
 
-#: apps/core/views.py:87
+#: apps/core/views.py:92
 msgid "Check-in rápido con toda la información."
 msgstr ""
 
-#: apps/core/views.py:88
+#: apps/core/views.py:93
 msgid "Se devuelve"
 msgstr ""
 
-#: apps/core/views.py:88
+#: apps/core/views.py:93
 msgid "Inspección y cierre en segundos."
 msgstr ""
 
-#: apps/core/views.py:89
+#: apps/core/views.py:94
 msgid "Se cobra"
 msgstr ""
 
-#: apps/core/views.py:89
+#: apps/core/views.py:94
 msgid "Tarjeta, efectivo o transferencia, con la fianza aparte."
 msgstr ""
 
-#: apps/core/views.py:98
+#: apps/core/views.py:103
 msgid "Implantación gratuita"
 msgstr ""
 
-#: apps/core/views.py:99
+#: apps/core/views.py:104
 msgid "Configuramos oficinas, flota, tarifas y usuarios contigo, sin coste."
 msgstr ""
 
-#: apps/core/views.py:103
-msgid "Migración de datos incluida"
-msgstr ""
-
-#: apps/core/views.py:104
-msgid ""
-"Pasamos tus clientes, vehículos y reservas abiertas desde tu sistema actual."
-msgstr ""
-
 #: apps/core/views.py:108
-msgid "Trato directo con el equipo"
+msgid "Migración de datos incluida"
 msgstr ""
 
 #: apps/core/views.py:109
 msgid ""
+"Pasamos tus clientes, vehículos y reservas abiertas desde tu sistema actual."
+msgstr ""
+
+#: apps/core/views.py:113
+msgid "Trato directo con el equipo"
+msgstr ""
+
+#: apps/core/views.py:114
+msgid ""
 "Hablas con quien desarrolla RentFlow y tus propuestas entran en el producto."
 msgstr ""
 
-#: apps/core/views.py:116
+#: apps/core/views.py:121
 msgid "¿Es difícil de usar?"
 msgstr ""
 
-#: apps/core/views.py:118
+#: apps/core/views.py:123
 msgid ""
 "No. RentFlow está diseñado para ser intuitivo y fácil de usar. Además, te "
 "ofrecemos formación y soporte para que empieces sin complicaciones."
 msgstr ""
 
-#: apps/core/views.py:123
+#: apps/core/views.py:128
 msgid "¿Puedo importar mis reservas actuales?"
 msgstr ""
 
-#: apps/core/views.py:124
+#: apps/core/views.py:129
 msgid ""
 "Sí. Te ayudamos a pasar clientes, flota y reservas abiertas desde tu sistema "
 "anterior."
 msgstr ""
 
-#: apps/core/views.py:127
+#: apps/core/views.py:132
 msgid "¿Funciona en móviles y tablets?"
 msgstr ""
 
-#: apps/core/views.py:129
+#: apps/core/views.py:134
 msgid ""
 "Sí. La interfaz se adapta a cualquier pantalla, así que puedes trabajar "
 "fuera del mostrador."
 msgstr ""
 
-#: apps/core/views.py:134
+#: apps/core/views.py:139
 msgid "¿Qué tipo de soporte ofrecéis?"
 msgstr ""
 
-#: apps/core/views.py:136
+#: apps/core/views.py:141
 msgid ""
-"Soporte en español por teléfono y correo, con la temporada alta cubierta "
-"también en fin de semana."
+"Soporte en español por WhatsApp, teléfono y correo en horario laboral, y "
+"respondemos el mismo día. En temporada alta atendemos también las urgencias "
+"del fin de semana."
 msgstr ""
 
-#: apps/core/views.py:141
+#: apps/core/views.py:147
 msgid "¿Cuánto cuesta?"
 msgstr ""
 
-#: apps/core/views.py:143
+#: apps/core/views.py:149
 msgid ""
-"Una cuota mensual por oficina, sin permanencia. Escríbenos y te pasamos el "
-"presupuesto."
+"Una cuota mensual por oficina, sin permanencia. Las empresas del programa "
+"Early Access no pagan la implantación ni la migración de datos. Escríbenos y "
+"te pasamos el presupuesto."
 msgstr ""
 
-#: apps/core/views.py:226
+#: apps/core/views.py:274
 msgid "Buenos días"
 msgstr ""
 
-#: apps/core/views.py:228
+#: apps/core/views.py:276
 msgid "Buenas tardes"
 msgstr ""
 
-#: apps/core/views.py:229
+#: apps/core/views.py:277
 msgid "Buenas noches"
 msgstr ""
 
-#: apps/core/views.py:252
+#: apps/core/views.py:300
 msgid "Esa oficina no esta disponible para tu usuario."
 msgstr ""
 
-#: apps/core/views.py:257
+#: apps/core/views.py:305
 #, python-format
 msgid "Oficina activa: %s"
 msgstr ""
 
-#: apps/core/views.py:278 apps/fleet/views.py:130 apps/fleet/views.py:257
+#: apps/core/views.py:326 apps/fleet/views.py:130 apps/fleet/views.py:257
 #: apps/reservations/templates/reservations/tabs/_vehiculo.html:9
 msgid "Matricula"
 msgstr "Registration"
 
-#: apps/core/views.py:279
+#: apps/core/views.py:327
 #: apps/reservations/templates/reservations/tabs/_vehiculo.html:15
 msgid "Modelo"
 msgstr ""
 
-#: apps/core/views.py:280 apps/core/views.py:292 apps/fleet/filters.py:57
+#: apps/core/views.py:328 apps/core/views.py:340 apps/fleet/filters.py:57
 #: apps/fleet/forms.py:61 apps/fleet/views.py:59 apps/fleet/views.py:132
 #: apps/pricing/forms.py:285 apps/pricing/templates/pricing/conflicts.html:30
 #: apps/reservations/filters.py:19 apps/reservations/forms.py:31
@@ -4480,48 +4678,70 @@ msgstr ""
 msgid "Categoria"
 msgstr "Category"
 
-#: apps/core/views.py:283
+#: apps/core/views.py:331
 msgid "Tarifa/dia"
 msgstr ""
 
-#: apps/core/views.py:288
+#: apps/core/views.py:336
 msgid "Matricula, modelo u oficina..."
 msgstr ""
 
-#: apps/core/views.py:303 apps/fleet/views.py:140
+#: apps/core/views.py:351 apps/fleet/views.py:140
 msgid "Ningun vehiculo coincide"
 msgstr ""
 
-#: apps/core/views.py:322
+#: apps/core/views.py:370
 msgid "Referencia viva del sistema de interfaz."
 msgstr ""
 
-#: apps/core/views.py:363
+#: apps/core/views.py:411
 msgid "Vehiculo dado de baja (es una demostracion)."
 msgstr ""
 
-#: apps/core/views.py:370
+#: apps/core/views.py:418
 msgid "Demostracion de la pagina 403."
 msgstr ""
 
-#: apps/core/views.py:372
+#: apps/core/views.py:420
 msgid "Demostracion de la pagina 404."
 msgstr ""
 
-#: apps/core/views.py:398
+#: apps/core/views.py:446
 msgid "La demostracion no esta preparada todavia. Ejecuta: manage.py seed_demo"
 msgstr ""
 
-#: apps/core/views.py:410
+#: apps/core/views.py:458
 msgid ""
 "Estas en la demostracion con datos de mentira. Mira, prueba y rompe lo que "
 "quieras."
+msgstr ""
+
+#: apps/core/views.py:477
+msgid "Recibido"
+msgstr ""
+
+#: apps/core/views.py:484
+msgid "Nombre, empresa, telefono o correo..."
+msgstr ""
+
+#: apps/core/views.py:485
+msgid "Ningun contacto coincide"
+msgstr ""
+
+#: apps/core/views.py:498
+msgid "Seguimiento del contacto"
+msgstr ""
+
+#: apps/core/views.py:499
+#, python-format
+msgid "Contacto %(objeto)s actualizado."
 msgstr ""
 
 #: apps/customers/filters.py:17
 #: apps/customers/templates/customers/customer_detail.html:34
 #: apps/customers/views.py:51
 #: apps/operations/templates/operations/fine_detail.html:47
+#: apps/reports/exports.py:161
 #: apps/reservations/templates/reservations/tabs/_cliente.html:21
 msgid "Documento"
 msgstr "ID document"
@@ -4740,10 +4960,6 @@ msgstr ""
 msgid "Donde se dio de alta. No limita quien puede atenderle."
 msgstr ""
 
-#: apps/customers/models.py:176 apps/reservations/models.py:328
-msgid "notas internas"
-msgstr ""
-
 #: apps/customers/models.py:178
 msgid "No se imprimen en el contrato ni las ve el cliente."
 msgstr ""
@@ -4858,11 +5074,6 @@ msgstr ""
 msgid "Nacionalidad"
 msgstr ""
 
-#: apps/customers/templates/customers/customer_detail.html:50
-#: apps/customers/views.py:52 apps/offices/views.py:34
-msgid "Contacto"
-msgstr "Contact"
-
 #: apps/customers/templates/customers/customer_detail.html:52
 #: apps/reservations/templates/reservations/tabs/_cliente.html:27
 msgid "Telefono"
@@ -4873,6 +5084,7 @@ msgid "Alternativo"
 msgstr ""
 
 #: apps/customers/templates/customers/customer_detail.html:58
+#: apps/reports/exports.py:105
 msgid "Direccion"
 msgstr ""
 
@@ -5037,8 +5249,8 @@ msgstr ""
 msgid "Cambio: todos"
 msgstr ""
 
-#: apps/fleet/filters.py:38 apps/fleet/views.py:62 apps/operations/forms.py:19
-#: apps/operations/forms.py:43 apps/reservations/forms.py:63
+#: apps/fleet/filters.py:38 apps/fleet/views.py:62 apps/operations/forms.py:37
+#: apps/operations/forms.py:77 apps/reservations/forms.py:63
 #: apps/reservations/models.py:670
 #: apps/reservations/templates/reservations/tabs/_checkin.html:34
 #: apps/reservations/templates/reservations/tabs/_checkout.html:35
@@ -5351,7 +5563,7 @@ msgid "cambio"
 msgstr ""
 
 #: apps/fleet/models.py:136 apps/fleet/models.py:220
-#: apps/operations/models.py:84 apps/operations/models.py:150
+#: apps/operations/models.py:84 apps/operations/models.py:155
 msgid "combustible"
 msgstr ""
 
@@ -5408,7 +5620,7 @@ msgid "Numero de bastidor (VIN). 17 caracteres."
 msgstr ""
 
 #: apps/fleet/models.py:215 apps/fleet/models.py:440
-#: apps/operations/models.py:82 apps/operations/models.py:148
+#: apps/operations/models.py:82 apps/operations/models.py:153
 msgid "kilometros"
 msgstr ""
 
@@ -5443,14 +5655,10 @@ msgid "numero de poliza"
 msgstr ""
 
 #: apps/fleet/models.py:259 apps/fleet/models.py:309 apps/fleet/models.py:410
-#: apps/operations/models.py:76 apps/operations/models.py:135
-#: apps/operations/models.py:197 apps/operations/models.py:310
+#: apps/operations/models.py:76 apps/operations/models.py:140
+#: apps/operations/models.py:202 apps/operations/models.py:315
 #: apps/reservations/models.py:175
 msgid "vehiculo"
-msgstr ""
-
-#: apps/fleet/models.py:260
-msgid "vehiculos"
 msgstr ""
 
 #: apps/fleet/models.py:327
@@ -6571,11 +6779,18 @@ msgstr ""
 msgid "Multa %(expediente)s cerrada"
 msgstr ""
 
-#: apps/operations/forms.py:16
+#: apps/operations/forms.py:21
+#: apps/operations/templates/operations/_signature_modal.html:4
+#: apps/reservations/templates/reservations/tabs/_checkin.html:42
+#: apps/reservations/templates/reservations/tabs/_checkin.html:76
+msgid "Firma del cliente"
+msgstr ""
+
+#: apps/operations/forms.py:34
 msgid "Fecha y hora de entrega"
 msgstr ""
 
-#: apps/operations/forms.py:17 apps/operations/forms.py:41
+#: apps/operations/forms.py:35 apps/operations/forms.py:75
 #: apps/reservations/templates/reservations/tabs/_checkin.html:30
 #: apps/reservations/templates/reservations/tabs/_checkout.html:26
 #: apps/reservations/templates/reservations/tabs/_resumen.html:29
@@ -6583,78 +6798,82 @@ msgstr ""
 msgid "Kilometros"
 msgstr ""
 
-#: apps/operations/forms.py:24
+#: apps/operations/forms.py:42
 msgid "He comprobado el carnet de conducir"
 msgstr ""
 
-#: apps/operations/forms.py:25
+#: apps/operations/forms.py:43
 msgid "He comprobado el DNI o pasaporte"
 msgstr ""
 
-#: apps/operations/forms.py:33
+#: apps/operations/forms.py:54
 msgid "Sin comprobar los documentos no se puede entregar el coche."
 msgstr ""
 
-#: apps/operations/forms.py:40
+#: apps/operations/forms.py:67 apps/operations/services.py:185
+msgid "No hay ninguna firma: pide al cliente que firme en el recuadro."
+msgstr ""
+
+#: apps/operations/forms.py:74
 msgid "Fecha y hora de devolucion"
 msgstr ""
 
-#: apps/operations/forms.py:46 apps/pricing/forms.py:293
+#: apps/operations/forms.py:80 apps/pricing/forms.py:293
 #: apps/reservations/forms.py:39
 msgid "Oficina de devolucion"
 msgstr "Return office"
 
-#: apps/operations/forms.py:48
+#: apps/operations/forms.py:82
 msgid "Si cambia, el coche se queda aparcado alli."
 msgstr ""
 
-#: apps/operations/forms.py:55 apps/operations/forms.py:94
+#: apps/operations/forms.py:89 apps/operations/forms.py:128
 #: apps/reservations/models.py:672
 msgid "Limpieza especial"
 msgstr ""
 
-#: apps/operations/forms.py:60
+#: apps/operations/forms.py:94
 msgid "Base imponible. En blanco, no se cobra."
 msgstr ""
 
-#: apps/operations/forms.py:63 apps/reservations/models.py:673
+#: apps/operations/forms.py:97 apps/reservations/models.py:673
 msgid "Danos"
 msgstr ""
 
-#: apps/operations/forms.py:66
+#: apps/operations/forms.py:100
 msgid "Concepto de los danos"
 msgstr ""
 
-#: apps/operations/forms.py:75
+#: apps/operations/forms.py:109
 #, python-format
 msgid "Al entregar marcaba %(km)s km."
 msgstr ""
 
-#: apps/operations/forms.py:83
+#: apps/operations/forms.py:117
 msgid "Di que dano se esta cobrando."
 msgstr ""
 
-#: apps/operations/forms.py:138
+#: apps/operations/forms.py:172
 msgid "Solo a efectos de inventario: un dano previo no se repercute."
 msgstr ""
 
-#: apps/operations/forms.py:144
+#: apps/operations/forms.py:178
 msgid "Pincha la zona danada en el croquis."
 msgstr ""
 
-#: apps/operations/forms.py:151
+#: apps/operations/forms.py:185
 msgid "Fecha y hora de la infracción"
 msgstr ""
 
-#: apps/operations/forms.py:152
+#: apps/operations/forms.py:186
 msgid "Fecha de notificación"
 msgstr ""
 
-#: apps/operations/forms.py:154
+#: apps/operations/forms.py:188
 msgid "Plazo para identificar"
 msgstr ""
 
-#: apps/operations/forms.py:156
+#: apps/operations/forms.py:190
 msgid "Vacío: 20 días naturales desde la notificación."
 msgstr ""
 
@@ -6806,251 +7025,273 @@ msgstr ""
 msgid "DNI o pasaporte comprobado"
 msgstr ""
 
-#: apps/operations/models.py:99 apps/operations/models.py:159
+#: apps/operations/models.py:99 apps/operations/models.py:164
 msgid "empleado"
 msgstr ""
 
-#: apps/operations/models.py:108
+#: apps/operations/models.py:109
 msgid "firma del cliente"
 msgstr ""
 
-#: apps/operations/models.py:109
+#: apps/operations/models.py:110
 msgid "firmado el"
 msgstr ""
 
-#: apps/operations/models.py:112
+#: apps/operations/models.py:113
 msgid "entrega"
 msgstr ""
 
-#: apps/operations/models.py:113
+#: apps/operations/models.py:114
 msgid "entregas"
 msgstr ""
 
-#: apps/operations/models.py:141 apps/reservations/models.py:192
+#: apps/operations/models.py:146 apps/reservations/models.py:192
 msgid "oficina de devolucion"
 msgstr ""
 
-#: apps/operations/models.py:144
+#: apps/operations/models.py:149
 msgid "Donde se devuelve de verdad. Puede no ser la prevista."
 msgstr ""
 
-#: apps/operations/models.py:147
+#: apps/operations/models.py:152
 msgid "fecha y hora de devolucion"
 msgstr ""
 
-#: apps/operations/models.py:167
+#: apps/operations/models.py:172
 msgid "devolucion"
 msgstr ""
 
-#: apps/operations/models.py:168
+#: apps/operations/models.py:173
 msgid "devoluciones"
 msgstr ""
 
-#: apps/operations/models.py:202
+#: apps/operations/models.py:207
 msgid "zona"
 msgstr ""
 
-#: apps/operations/models.py:205
+#: apps/operations/models.py:210
 msgid "gravedad"
 msgstr ""
 
-#: apps/operations/models.py:210
+#: apps/operations/models.py:215
 msgid "preexistente"
 msgstr ""
 
-#: apps/operations/models.py:213
+#: apps/operations/models.py:218
 msgid "Ya estaba cuando se entrego el coche. No se le cobra al cliente."
 msgstr ""
 
-#: apps/operations/models.py:216
+#: apps/operations/models.py:221
 msgid "coste estimado"
 msgstr ""
 
-#: apps/operations/models.py:219
+#: apps/operations/models.py:224
 msgid "se repercute al cliente"
 msgstr ""
 
-#: apps/operations/models.py:221
+#: apps/operations/models.py:226
 msgid "Un dano preexistente no se repercute nunca."
 msgstr ""
 
-#: apps/operations/models.py:226
+#: apps/operations/models.py:231
 msgid "anotado por"
 msgstr ""
 
-#: apps/operations/models.py:234 apps/operations/models.py:257
+#: apps/operations/models.py:239 apps/operations/models.py:262
 msgid "dano"
 msgstr ""
 
-#: apps/operations/models.py:235
+#: apps/operations/models.py:240
 msgid "danos"
 msgstr ""
 
-#: apps/operations/models.py:261
+#: apps/operations/models.py:266
 msgid "foto"
 msgstr ""
 
-#: apps/operations/models.py:262
+#: apps/operations/models.py:267
 msgid "pie de foto"
 msgstr ""
 
-#: apps/operations/models.py:265
+#: apps/operations/models.py:270
 msgid "foto del dano"
 msgstr ""
 
-#: apps/operations/models.py:266
+#: apps/operations/models.py:271
 msgid "fotos del dano"
 msgstr ""
 
-#: apps/operations/models.py:279
+#: apps/operations/models.py:284
 msgid "Recibida"
 msgstr ""
 
-#: apps/operations/models.py:280
+#: apps/operations/models.py:285
 msgid "Reserva localizada"
 msgstr ""
 
-#: apps/operations/models.py:281
+#: apps/operations/models.py:286
 #: apps/operations/templates/operations/_fine_row.html:16
 msgid "Sin reserva"
 msgstr ""
 
-#: apps/operations/models.py:282
+#: apps/operations/models.py:287
 msgid "Conductor identificado"
 msgstr ""
 
-#: apps/operations/models.py:283
+#: apps/operations/models.py:288
 msgid "Facturada al cliente"
 msgstr ""
 
-#: apps/operations/models.py:284
+#: apps/operations/models.py:289
 msgid "Cerrada"
 msgstr ""
 
-#: apps/operations/models.py:312
+#: apps/operations/models.py:317
 msgid "fecha y hora de la infraccion"
 msgstr ""
 
-#: apps/operations/models.py:313
+#: apps/operations/models.py:318
 msgid "lugar"
 msgstr ""
 
-#: apps/operations/models.py:315
+#: apps/operations/models.py:320
 msgid "organismo"
 msgstr ""
 
-#: apps/operations/models.py:317
+#: apps/operations/models.py:322
 msgid "DGT, ayuntamiento, Servei Catala de Transit..."
 msgstr ""
 
-#: apps/operations/models.py:319
+#: apps/operations/models.py:324
 msgid "expediente"
 msgstr ""
 
-#: apps/operations/models.py:320
+#: apps/operations/models.py:325
 msgid "infraccion"
 msgstr ""
 
-#: apps/operations/models.py:322
+#: apps/operations/models.py:327
 msgid "fecha de notificacion"
 msgstr ""
 
-#: apps/operations/models.py:324
+#: apps/operations/models.py:329
 msgid "plazo para identificar al conductor"
 msgstr ""
 
-#: apps/operations/models.py:327
+#: apps/operations/models.py:332
 msgid "Si se deja vacio: 20 dias naturales desde la notificacion."
 msgstr ""
 
-#: apps/operations/models.py:343
+#: apps/operations/models.py:348
 msgid "cliente responsable"
 msgstr ""
 
-#: apps/operations/models.py:350
+#: apps/operations/models.py:355
 msgid "conductor"
 msgstr ""
 
-#: apps/operations/models.py:351
+#: apps/operations/models.py:356
 msgid "documento del conductor"
 msgstr ""
 
-#: apps/operations/models.py:352
+#: apps/operations/models.py:357
 msgid "carnet del conductor"
 msgstr ""
 
-#: apps/operations/models.py:353
+#: apps/operations/models.py:358
 msgid "direccion del conductor"
 msgstr ""
 
-#: apps/operations/models.py:354
+#: apps/operations/models.py:359
 msgid "identificado el"
 msgstr ""
 
-#: apps/operations/models.py:358
+#: apps/operations/models.py:363
 msgid "factura al cliente"
 msgstr ""
 
-#: apps/operations/models.py:367
+#: apps/operations/models.py:372
 msgid "registrada por"
 msgstr ""
 
-#: apps/operations/models.py:377
+#: apps/operations/models.py:382
 msgid "multa"
 msgstr ""
 
-#: apps/operations/models.py:378
+#: apps/operations/models.py:383
 msgid "multas"
 msgstr ""
 
-#: apps/operations/services.py:86
+#: apps/operations/services.py:88
 #, python-format
 msgid ""
 "La reserva %(numero)s no tiene vehiculo asignado: asignalo antes de entregar."
 msgstr ""
 
-#: apps/operations/services.py:91
+#: apps/operations/services.py:93
 #, python-format
 msgid "La reserva %(numero)s ya tiene entrega registrada."
 msgstr ""
 
-#: apps/operations/services.py:95
+#: apps/operations/services.py:97
 msgid ""
 "Hay que comprobar el carnet y el documento de identidad antes de entregar."
 msgstr ""
 
-#: apps/operations/services.py:127
+#: apps/operations/services.py:138
 #, python-format
 msgid "Entrega de %(numero)s: %(matricula)s con %(km)s km"
 msgstr ""
 
-#: apps/operations/services.py:229
+#: apps/operations/services.py:176
+#, python-format
+msgid "La entrega de %(numero)s ya esta firmada."
+msgstr ""
+
+#: apps/operations/services.py:194
+#, python-format
+msgid "Firma del cliente en la entrega de %(numero)s"
+msgstr ""
+
+#: apps/operations/services.py:292
 #, python-format
 msgid ""
 "La reserva %(numero)s no tiene entrega registrada: no se puede devolver."
 msgstr ""
 
-#: apps/operations/services.py:234
+#: apps/operations/services.py:297
 #, python-format
 msgid "La reserva %(numero)s ya esta devuelta."
 msgstr ""
 
-#: apps/operations/services.py:238
+#: apps/operations/services.py:301
 #, python-format
 msgid "Los kilometros no pueden bajar: al entregar marcaba %(km)s."
 msgstr ""
 
-#: apps/operations/services.py:278
+#: apps/operations/services.py:341
 #, python-format
 msgid "Devolución de %(numero)s: %(km)s km, %(cargos)s cargos"
 msgstr ""
 
-#: apps/operations/services.py:355
+#: apps/operations/services.py:418
 msgid "Un cargo sin concepto no se puede cobrar."
 msgstr ""
 
-#: apps/operations/services.py:357
+#: apps/operations/services.py:420
 msgid "El importe del cargo tiene que ser mayor que cero."
+msgstr ""
+
+#: apps/operations/signature.py:42 apps/operations/signature.py:52
+msgid "La firma no ha llegado bien. Pide al cliente que firme otra vez."
+msgstr ""
+
+#: apps/operations/signature.py:45
+msgid "La firma ocupa demasiado. Borrala y vuelve a firmar."
+msgstr ""
+
+#: apps/operations/signature.py:56
+msgid "La firma no es una imagen valida."
 msgstr ""
 
 #: apps/operations/templates/operations/_check_in_modal.html:4
@@ -7068,11 +7309,17 @@ msgid ""
 "Sin las dos comprobaciones el coche no sale. Queda registrado con tu nombre."
 msgstr ""
 
-#: apps/operations/templates/operations/_check_in_modal.html:45
+#: apps/operations/templates/operations/_check_in_modal.html:44
+msgid ""
+"Si ahora no se puede firmar, la entrega queda marcada como pendiente de "
+"firma."
+msgstr ""
+
+#: apps/operations/templates/operations/_check_in_modal.html:52
 msgid "Danos ya anotados"
 msgstr ""
 
-#: apps/operations/templates/operations/_check_in_modal.html:59
+#: apps/operations/templates/operations/_check_in_modal.html:66
 msgid "Entregar y poner en curso"
 msgstr ""
 
@@ -7171,6 +7418,31 @@ msgstr ""
 msgid "Anotar"
 msgstr ""
 
+#: apps/operations/templates/operations/_signature_modal.html:24
+#, python-format
+msgid ""
+"\n"
+"        El cliente firma la entrega del vehiculo %(matricula)s y las "
+"condiciones del contrato.\n"
+"      "
+msgstr ""
+
+#: apps/operations/templates/operations/_signature_modal.html:35
+msgid "Guardar la firma"
+msgstr ""
+
+#: apps/operations/templates/operations/_signature_pad.html:13
+msgid "Borrar y firmar otra vez"
+msgstr ""
+
+#: apps/operations/templates/operations/_signature_pad.html:21
+msgid "Recuadro para firmar"
+msgstr ""
+
+#: apps/operations/templates/operations/_signature_pad.html:29
+msgid "Gira la tablet al cliente para que firme con el dedo."
+msgstr ""
+
 #: apps/operations/templates/operations/fine_detail.html:22
 msgid "Plazo de identificación vencido"
 msgstr ""
@@ -7180,12 +7452,12 @@ msgid "Organismo"
 msgstr ""
 
 #: apps/operations/templates/operations/fine_detail.html:27
-#: apps/operations/views.py:217
+#: apps/operations/views.py:254
 msgid "Expediente"
 msgstr ""
 
 #: apps/operations/templates/operations/fine_detail.html:28
-#: apps/operations/views.py:218
+#: apps/operations/views.py:255
 msgid "Infracción"
 msgstr ""
 
@@ -7254,92 +7526,104 @@ msgstr ""
 msgid "Cerrar multa"
 msgstr ""
 
-#: apps/operations/views.py:94
-msgid "Coche entregado. La reserva esta en curso."
+#: apps/operations/views.py:96
+msgid "Coche entregado y entrega firmada. La reserva esta en curso."
 msgstr ""
 
-#: apps/operations/views.py:133
+#: apps/operations/views.py:97
+msgid "Coche entregado sin firma. La reserva esta en curso."
+msgstr ""
+
+#: apps/operations/views.py:112
+msgid "La reserva todavia no tiene entrega registrada."
+msgstr ""
+
+#: apps/operations/views.py:131
+msgid "Entrega firmada por el cliente."
+msgstr ""
+
+#: apps/operations/views.py:170
 msgid "Coche devuelto. Revisa los cargos en la pestana de precio."
 msgstr ""
 
-#: apps/operations/views.py:179
+#: apps/operations/views.py:216
 msgid "Sin vehiculo asignado no se puede anotar un dano."
 msgstr ""
 
-#: apps/operations/views.py:198
+#: apps/operations/views.py:235
 msgid "Dano anotado."
 msgstr ""
 
-#: apps/operations/views.py:220
+#: apps/operations/views.py:257
 msgid "Reserva / conductor"
 msgstr ""
 
-#: apps/operations/views.py:225
+#: apps/operations/views.py:262
 msgid "Expediente, matrícula, reserva o conductor..."
 msgstr ""
 
-#: apps/operations/views.py:226
+#: apps/operations/views.py:263
 msgid "Sin multas"
 msgstr ""
 
-#: apps/operations/views.py:227
+#: apps/operations/views.py:264
 msgid "Cuando llegue una, regístrala: se busca sola la reserva."
 msgstr ""
 
-#: apps/operations/views.py:228 apps/operations/views.py:325
+#: apps/operations/views.py:265 apps/operations/views.py:362
 msgid "Multas"
 msgstr ""
 
-#: apps/operations/views.py:230 apps/operations/views.py:255
+#: apps/operations/views.py:267 apps/operations/views.py:292
 msgid "Registrar multa"
 msgstr ""
 
-#: apps/operations/views.py:256
+#: apps/operations/views.py:293
 msgid "Registrar y buscar reserva"
 msgstr ""
 
-#: apps/operations/views.py:260
+#: apps/operations/views.py:297
 #, python-format
 msgid "Multa registrada: era de la reserva %(numero)s (%(cliente)s)."
 msgstr ""
 
-#: apps/operations/views.py:264
+#: apps/operations/views.py:301
 msgid "Multa registrada, pero ninguna reserva tenía el coche en ese momento."
 msgstr ""
 
-#: apps/operations/views.py:269
+#: apps/operations/views.py:306
 msgid "Editar multa"
 msgstr ""
 
-#: apps/operations/views.py:270
+#: apps/operations/views.py:307
 #, python-format
 msgid "Multa %(objeto)s actualizada."
 msgstr ""
 
-#: apps/operations/views.py:302
+#: apps/operations/views.py:339
 #, python-format
 msgid "Gestión de la multa %(expediente)s (%(organismo)s)"
 msgstr ""
 
-#: apps/operations/views.py:305
+#: apps/operations/views.py:342
 #, python-format
 msgid "Infracción del %(fecha)s con el vehículo %(matricula)s."
 msgstr ""
 
-#: apps/operations/views.py:322
+#: apps/operations/views.py:359
 #, python-format
 msgid "Multa %(expediente)s"
 msgstr ""
 
-#: apps/operations/views.py:338
+#: apps/operations/views.py:375
 msgid "Reserva buscada de nuevo."
 msgstr ""
 
-#: apps/operations/views.py:339
+#: apps/operations/views.py:376
 msgid "Conductor marcado como identificado."
 msgstr ""
 
-#: apps/operations/views.py:340
+#: apps/operations/views.py:377
 msgid "Multa cerrada."
 msgstr ""
 
@@ -8461,6 +8745,134 @@ msgstr ""
 msgid "Dos tarifas igual de aplicables dejan al motor sin forma de elegir."
 msgstr ""
 
+#: apps/reports/exports.py:99 apps/reservations/views.py:77
+msgid "Numero"
+msgstr ""
+
+#: apps/reports/exports.py:112
+msgid "Rectifica a"
+msgstr ""
+
+#: apps/reports/models.py:17
+msgid "permisos de informes"
+msgstr ""
+
+#: apps/reports/models.py:19
+msgid "Puede consultar los informes y exportar para la gestoria"
+msgstr ""
+
+#: apps/reports/services.py:303
+msgid "Este mes"
+msgstr ""
+
+#: apps/reports/services.py:304
+msgid "Ultimos 3 meses"
+msgstr ""
+
+#: apps/reports/services.py:305
+msgid "Ultimos 12 meses"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:31
+#, fuzzy
+#| msgid "Factura"
+msgid "Facturas (CSV)"
+msgstr "Invoice"
+
+#: apps/reports/templates/reports/reports.html:34
+msgid "Cobros (CSV)"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:40
+#, python-format
+msgid ""
+"\n"
+"      Del %(desde)s al %(hasta)s. Los CSV se abren en Excel y son los que se "
+"pasan a la gestoria.\n"
+"    "
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:48
+msgid "Ingresos del periodo"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:52
+#: apps/reports/templates/reports/reports.html:79
+msgid "Alquileres"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:56
+#, fuzzy
+#| msgid "Dias facturados"
+msgid "Dias alquilados"
+msgstr "Days charged"
+
+#: apps/reports/templates/reports/reports.html:60
+msgid "Ingreso por dia"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:70
+msgid "Ingresos por coche"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:71
+#, fuzzy
+#| msgid "Oficina de recogida"
+msgid "Por fecha de recogida"
+msgstr "Pick-up office"
+
+#: apps/reports/templates/reports/reports.html:80 apps/reservations/forms.py:47
+#: apps/reservations/forms.py:264
+msgid "Dias"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:81
+msgid "Ingresos"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:82
+msgid "€/dia"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:102
+#, fuzzy
+#| msgid "Tu alquiler empieza pronto"
+msgid "Sin alquileres en el periodo"
+msgstr "Your rental starts soon"
+
+#: apps/reports/templates/reports/reports.html:103
+msgid "Cambia las fechas o el periodo."
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:111
+msgid "Ocupación por mes"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:112
+msgid "Días alquilados sobre días de flota"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:134
+#, python-format
+msgid ""
+"\n"
+"              Flota de referencia: %(vehiculos)s vehículo activo.\n"
+"            "
+msgid_plural ""
+"\n"
+"              Flota de referencia: %(vehiculos)s vehículos activos.\n"
+"            "
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/reports/templates/reports/reports.html:142
+msgid "Sin datos de ocupación"
+msgstr ""
+
+#: apps/reports/templates/reports/reports.html:143
+msgid "Elige un periodo con vehículos dados de alta."
+msgstr ""
+
 #: apps/reservations/filters.py:29
 msgid "Sin coche asignado"
 msgstr ""
@@ -8471,10 +8883,6 @@ msgstr ""
 
 #: apps/reservations/forms.py:42
 msgid "En blanco: se devuelve en la misma oficina."
-msgstr ""
-
-#: apps/reservations/forms.py:47 apps/reservations/forms.py:264
-msgid "Dias"
 msgstr ""
 
 #: apps/reservations/forms.py:51
@@ -9417,32 +9825,42 @@ msgid "Empleado"
 msgstr ""
 
 #: apps/reservations/templates/reservations/tabs/_checkin.html:45
+msgid "Firmada"
+msgstr ""
+
+#: apps/reservations/templates/reservations/tabs/_checkin.html:56
 msgid "Comprobados"
 msgstr ""
 
-#: apps/reservations/templates/reservations/tabs/_checkin.html:47
+#: apps/reservations/templates/reservations/tabs/_checkin.html:58
 msgid "Sin comprobar"
 msgstr ""
 
-#: apps/reservations/templates/reservations/tabs/_checkin.html:58
-msgid ""
-"La firma del cliente se recoge en el contrato en papel. La firma digital no "
-"entra en la v1."
+#: apps/reservations/templates/reservations/tabs/_checkin.html:74
+msgid "Firmado por el cliente. Sale impreso en el contrato."
 msgstr ""
 
-#: apps/reservations/templates/reservations/tabs/_checkin.html:64
+#: apps/reservations/templates/reservations/tabs/_checkin.html:81
+msgid "La entrega salio sin firmar. Recoge la firma en cuanto puedas."
+msgstr ""
+
+#: apps/reservations/templates/reservations/tabs/_checkin.html:87
+msgid "Firmar ahora"
+msgstr ""
+
+#: apps/reservations/templates/reservations/tabs/_checkin.html:97
 msgid "La reserva no tiene vehiculo asignado."
 msgstr ""
 
-#: apps/reservations/templates/reservations/tabs/_checkin.html:67
+#: apps/reservations/templates/reservations/tabs/_checkin.html:100
 msgid "Asignale uno en la pestana Vehiculo antes de entregar."
 msgstr ""
 
-#: apps/reservations/templates/reservations/tabs/_checkin.html:70
+#: apps/reservations/templates/reservations/tabs/_checkin.html:103
 msgid "El coche todavia no se ha entregado."
 msgstr ""
 
-#: apps/reservations/templates/reservations/tabs/_checkin.html:76
+#: apps/reservations/templates/reservations/tabs/_checkin.html:109
 msgid "Danos al entregar"
 msgstr ""
 
@@ -9758,10 +10176,6 @@ msgstr ""
 
 #: apps/reservations/templates/reservations/tabs/_vehiculo.html:73
 msgid "Flota de la categoria en este periodo"
-msgstr ""
-
-#: apps/reservations/views.py:77
-msgid "Numero"
 msgstr ""
 
 #: apps/reservations/views.py:85

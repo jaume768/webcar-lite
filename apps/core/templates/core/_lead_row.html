@@ -1,0 +1,24 @@
+{% load i18n %}
+<td class="text-slate-600">{{ row.created_at|date:"d/m/Y H:i" }}</td>
+<td>
+  <span class="font-medium text-slate-900">{{ row.name }}</span>
+  <span class="block text-xs text-slate-500">{{ row.display_company }}</span>
+</td>
+<td class="text-slate-600">
+  {% if row.phone %}<a class="hover:text-brand-700" href="tel:{{ row.phone }}">{{ row.phone }}</a>{% endif %}
+  {% if row.email %}<span class="block text-xs"><a class="hover:text-brand-700" href="mailto:{{ row.email }}">{{ row.email }}</a></span>{% endif %}
+  {% if not row.phone and not row.email %}—{% endif %}
+</td>
+<td class="text-right tabular text-slate-600">{{ row.fleet_size|default:"—" }}</td>
+<td>
+  {% include "ui/_badge.html" with status=row.badge_status label=row.get_status_display only %}
+</td>
+<td class="text-right whitespace-nowrap">
+  {% if perms.core.change_lead %}
+    <button type="button" class="btn-ghost px-2 py-1 text-xs"
+            hx-get="{% url 'core:lead_update' row.pk %}"
+            hx-target="#modal-host" hx-swap="innerHTML">
+      {% translate "Seguimiento" %}
+    </button>
+  {% endif %}
+</td>

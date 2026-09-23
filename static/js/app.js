@@ -191,6 +191,120 @@
         this.cerrar();
       },
     }));
+
+    /* Lienzo de firma del cliente: ver operations/_signature_pad.html.
+       Dibuja el trazo del dedo y deja el PNG en el campo oculto del formulario.
+       El campo es la unica fuente de verdad: si ya trae una firma (por ejemplo
+       al reabrir el formulario tras un error de validacion), se repinta. */
+    Alpine.data("firmaCliente", () => ({
+      hayFirma: false,
+      pintando: false,
+
+      campo() {
+        return this.$root.querySelector('input[type="hidden"]');
+      },
+
+      preparar() {
+        const lienzo = this.$refs.lienzo;
+        // El canvas se estira con CSS; su resolucion interna hay que fijarla a
+        // mano o el trazo sale borroso en pantallas densas.
+        const escala = window.devicePixelRatio || 1;
+        lienzo.width = lienzo.offsetWidth * escala;
+        lienzo.height = lienzo.offsetHeight * escala;
+        const ctx = lienzo.getContext("2d");
+        ctx.scale(escala, escala);
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#0f172a";
+        this.ctx = ctx;
+
+        const guardada = this.campo().value;
+        if (guardada) {
+          const imagen = new Image();
+          imagen.onload = () => ctx.drawImage(imagen, 0, 0, lienzo.offsetWidth, lienzo.offsetHeight);
+          imagen.src = guardada;
+          this.hayFirma = true;
+        }
+      },
+
+      punto(evento) {
+        const caja = this.$refs.lienzo.getBoundingClientRect();
+        return { x: evento.clientX - caja.left, y: evento.clientY - caja.top };
+      },
+
+      empezar(evento) {
+        this.pintando = true;
+        this.$refs.lienzo.setPointerCapture(evento.pointerId);
+        const { x, y } = this.punto(evento);
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+      },
+
+      trazar(evento) {
+        if (!this.pintando) return;
+        const { x, y } = this.punto(evento);
+        this.ctx.lineTo(x, y);
+        this.ctx.stroke();
+      },
+
+      terminar() {
+        if (!this.pintando) return;
+        this.pintando = false;
+        this.hayFirma = true;
+        this.campo().value = this.$refs.lienzo.toDataURL("image/png");
+      },
+
+      borrar() {
+        const lienzo = this.$refs.lienzo;
+        this.ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+        this.campo().value = "";
+        this.hayFirma = false;
+      },
+    }));
+  });
+
+  /* Secciones plegables del menu lateral: ver shell/_sidebar.html.
+
+     El estado inicial ya lo aplica un script del propio menu, para que una
+     seccion plegada no aparezca y desaparezca al cargar. Aqui solo se atiende
+     el clic y se recuerda la decision, que es de cada persona y de cada
+     navegador: no se guarda en el servidor ni viaja a ningun sitio. */
+  const CLAVE_MENU = "rentflow:menu-plegado";
+
+  const leerPlegadas = () => {
+    try {
+      const guardado = JSON.parse(localStorage.getItem(CLAVE_MENU) || "[]");
+      return Array.isArray(guardado) ? guardado : [];
+    } catch (error) {
+      return [];
+    }
+  };
+
+  const guardarPlegadas = (codigos) => {
+    try {
+      localStorage.setItem(CLAVE_MENU, JSON.stringify(codigos));
+    } catch (error) {
+      /* Ventana privada o almacenamiento lleno: se pliega igual, pero solo
+         hasta que se cierre la pestana. */
+    }
+  };
+
+  document.addEventListener("click", (evento) => {
+    const boton = evento.target.closest("[data-menu-toggle]");
+    if (!boton) return;
+
+    const codigo = boton.dataset.menuToggle;
+    const lista = document.querySelector(`[data-menu-seccion="${codigo}"]`);
+    if (!lista) return;
+
+    const plegar = boton.getAttribute("aria-expanded") !== "false";
+    boton.setAttribute("aria-expanded", plegar ? "false" : "true");
+    lista.hidden = plegar;
+
+    const plegadas = leerPlegadas().filter((otro) => otro !== codigo);
+    if (plegar) plegadas.push(codigo);
+    guardarPlegadas(plegadas);
   });
 
   const avisar = (mensaje, nivel) => {

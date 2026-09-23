@@ -23,6 +23,7 @@ FORZAR_DISPONIBILIDAD = "availability.override_availability"
 
 # --- Dinero -----------------------------------------------------------------
 VER_FACTURACION = "billing.view_billing"
+VER_INFORMES = "reports.view_reports"
 COBRAR = "billing.add_payment"
 SOBREPAGO = "billing.allow_overpayment"
 EMITIR_FACTURAS = "billing.add_invoice"
@@ -96,6 +97,8 @@ RESPONSABLE = [
     CAMBIAR_PRECIO,
     FORZAR_DISPONIBILIDAD,
     VER_FACTURACION,
+    # Los informes ensenan el negocio entero: del responsable hacia arriba.
+    VER_INFORMES,
     EMITIR_FACTURAS,
     SOBREPAGO,
     EDITAR_FLOTA,
@@ -124,6 +127,9 @@ ADMINISTRACION = [
     "pricing.add_extra",
     "pricing.change_extra",
     *EDITAR_TARIFAS,
+    # Contactos que llegan del formulario de la portada publica.
+    "core.view_lead",
+    "core.change_lead",
     # Politicas de la empresa: las que salen al pie de las facturas.
     "settings_app.view_policy",
     "settings_app.add_policy",

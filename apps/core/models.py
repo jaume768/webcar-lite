@@ -1,4 +1,4 @@
-"""Modelos base reutilizables. Aqui no hay dominio, solo comportamiento comun."""
+"""Modelos base reutilizables y los contactos que llegan de la portada."""
 
 from django.conf import settings
 from django.db import models
@@ -126,3 +126,57 @@ class UserStampedModel(models.Model):
                     kwargs["update_fields"] = update_fields
 
         super().save(*args, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Contactos de la web
+# ---------------------------------------------------------------------------
+
+
+class LeadStatus(models.TextChoices):
+    """En que punto esta la conversacion con una empresa interesada."""
+
+    NEW = "new", _("Nuevo")
+    CONTACTED = "contacted", _("Contactado")
+    WON = "won", _("Cliente")
+    DISCARDED = "discarded", _("Descartado")
+
+
+class Lead(TimeStampedModel):
+    """Empresa que pide informacion desde la portada.
+
+    Es el unico dato que entra sin sesion, y el mas fragil: si se pierde, se
+    pierde el cliente. Por eso se guarda siempre en la base de datos y el aviso
+    por correo es solo un extra que puede fallar sin arrastrar nada.
+    """
+
+    name = models.CharField(_("nombre"), max_length=120)
+    company = models.CharField(_("empresa"), max_length=160, blank=True, default="")
+    phone = models.CharField(_("telefono"), max_length=32, blank=True, default="")
+    email = models.EmailField(_("correo"), blank=True, default="")
+    fleet_size = models.PositiveSmallIntegerField(
+        _("vehiculos"), null=True, blank=True, help_text=_("Tamano aproximado de la flota.")
+    )
+    message = models.TextField(_("mensaje"), blank=True, default="")
+
+    status = models.CharField(
+        _("estado"), max_length=20, choices=LeadStatus.choices, default=LeadStatus.NEW
+    )
+    notes = models.TextField(_("notas internas"), blank=True, default="")
+
+    class Meta:
+        verbose_name = _("contacto de la web")
+        verbose_name_plural = _("contactos de la web")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name} ({self.company})" if self.company else self.name
+
+    @property
+    def display_company(self) -> str:
+        return self.company or str(_("Sin empresa"))
+
+    @property
+    def badge_status(self) -> str:
+        """Clave del tono del badge. Ver `core.badges` y `CoreConfig.ready`."""
+        return f"lead_{self.status}"

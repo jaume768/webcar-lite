@@ -37,6 +37,13 @@
         {% translate "Sin las dos comprobaciones el coche no sale. Queda registrado con tu nombre." %}
       </p>
     </fieldset>
+
+    <div class="mt-4">
+      {% include "operations/_signature_pad.html" with field=form.customer_signature %}
+      <p class="field-hint -mt-2">
+        {% translate "Si ahora no se puede firmar, la entrega queda marcada como pendiente de firma." %}
+      </p>
+    </div>
   </form>
 
   {% if danos_previos %}

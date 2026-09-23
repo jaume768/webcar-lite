@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Informes" %} · RentFlow{% endblock %}
+
+{% block content %}
+
+  {# El periodo manda en todo lo de abajo, incluidas las descargas. #}
+  <form method="get" action="{% url 'reports:reports' %}"
+        class="card mb-5 flex flex-wrap items-end gap-3 p-4">
+    <div>
+      <label class="field-label" for="periodo">{% translate "Periodo" %}</label>
+      <select class="input" id="periodo" name="periodo">
+        {% for codigo, etiqueta in periodos.items %}
+          <option value="{{ codigo }}" {% if codigo == periodo %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="field-label" for="desde">{% translate "Desde" %}</label>
+      <input class="input" type="date" id="desde" name="desde" value="{{ desde|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}">
+    </div>
+    <div>
+      <label class="field-label" for="hasta">{% translate "Hasta" %}</label>
+      <input class="input" type="date" id="hasta" name="hasta" value="{{ hasta|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}">
+    </div>
+    <button type="submit" class="btn-primary">{% translate "Ver" %}</button>
+
+    <div class="ml-auto flex flex-wrap gap-2">
+      <a class="btn-secondary" href="{% url 'reports:export_invoices' %}?desde={{ desde|date:'Y-m-d' }}&amp;hasta={{ hasta|date:'Y-m-d' }}">
+        {% translate "Facturas (CSV)" %}
+      </a>
+      <a class="btn-secondary" href="{% url 'reports:export_payments' %}?desde={{ desde|date:'Y-m-d' }}&amp;hasta={{ hasta|date:'Y-m-d' }}">
+        {% translate "Cobros (CSV)" %}
+      </a>
+    </div>
+  </form>
+
+  <p class="mb-5 text-sm text-slate-500">
+    {% blocktranslate with desde=desde|date:"d/m/Y" hasta=hasta|date:"d/m/Y" %}
+      Del {{ desde }} al {{ hasta }}. Los CSV se abren en Excel y son los que se pasan a la gestoria.
+    {% endblocktranslate %}
+  </p>
+
+  {# ------------------------------------------------------------- resumen #}
+  <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="card p-4">
+      <p class="text-sm text-slate-500">{% translate "Ingresos del periodo" %}</p>
+      <p class="mt-1 text-2xl font-bold tabular text-brand-950">{{ resumen.revenue|floatformat:2 }} €</p>
+    </div>
+    <div class="card p-4">
+      <p class="text-sm text-slate-500">{% translate "Alquileres" %}</p>
+      <p class="mt-1 text-2xl font-bold tabular text-brand-950">{{ resumen.reservations }}</p>
+    </div>
+    <div class="card p-4">
+      <p class="text-sm text-slate-500">{% translate "Dias alquilados" %}</p>
+      <p class="mt-1 text-2xl font-bold tabular text-brand-950">{{ resumen.days }}</p>
+    </div>
+    <div class="card p-4">
+      <p class="text-sm text-slate-500">{% translate "Ingreso por dia" %}</p>
+      <p class="mt-1 text-2xl font-bold tabular text-brand-950">{{ resumen.revenue_per_day|floatformat:2 }} €</p>
+    </div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+
+    {# --------------------------------------------------- ingresos por coche #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Ingresos por coche" %}</h2>
+        <span class="text-xs text-slate-400">{% translate "Por fecha de recogida" %}</span>
+      </div>
+      {% if ingresos %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-line text-left text-xs text-slate-500 uppercase">
+              <tr>
+                <th class="px-4 py-2">{% translate "Coche" %}</th>
+                <th class="px-4 py-2 text-right">{% translate "Alquileres" %}</th>
+                <th class="px-4 py-2 text-right">{% translate "Dias" %}</th>
+                <th class="px-4 py-2 text-right">{% translate "Ingresos" %}</th>
+                <th class="px-4 py-2 text-right">{% translate "€/dia" %}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              {% for fila in ingresos %}
+                <tr>
+                  <td class="px-4 py-2">
+                    <span class="font-mono font-medium text-slate-900">{{ fila.plate }}</span>
+                    <span class="block text-xs text-slate-500">{{ fila.label }} · {{ fila.category }}</span>
+                  </td>
+                  <td class="px-4 py-2 text-right tabular text-slate-600">{{ fila.reservations }}</td>
+                  <td class="px-4 py-2 text-right tabular text-slate-600">{{ fila.days }}</td>
+                  <td class="px-4 py-2 text-right tabular font-medium text-slate-900">{{ fila.revenue|floatformat:2 }} €</td>
+                  <td class="px-4 py-2 text-right tabular text-slate-600">{{ fila.revenue_per_day|floatformat:2 }} €</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        {% translate "Sin alquileres en el periodo" as vacio_titulo %}
+        {% translate "Cambia las fechas o el periodo." as vacio_mensaje %}
+        {% include "ui/_empty.html" with empty_title=vacio_titulo empty_message=vacio_mensaje only %}
+      {% endif %}
+    </section>
+
+    {# ------------------------------------------------------ ocupacion mensual #}
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">{% translate "Ocupación por mes" %}</h2>
+        <span class="text-xs text-slate-400">{% translate "Días alquilados sobre días de flota" %}</span>
+      </div>
+      {% if ocupacion %}
+        <ul class="divide-y divide-line">
+          {% for mes in ocupacion %}
+            <li class="px-4 py-3">
+              <div class="flex items-baseline justify-between gap-3">
+                <span class="text-sm font-medium text-slate-900">{{ mes.label }}</span>
+                <span class="text-sm tabular text-slate-600">
+                  {{ mes.rate|floatformat:1 }}%
+                  <span class="text-xs text-slate-400">· {{ mes.rented_days }}/{{ mes.available_days }}</span>
+                </span>
+              </div>
+              {# La barra es la lectura rapida: el numero exacto va al lado. #}
+              <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div class="h-full rounded-full bg-brand-600" style="width: {{ mes.rate|floatformat:0 }}%"></div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="border-t border-line px-4 py-2 text-xs text-slate-400">
+          {% with flota=ocupacion.0.vehicles %}
+            {% blocktranslate count vehiculos=flota %}
+              Flota de referencia: {{ vehiculos }} vehículo activo.
+            {% plural %}
+              Flota de referencia: {{ vehiculos }} vehículos activos.
+            {% endblocktranslate %}
+          {% endwith %}
+        </p>
+      {% else %}
+        {% translate "Sin datos de ocupación" as vacio_ocupacion %}
+        {% translate "Elige un periodo con vehículos dados de alta." as vacio_ocupacion_mensaje %}
+        {% include "ui/_empty.html" with empty_title=vacio_ocupacion empty_message=vacio_ocupacion_mensaje only %}
+      {% endif %}
+    </section>
+  </div>
+
+{% endblock %}

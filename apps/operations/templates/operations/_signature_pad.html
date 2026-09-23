@@ -1,0 +1,33 @@
+{% load i18n %}
+{% comment %} Lienzo de firma. Se le gira la tablet al cliente y firma con el
+   dedo; el trazo viaja en un campo oculto como PNG en base64.
+
+   Uso: {% include "operations/_signature_pad.html" with field=form.customer_signature %}
+   El componente Alpine esta en static/js/app.js (firmaCliente). {% endcomment %}
+<div class="mb-4" x-data="firmaCliente()" x-init="preparar()">
+  <div class="flex items-baseline justify-between">
+    <span class="field-label">{{ field.label }}</span>
+    <button type="button" class="btn-ghost px-2 py-1 text-xs" @click="borrar()"
+            x-show="hayFirma" x-cloak>
+      {% translate "Borrar y firmar otra vez" %}
+    </button>
+  </div>
+
+  {# touch-none: al firmar con el dedo la pagina no debe desplazarse. #}
+  <canvas x-ref="lienzo" height="180"
+          class="mt-1 w-full touch-none rounded-lg border-2 border-dashed bg-white"
+          :class="hayFirma ? 'border-brand-400' : 'border-line'"
+          aria-label="{% translate 'Recuadro para firmar' %}"
+          @pointerdown="empezar($event)" @pointermove="trazar($event)"
+          @pointerup="terminar()" @pointerleave="terminar()"
+          @pointercancel="terminar()"></canvas>
+
+  {{ field }}
+
+  <p class="field-hint" x-show="!hayFirma">
+    {% translate "Gira la tablet al cliente para que firme con el dedo." %}
+  </p>
+  {% for error in field.errors %}
+    <p class="field-error">{{ error }}</p>
+  {% endfor %}
+</div>

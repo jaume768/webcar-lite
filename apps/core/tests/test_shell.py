@@ -168,3 +168,41 @@ def test_el_menu_deja_facturacion_y_administracion_al_final():
 
     assert secciones[-2:] == ["Facturación", "Administración"]
     assert "Planning" in [str(item.label) for item in MAIN_NAV[1].items]
+
+
+# ---------------------------------------------------------------------------
+# Secciones plegables del menu
+# ---------------------------------------------------------------------------
+
+
+def test_cada_seccion_del_menu_tiene_un_codigo_estable():
+    """La etiqueta se traduce; lo que se guarda en el navegador, no."""
+    from apps.core.navigation import MAIN_NAV
+
+    codigos = [seccion.code for seccion in MAIN_NAV]
+
+    assert all(codigos)
+    assert len(codigos) == len(set(codigos))
+
+
+def test_el_recorte_por_permisos_conserva_el_codigo(gestor_centro):
+    from apps.core.navigation import sections_for
+
+    for seccion in sections_for(gestor_centro):
+        assert seccion.code
+
+
+def test_el_menu_se_pliega_por_seccion(client, gestor_centro):
+    client.force_login(gestor_centro)
+
+    contenido = client.get(reverse("core:home")).content.decode()
+
+    # Cabecera pulsable y lista que controla, atadas por id. "General" la ve
+    # cualquiera: no depende de permisos.
+    assert 'data-menu-toggle="general"' in contenido
+    assert 'aria-controls="menu-seccion-general"' in contenido
+    assert 'id="menu-seccion-general"' in contenido
+    # Y la seccion que este usuario si tiene.
+    assert 'data-menu-toggle="administracion"' in contenido
+    # Por defecto, todo desplegado.
+    assert 'aria-expanded="false"' not in contenido

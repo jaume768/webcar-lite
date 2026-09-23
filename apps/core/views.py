@@ -17,7 +17,12 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
 from . import demo
+from .crud import CrudListView, ModalUpdateView
+from .filters import LeadFilter
+from .forms import LeadFollowUpForm, LeadForm
 from .htmx import trigger_toast
+from .leads import register_lead, whatsapp_link
+from .models import Lead
 from .offices import set_active_office as activar_oficina
 from .tables import Column, Filter, FilterOption, Table, paginate
 
@@ -133,15 +138,17 @@ FAQ_LANDING = [
     (
         _("¿Qué tipo de soporte ofrecéis?"),
         _(
-            "Soporte en español por teléfono y correo, con la temporada alta cubierta "
-            "también en fin de semana."
+            "Soporte en español por WhatsApp, teléfono y correo en horario laboral, y "
+            "respondemos el mismo día. En temporada alta atendemos también las urgencias "
+            "del fin de semana."
         ),
     ),
     (
         _("¿Cuánto cuesta?"),
         _(
-            "Una cuota mensual por oficina, sin permanencia. Escríbenos y te pasamos "
-            "el presupuesto."
+            "Una cuota mensual por oficina, sin permanencia. Las empresas del programa "
+            "Early Access no pagan la implantación ni la migración de datos. Escríbenos y "
+            "te pasamos el presupuesto."
         ),
     ),
 ]
@@ -159,6 +166,62 @@ FOTOS_LANDING = {
 }
 
 
+def landing_context(request, *, form=None, enviado: bool = False) -> dict:
+    """Todo lo que pinta la portada publica.
+
+    Lo usan dos vistas: la portada y el alta de contactos, que al fallar la
+    validacion vuelve a pintar la misma pagina con los errores.
+    """
+    return {
+        "modulos": MODULOS_LANDING,
+        "pasos": PASOS_LANDING,
+        "early_access": EARLY_ACCESS_LANDING,
+        "faqs": FAQ_LANDING,
+        # Se resuelven en cada peticion y no al importar: en produccion
+        # `static()` consulta el manifiesto de collectstatic.
+        "fotos": {clave: static(ruta) for clave, ruta in FOTOS_LANDING.items()},
+        "demo_activa": settings.DEMO_MODE,
+        "demo_email": settings.DEMO_EMAIL,
+        "demo_password": settings.DEMO_PASSWORD,
+        "form": form if form is not None else LeadForm(),
+        "enviado": enviado,
+        "whatsapp": whatsapp_link(),
+        "whatsapp_numero": settings.CONTACT_WHATSAPP,
+        "telefono": settings.CONTACT_PHONE,
+        "correo": settings.CONTACT_EMAIL,
+    }
+
+
+@login_not_required
+@require_POST
+def lead_create(request):
+    """Alta de un contacto desde la portada.
+
+    Es la unica escritura publica del sistema junto a la API de reservas. No
+    crea usuarios, no toca reservas y no ensena nada de dentro: guarda quien
+    quiere que le llamen.
+    """
+    form = LeadForm(request.POST)
+    if not form.is_valid():
+        return render(request, "core/landing.html", landing_context(request, form=form), status=422)
+
+    # Un robot relleno el campo trampa: se le responde como a cualquiera y no
+    # se guarda nada.
+    if not form.is_bot:
+        register_lead(
+            name=form.cleaned_data["name"],
+            company=form.cleaned_data["company"],
+            phone=form.cleaned_data["phone"],
+            email=form.cleaned_data["email"],
+            fleet_size=form.cleaned_data["fleet_size"],
+            message=form.cleaned_data["message"],
+        )
+    else:
+        logger.info("lead_descartado", motivo="campo trampa relleno")
+
+    return render(request, "core/landing.html", landing_context(request, enviado=True))
+
+
 @login_not_required
 def home(request):
     """Portada publica o panel de mostrador, segun quien mire.
@@ -172,22 +235,7 @@ def home(request):
     importarse.
     """
     if not request.user.is_authenticated:
-        return render(
-            request,
-            "core/landing.html",
-            {
-                "modulos": MODULOS_LANDING,
-                "pasos": PASOS_LANDING,
-                "early_access": EARLY_ACCESS_LANDING,
-                "faqs": FAQ_LANDING,
-                # Se resuelven en cada peticion y no al importar: en produccion
-                # `static()` consulta el manifiesto de collectstatic.
-                "fotos": {clave: static(ruta) for clave, ruta in FOTOS_LANDING.items()},
-                "demo_activa": settings.DEMO_MODE,
-                "demo_email": settings.DEMO_EMAIL,
-                "demo_password": settings.DEMO_PASSWORD,
-            },
-        )
+        return render(request, "core/landing.html", landing_context(request))
 
     from apps.offices.selectors import offices_for_user
     from apps.operations.dashboard import PERIODS, build_dashboard, period_for
@@ -410,3 +458,47 @@ def demo_login(request):
         _("Estas en la demostracion con datos de mentira. Mira, prueba y rompe lo que quieras."),
     )
     return HttpResponseRedirect(reverse("core:home"))
+
+
+# ---------------------------------------------------------------------------
+# Contactos de la web
+# ---------------------------------------------------------------------------
+
+
+class LeadListView(CrudListView):
+    """Quien ha pedido informacion desde la portada y en que punto esta."""
+
+    permission_required = "core.view_lead"
+    model = Lead
+    filterset_class = LeadFilter
+    table_id = "tabla-contactos"
+    table_row_template = "core/_lead_row.html"
+    table_columns = [
+        Column(label=_("Recibido"), css="w-40"),
+        Column(label=_("Quien")),
+        Column(label=_("Contacto")),
+        Column(label=_("Flota"), align="right", css="w-24"),
+        Column(label=_("Estado"), css="w-32"),
+        Column(label=_("Acciones"), align="right"),
+    ]
+    search_placeholder = _("Nombre, empresa, telefono o correo...")
+    empty_title = _("Ningun contacto coincide")
+    empty_message = _("Cambia la busqueda o quita algun filtro.")
+    page_title = _("Contactos web")
+
+
+class LeadUpdateView(ModalUpdateView):
+    """Seguimiento del contacto: en que estado esta y que se hablo."""
+
+    permission_required = "core.change_lead"
+    model = Lead
+    form_class = LeadFollowUpForm
+    table_id = "tabla-contactos"
+    list_url_name = "core:lead_list"
+    modal_title = _("Seguimiento del contacto")
+    success_message = _("Contacto %(objeto)s actualizado.")
+
+    def save_object(self, form):
+        objeto = form.save()
+        logger.info("lead_actualizado", lead_id=objeto.pk, estado=objeto.status)
+        return objeto

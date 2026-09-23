@@ -26,6 +26,8 @@
     .condiciones li { margin-bottom: 1mm; text-align: justify; }
     .firmas { display: flex; gap: 12mm; margin-top: 14mm; page-break-inside: avoid; }
     .firma { flex: 1; border-top: .5pt solid #334155; padding-top: 2mm; font-size: 7pt; color: #475569; }
+    /* La rubrica se apoya sobre la linea de la firma, como en el papel. */
+    .rubrica { display: block; height: 16mm; margin: -18mm 0 2mm; }
   </style>
 </head>
 <body>
@@ -192,13 +194,19 @@
     </ol>
   </section>
 
-  {% comment %} La firma digital no entra en la v1: el contrato se firma a
-     mano sobre el papel impreso. {% endcomment %}
+  {% comment %} Si el cliente firmo en la tablet al recoger el coche, la firma
+     sale impresa aqui. Si no, queda el hueco para firmar a mano. {% endcomment %}
   <div class="firmas">
     <div class="firma">
+      {% if entrega.customer_signature %}
+        <img class="rubrica" src="{{ entrega.customer_signature }}" alt="">
+      {% endif %}
       <p class="fuerte">{% translate "El arrendatario" %}</p>
       <p>{{ cliente.full_name|default:"" }}</p>
       <p>{% translate "Declara conocer y aceptar las condiciones generales" %}</p>
+      {% if entrega.signed_at %}
+        <p>{% translate "Firmado el" %} {{ entrega.signed_at|date:"d/m/Y H:i" }}</p>
+      {% endif %}
     </div>
     <div class="firma">
       <p class="fuerte">{% translate "Por la empresa" %}</p>

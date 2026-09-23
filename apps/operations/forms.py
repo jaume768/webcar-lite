@@ -8,6 +8,24 @@ from apps.offices.models import Office
 from apps.reservations.models import ChargeKind
 
 from .models import Damage, DamageSeverity, DamageType, DamageZone, FuelLevel, TrafficFine
+from .signature import SignatureError, clean_signature
+
+
+class SignatureField(forms.CharField):
+    """El trazo que manda el lienzo, comprobado en el servidor."""
+
+    widget = forms.HiddenInput
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("required", False)
+        kwargs.setdefault("label", _("Firma del cliente"))
+        super().__init__(**kwargs)
+
+    def clean(self, value):
+        try:
+            return clean_signature(super().clean(value))
+        except SignatureError as exc:
+            raise forms.ValidationError(str(exc)) from exc
 
 
 class CheckInForm(forms.Form):
@@ -23,6 +41,9 @@ class CheckInForm(forms.Form):
     )
     licence_verified = forms.BooleanField(label=_("He comprobado el carnet de conducir"))
     id_verified = forms.BooleanField(label=_("He comprobado el DNI o pasaporte"))
+    # La firma no bloquea la entrega: si la tablet falla, el coche sale igual y
+    # la reserva queda marcada como pendiente de firma.
+    customer_signature = SignatureField()
 
     def __init__(self, *args, reservation=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -32,6 +53,19 @@ class CheckInForm(forms.Form):
             self.fields[campo].error_messages["required"] = _(
                 "Sin comprobar los documentos no se puede entregar el coche."
             )
+
+
+class SignatureForm(forms.Form):
+    """Firma recogida despues de la entrega, cuando quedo pendiente."""
+
+    customer_signature = SignatureField(required=True)
+
+    def __init__(self, *args, reservation=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.reservation = reservation
+        self.fields["customer_signature"].error_messages["required"] = _(
+            "No hay ninguna firma: pide al cliente que firme en el recuadro."
+        )
 
 
 class CheckOutForm(forms.Form):

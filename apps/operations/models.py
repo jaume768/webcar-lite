@@ -103,8 +103,9 @@ class CheckIn(TimeStampedModel):
         related_name="check_ins",
     )
 
-    #: Reservado para la firma del cliente. En v1 no hay firma digital: el
-    #: contrato se firma en papel y aqui solo queda el hueco preparado.
+    #: Firma del cliente, tal y como sale del lienzo de la tablet: un PNG en
+    #: base64 (`data:` URI). Se guarda aqui y no como fichero porque es parte
+    #: del acta: pesa unos kilobytes y no tiene vida propia fuera de ella.
     customer_signature = models.TextField(_("firma del cliente"), blank=True, default="")
     signed_at = models.DateTimeField(_("firmado el"), null=True, blank=True)
 
@@ -119,6 +120,10 @@ class CheckIn(TimeStampedModel):
     @property
     def documents_verified(self) -> bool:
         return self.licence_verified and self.id_verified
+
+    @property
+    def is_signed(self) -> bool:
+        return bool(self.customer_signature)
 
 
 class CheckOut(TimeStampedModel):

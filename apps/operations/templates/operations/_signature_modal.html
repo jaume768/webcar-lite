@@ -1,0 +1,36 @@
+{% extends "ui/_modal.html" %}
+{% load i18n %}
+
+{% block modal_title %}{% translate "Firma del cliente" %}{% endblock %}
+
+{% block modal_subtitle %}
+  <p class="mt-0.5 text-sm text-slate-500">
+    {{ reservation.number }} · {{ reservation.customer.full_name|default:"—" }}
+  </p>
+{% endblock %}
+
+{% block modal_body %}
+  <form id="form-firma" method="post" action="{{ form_action }}"
+        hx-post="{{ form_action }}" hx-target="#modal-host" hx-swap="innerHTML" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+           role="alert">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <p class="mb-3 text-sm text-slate-600">
+      {% blocktranslate with matricula=entrega.vehicle.plate %}
+        El cliente firma la entrega del vehiculo {{ matricula }} y las condiciones del contrato.
+      {% endblocktranslate %}
+    </p>
+
+    {% include "operations/_signature_pad.html" with field=form.customer_signature %}
+  </form>
+{% endblock %}
+
+{% block modal_footer %}
+  <button type="button" class="btn-secondary" @click="cerrar()">{% translate "Cancelar" %}</button>
+  <button type="submit" form="form-firma" class="btn-primary">{% translate "Guardar la firma" %}</button>
+{% endblock %}

@@ -58,6 +58,7 @@ LOCAL_APPS = [
     "apps.settings_app",
     "apps.notifications",
     "apps.booking_api",
+    "apps.reports",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -252,6 +253,16 @@ DEFAULT_CURRENCY = "EUR"
 DEMO_MODE = env.bool("DEMO_MODE", default=False)
 DEMO_EMAIL = env("DEMO_EMAIL", default="demo@webcar.example")
 DEMO_PASSWORD = env("DEMO_PASSWORD", default="demo-webcar-2026")
+
+# --- Contacto comercial de la portada ---------------------------------------
+# La portada publica ofrece estos datos y guarda los formularios como "Lead".
+# El WhatsApp es el canal principal: en este sector se responde antes por ahi
+# que por correo. El buzon de avisos puede quedarse vacio sin romper nada: el
+# contacto se guarda igual y se ve en Administracion > Contactos web.
+CONTACT_WHATSAPP = env("CONTACT_WHATSAPP", default="683472110")
+CONTACT_PHONE = env("CONTACT_PHONE", default="")
+CONTACT_EMAIL = env("CONTACT_EMAIL", default="")
+LEADS_NOTIFY_EMAIL = env("LEADS_NOTIFY_EMAIL", default="")
 
 # Cada cuantos segundos se refresca solo el panel de mostrador.
 DASHBOARD_REFRESH_SECONDS = env.int("DASHBOARD_REFRESH_SECONDS", default=120)

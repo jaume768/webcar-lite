@@ -1,7 +1,7 @@
 """Pantallas de entrega y devolucion."""
 
 import structlog
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -16,9 +16,9 @@ from apps.reservations.models import Reservation
 
 from .filters import TrafficFineFilter
 from .fines import close_fine, mark_identified, register_fine, rematch
-from .forms import CheckInForm, CheckOutForm, DamageForm, TrafficFineForm
+from .forms import CheckInForm, CheckOutForm, DamageForm, SignatureForm, TrafficFineForm
 from .models import TrafficFine
-from .services import perform_check_in, perform_check_out, preexisting_damages
+from .services import perform_check_in, perform_check_out, preexisting_damages, sign_check_in
 
 logger = structlog.get_logger(__name__)
 
@@ -85,13 +85,50 @@ class CheckInView(OperacionBaseView):
                 id_verified=form.cleaned_data["id_verified"],
                 observations=form.cleaned_data["observations"],
                 actual_datetime=form.cleaned_data["actual_datetime"],
+                customer_signature=form.cleaned_data["customer_signature"],
                 employee=self.request.user,
             )
         except ServiceError as exc:
             form.add_error(None, str(exc))
             return self.form_invalid(form)
 
-        return _hecho(_("Coche entregado. La reserva esta en curso."))
+        if form.cleaned_data["customer_signature"]:
+            return _hecho(_("Coche entregado y entrega firmada. La reserva esta en curso."))
+        return _hecho(_("Coche entregado sin firma. La reserva esta en curso."))
+
+
+class CheckInSignatureView(OperacionBaseView):
+    """Firma de una entrega que salio sin firmar.
+
+    La entrega ya esta hecha: aqui solo se le acerca la tablet al cliente.
+    """
+
+    template_name = "operations/_signature_modal.html"
+    form_class = SignatureForm
+
+    def get_check_in(self):
+        entrega = getattr(self.get_reservation(), "check_in", None)
+        if entrega is None:
+            raise Http404(_("La reserva todavia no tiene entrega registrada."))
+        return entrega
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        contexto["entrega"] = self.get_check_in()
+        return contexto
+
+    def form_valid(self, form):
+        try:
+            sign_check_in(
+                check_in=self.get_check_in(),
+                signature=form.cleaned_data["customer_signature"],
+                employee=self.request.user,
+            )
+        except ServiceError as exc:
+            form.add_error(None, str(exc))
+            return self.form_invalid(form)
+
+        return _hecho(_("Entrega firmada por el cliente."))
 
 
 class CheckOutView(OperacionBaseView):

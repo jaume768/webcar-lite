@@ -38,7 +38,7 @@
       <a class="transition-colors hover:text-white" href="#como-funciona">{% translate "Cómo funciona" %}</a>
       <a class="transition-colors hover:text-white" href="#early-access">{% translate "Early Access" %}</a>
       <a class="transition-colors hover:text-white" href="#faq">{% translate "Preguntas" %}</a>
-      <a class="transition-colors hover:text-white" href="#empezar">{% translate "Empezar" %}</a>
+      <a class="transition-colors hover:text-white" href="#contacto">{% translate "Contacto" %}</a>
     </nav>
 
     <a href="{% url 'accounts:login' %}"
@@ -288,7 +288,7 @@
         <p class="mt-4 text-slate-500">
           {% translate "Únete al programa Early Access. Implantación y migración gratuita a cambio de ayudarnos a perfeccionar RentFlow." %}
         </p>
-        <a href="#empezar"
+        <a href="#contacto"
            class="group mt-6 inline-flex items-center gap-2 rounded-xl border border-line bg-white px-5 py-3 text-sm font-semibold text-brand-950 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 active:scale-95">
           {% translate "Quiero ser empresa piloto" %}
           <svg class="size-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
@@ -420,6 +420,127 @@
     </div>
   </section>
 
+  {# --------------------------------------------------------------- contacto #}
+  {% comment %} La unica pantalla publica donde alguien puede dejar sus datos.
+     El formulario se guarda siempre en el CRM; WhatsApp es el atajo para quien
+     prefiere escribir ahora mismo. {% endcomment %}
+  <section id="contacto" class="mx-auto max-w-7xl scroll-mt-24 px-4 py-14 sm:px-8 lg:py-16">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,26rem)_1fr] lg:gap-12">
+      <div class="reveal">
+        <p class="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">{% translate "Hablemos" %}</p>
+        <h2 class="mt-3 text-3xl leading-tight font-bold tracking-tight text-balance text-brand-950 sm:text-4xl">
+          {% translate "Te enseñamos RentFlow en 20 minutos" %}
+        </h2>
+        <p class="mt-4 text-slate-500">
+          {% translate "Cuéntanos cómo trabajáis y te decimos sin rodeos si RentFlow os encaja. Sin compromiso y sin presentaciones eternas." %}
+        </p>
+
+        <ul class="mt-6 space-y-3">
+          {% if whatsapp %}
+            <li>
+              <a href="{{ whatsapp }}" target="_blank" rel="noopener"
+                 class="group flex items-center gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-brand-950 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.39a9.86 9.86 0 004.74 1.21h.01c5.45 0 9.89-4.44 9.89-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0012.04 2zm0 1.8c2.16 0 4.19.84 5.72 2.37a8.03 8.03 0 012.37 5.72c0 4.47-3.63 8.1-8.1 8.1a8.1 8.1 0 01-4.12-1.13l-.3-.18-3.06.8.82-2.99-.2-.31a8.05 8.05 0 01-1.24-4.3c0-4.46 3.64-8.09 8.11-8.09zm-2.2 4.1c-.16 0-.42.06-.64.3-.22.24-.85.83-.85 2.02s.87 2.34.99 2.5c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.19 1.11.16 1.53.1.47-.07 1.43-.59 1.63-1.15.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46z"/></svg>
+                </span>
+                <span>
+                  {% translate "Escríbenos por WhatsApp" %}
+                  <span class="block text-xs font-normal text-slate-500">{{ whatsapp_numero }}</span>
+                </span>
+              </a>
+            </li>
+          {% endif %}
+          {% if telefono %}
+            <li>
+              <a href="tel:{{ telefono }}"
+                 class="flex items-center gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-brand-950 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                  <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+                </span>
+                <span>
+                  {% translate "Llámanos" %}
+                  <span class="block text-xs font-normal text-slate-500">{{ telefono }}</span>
+                </span>
+              </a>
+            </li>
+          {% endif %}
+          {% if correo %}
+            <li>
+              <a href="mailto:{{ correo }}"
+                 class="flex items-center gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-brand-950 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                  <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                </span>
+                <span>
+                  {% translate "Escríbenos un correo" %}
+                  <span class="block text-xs font-normal text-slate-500">{{ correo }}</span>
+                </span>
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="reveal rounded-[1.75rem] bg-brand-50/60 p-4 sm:p-6">
+        {% if enviado %}
+          <div class="flex h-full flex-col items-center justify-center rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-900/5"
+               role="status">
+            <span class="flex size-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            </span>
+            <h3 class="mt-4 text-lg font-semibold text-brand-950">{% translate "Recibido. Gracias." %}</h3>
+            <p class="mt-2 text-sm text-slate-500">
+              {% translate "Te contestamos en menos de 24 horas laborables. Si tienes prisa, escríbenos por WhatsApp." %}
+            </p>
+            {% if whatsapp %}
+              <a href="{{ whatsapp }}" target="_blank" rel="noopener"
+                 class="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 active:scale-95">
+                {% translate "Abrir WhatsApp" %}
+              </a>
+            {% endif %}
+          </div>
+        {% else %}
+          <form method="post" action="{% url 'core:lead_create' %}#contacto" novalidate
+                class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-6">
+            {% csrf_token %}
+            <h3 class="text-lg font-semibold text-brand-950">{% translate "Pide información" %}</h3>
+            <p class="mt-1 text-sm text-slate-500">
+              {% translate "Rellena esto y te llamamos. Nada de cuentas ni tarjetas." %}
+            </p>
+
+            {% if form.non_field_errors %}
+              <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
+                {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              {% include "core/_landing_field.html" with field=form.name %}
+              {% include "core/_landing_field.html" with field=form.company %}
+              {% include "core/_landing_field.html" with field=form.phone %}
+              {% include "core/_landing_field.html" with field=form.email %}
+              {% include "core/_landing_field.html" with field=form.fleet_size %}
+            </div>
+            {% include "core/_landing_field.html" with field=form.message %}
+
+            {# Campo trampa: invisible para una persona, irresistible para un robot. #}
+            <div class="hidden" aria-hidden="true">
+              {{ form.website }}
+            </div>
+
+            <button type="submit"
+                    class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition hover:-translate-y-0.5 active:scale-95">
+              {% translate "Quiero que me llaméis" %}
+            </button>
+            <p class="mt-3 text-center text-xs text-slate-400">
+              {% translate "Usamos tus datos solo para contestarte. Ni spam ni terceros." %}
+            </p>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
   {# ---------------------------------------------------------------- empezar #}
   <section id="empezar" class="scroll-mt-24 px-3 pb-6 sm:px-6">
     <div class="reveal relative isolate mx-auto max-w-[88rem] overflow-hidden rounded-[2rem] bg-brand-950">
@@ -496,7 +617,8 @@
     </ul>
     <div class="mt-5 flex flex-col items-center gap-2 border-t border-line pt-5 text-sm text-slate-500 sm:flex-row">
       <p><span class="font-semibold text-slate-700">RentFlow</span> · {% translate "Alquiler de vehículos sin conductor" %}</p>
-      <a class="hover:text-slate-800 sm:ml-auto" href="{% url 'accounts:login' %}">{% translate "Acceso de empleado" %}</a>
+      <a class="hover:text-slate-800 sm:ml-auto" href="#contacto">{% translate "Contacto" %}</a>
+      <a class="hover:text-slate-800" href="{% url 'accounts:login' %}">{% translate "Acceso de empleado" %}</a>
     </div>
   </div>
 </footer>

@@ -68,6 +68,8 @@ de los contenedores. Si el 8000 o el 5432 están ocupados, cambia `WEB_PORT` o `
 | SES.Hospedajes | Parte del contrato (RD 933/2021): datos que faltan, XML, plazo, envío y reintentos | `/ses-hospedajes/` |
 | Correos al cliente | Confirmación, recordatorio, contrato, devolución, factura, enlace de pago y pago recibido; en es/en/de/fr | `/correos/` |
 | API de reservas web | La web de la empresa consulta disponibilidad y precio, reserva, cancela y pide enlace de pago | `/api/v1/…` |
+| Informes y gestoría | Ingresos por coche, ocupación por mes y exportación CSV de facturas y cobros | `/informes/` |
+| Captación | Formulario de contacto de la portada pública y seguimiento de los interesados | `/`, `/contactos/` |
 | Auditoría | Quién hizo qué y cuándo, con IP; inmutable | `/auditoria/` |
 | Configuración | Datos de la empresa y logo, correos automáticos, condiciones generales, políticas de factura | `/configuracion/`, `/politicas/` |
 | Usuarios | Alta, roles, oficinas asignadas, baja lógica | `/usuarios/` |
@@ -125,6 +127,12 @@ Forzar por encima de la capacidad (overbooking) exige permiso y motivo. Decisió
 - **Check-in**: km, combustible, carnet y documento comprobados, daños preexistentes con zona,
   tipo, gravedad y fotos (almacén privado). Pone el coche en ALQUILADO y prepara el parte de
   SES.Hospedajes.
+- **Firma del cliente**: el cliente firma con el dedo en la tablet dentro del mismo formulario de
+  entrega. La firma viaja como PNG en base64, se valida en el servidor (`operations/signature.py`:
+  que sea un PNG de verdad y que no pase de 256 KB) y se guarda en el acta con su hora. Si no se
+  puede firmar en el momento, **el coche sale igual** y la entrega queda *pendiente de firma*, con
+  un botón para recogerla después; firmar dos veces no se permite, porque entonces la firma no
+  probaría nada. La firma sale impresa en el contrato.
 - **Check-out**: km, combustible, daños nuevos y oficina de devolución. Calcula los cargos
   (`operations/charges.py`, funciones puras): kilómetros de más (`EXTRA_KM_PRICE`), combustible
   (`FUEL_PRICE_PER_LITER`), devolución tardía, limpieza, daños y cargos manuales. El coche vuelve
@@ -218,7 +226,14 @@ Redsys con firma HMAC-SHA256 y 3DES.
 
 `contracts/`: contrato de alquiler en PDF generado en segundo plano con la **versión vigente de las
 condiciones generales** (versionadas en `/configuracion/`; cada contrato guarda la versión con la que
-se generó). Sale en el idioma del cliente y se puede enviar por correo.
+se generó). Sale en el idioma del cliente y se puede enviar por correo. Si la entrega está firmada,
+la rúbrica del cliente se imprime sobre la línea de firma, con la fecha y la hora.
+
+Los textos del contrato, de la factura y de los correos están traducidos a en, de y fr; las
+condiciones generales no se traducen, porque son texto de la empresa y se imprimen tal como se
+publicaron. `apps/core/tests/test_i18n_documentos.py` falla si una de esas cadenas se queda sin
+traducir o si `makemessages` la marca como dudosa (`fuzzy`), que es como un contrato acababa
+saliendo en español para un cliente inglés.
 
 ### Multas
 
@@ -288,6 +303,30 @@ make manage ARGS='api_client list'
 Referencia completa, errores y ejemplos en [`docs/api-reservas.md`](docs/api-reservas.md).
 Para que una categoría se ofrezca en la web hace falta una **tarifa con canal Web**.
 
+### Informes y gestoría
+
+`reports/`, en `/informes/`. No tiene modelos propios (solo el ancla del permiso
+`reports.view_reports`): lee de reservas, flota y facturación.
+
+- **Ingresos por coche**: alquileres, días e ingresos de cada vehículo en el periodo, y el €/día.
+  Se imputa por **fecha de recogida** y se cuenta `grand_total` (alquiler más cargos de la
+  devolución). Las reservas canceladas y los no-show no cuentan.
+- **Ocupación por mes**: días alquilados sobre días de flota (vehículos activos × días del mes). Un
+  alquiler a caballo de dos meses reparte sus días entre ambos.
+- **Exportación para la gestoría**: CSV de facturas y de cobros del periodo, con `;` como separador,
+  coma decimal y BOM, que es lo que Excel en español abre sin tocar nada.
+
+El cálculo vive en funciones puras (`revenue_rows`, `occupancy_rows`) y se prueba sin base de datos.
+Todo pasa por el scope de oficina: quien solo trabaja en una oficina no ve los números de otra.
+
+### Captación desde la portada
+
+La portada pública (`/`) ofrece WhatsApp y un formulario corto. El contacto se guarda **siempre**
+como `core.Lead` y el aviso por correo es un extra: si `LEADS_NOTIFY_EMAIL` está sin configurar o el
+envío falla, el contacto sigue guardado y se consulta en `/contactos/` (Administración > Contactos
+web), con estado (nuevo, contactado, cliente, descartado) y notas internas. El formulario lleva un
+campo trampa para robots.
+
 ### Auditoría
 
 `auditlog.services.record()` se llama dentro de la misma transacción que el hecho: si la
@@ -354,6 +393,7 @@ van agrupadas.
 | Correo | `BREVO_API_KEY`, `DEFAULT_FROM_EMAIL`, `EMAIL_REPLY_TO`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` |
 | Acceso | `AXES_FAILURE_LIMIT`, `AXES_COOLOFF_MINUTES`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` |
 | Interfaz | `DASHBOARD_REFRESH_SECONDS`, `DEMO_MODE`, `DEMO_EMAIL`, `DEMO_PASSWORD` |
+| Portada y captación | `CONTACT_WHATSAPP`, `CONTACT_PHONE`, `CONTACT_EMAIL`, `LEADS_NOTIFY_EMAIL` |
 | Prod | `DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_SECURE_HSTS_SECONDS` |
 
 Pasarelas: **cada una se ofrece solo si tiene credenciales**. Webhook de Stripe en
@@ -418,6 +458,7 @@ apps/
   compliance/      SesSubmission: SES.Hospedajes
   notifications/   EmailLog, envío por Brevo o SMTP
   booking_api/     ApiClient, ApiReservation: API de reservas web
+  reports/         informes de explotacion y exportacion para la gestoria (sin modelos)
   auditlog/        AuditLog
   settings_app/    CompanySettings, TermsVersion, Policy
 ```
@@ -577,11 +618,10 @@ Antes de desplegar:
 - **Verifactu**: huella encadenada y QR desde el principio; el envío a la AEAT no está hecho.
 - **Menú lateral**: Mantenimiento (`/mantenimiento/`), Multas (`/multas/`), Pagos online
   (`/facturacion/pagos-online/`), SES.Hospedajes (`/ses-hospedajes/`), Auditoría (`/auditoria/`)
-  y Correos (`/correos/`) funcionan, pero todavía no tienen entrada en la navegación.
-- **Firma del cliente en la entrega**: `CheckIn` tiene los campos (`customer_signature`,
-  `signed_at`), pero ninguna pantalla la recoge todavía.
-- **Tests en rojo** que ya estaban antes de la API: `contracts/tests/test_idioma.py` (el contrato
-  de un cliente inglés sale en español) y `test_el_historial_junta_las_fuentes`.
+  y Correos (`/correos/`) funcionan, pero todavía no tienen entrada en la navegación. Informes
+  (`/informes/`) y Contactos web (`/contactos/`) sí la tienen.
+- **Test en rojo**: `test_el_historial_junta_las_fuentes`. El contrato en el idioma del cliente ya
+  está arreglado (eran traducciones marcadas como dudosas) y tiene test de regresión.
 - **Fuera de alcance en v1**: portal público de reservas dentro del CRM (la web usa la API),
   OTAs y brokers, app móvil, firma biométrica y multi-empresa. Multi-tenant está previsto a largo
   plazo; en v1 cada cliente tiene su propia instalación.

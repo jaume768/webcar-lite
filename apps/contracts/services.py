@@ -45,9 +45,8 @@ def contract_context(reservation, *, terms: TermsVersion) -> dict:
 
 def render_contract_pdf(contract: Contract) -> bytes:
     """HTML del contrato pasado por WeasyPrint."""
-    from weasyprint import HTML
-
     from django.utils import translation
+    from weasyprint import HTML
 
     from apps.billing.pdf import document_language
 

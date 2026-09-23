@@ -18,6 +18,7 @@ from apps.reservations.state_machine import transition
 
 from .charges import extra_km_charge, fuel_charge, late_return_charge, manual_charge
 from .models import CheckIn, CheckOut, Damage
+from .signature import SignatureError, clean_signature
 
 logger = structlog.get_logger(__name__)
 
@@ -73,6 +74,7 @@ def perform_check_in(
     observations: str = "",
     actual_datetime=None,
     damages=(),
+    customer_signature: str = "",
     employee=None,
 ) -> CheckIn:
     """Entrega el coche: deja el acta y pone la reserva en curso.
@@ -95,6 +97,11 @@ def perform_check_in(
             _("Hay que comprobar el carnet y el documento de identidad antes de entregar.")
         )
 
+    try:
+        firma = clean_signature(customer_signature)
+    except SignatureError as exc:
+        raise OperationsServiceError(str(exc)) from exc
+
     momento = actual_datetime or timezone.now()
     entrega = CheckIn(
         reservation=reservation,
@@ -105,6 +112,10 @@ def perform_check_in(
         observations=observations,
         licence_verified=licence_verified,
         id_verified=id_verified,
+        # Sin firma el coche sale igual: la entrega queda pendiente de firmar y
+        # se recoge despues con `sign_check_in`.
+        customer_signature=firma,
+        signed_at=momento if firma else None,
         employee=employee if getattr(employee, "pk", None) else None,
     )
     entrega.full_clean(exclude=["reservation", "vehicle", "employee"])
@@ -129,7 +140,12 @@ def perform_check_in(
         obj=entrega,
         actor=employee,
         reservation=reservation,
-        changes={"mileage": mileage, "fuel_level": fuel_level, "damages": len(damages)},
+        changes={
+            "mileage": mileage,
+            "fuel_level": fuel_level,
+            "damages": len(damages),
+            "signed": bool(firma),
+        },
     )
     logger.info(
         "entrega_registrada",
@@ -138,9 +154,56 @@ def perform_check_in(
         mileage=mileage,
         fuel_level=fuel_level,
         danos=len(damages),
+        firmada=bool(firma),
         employee_id=getattr(employee, "pk", None),
     )
     return entrega
+
+
+@transaction.atomic
+def sign_check_in(*, check_in: CheckIn, signature: str, employee=None) -> CheckIn:
+    """Recoge la firma del cliente sobre una entrega ya registrada.
+
+    Es la segunda oportunidad: si la tablet fallo o el cliente salio con prisa,
+    la entrega quedo sin firmar y se puede firmar despues. Lo que no se puede es
+    cambiar una firma que ya esta: el acta se firma una vez.
+    """
+    reserva = check_in.reservation
+    ensure_not_invoiced(reserva)
+
+    if check_in.customer_signature:
+        raise OperationsServiceError(
+            _("La entrega de %(numero)s ya esta firmada.") % {"numero": reserva.number}
+        )
+
+    try:
+        firma = clean_signature(signature)
+    except SignatureError as exc:
+        raise OperationsServiceError(str(exc)) from exc
+    if not firma:
+        raise OperationsServiceError(
+            _("No hay ninguna firma: pide al cliente que firme en el recuadro.")
+        )
+
+    check_in.customer_signature = firma
+    check_in.signed_at = timezone.now()
+    check_in.save(update_fields=["customer_signature", "signed_at", "updated_at"])
+
+    audit.record(
+        AuditAction.CHECK_IN,
+        _("Firma del cliente en la entrega de %(numero)s") % {"numero": reserva.number},
+        obj=check_in,
+        actor=employee,
+        reservation=reserva,
+        changes={"signed": True},
+    )
+    logger.info(
+        "entrega_firmada",
+        reservation_number=reserva.number,
+        check_in_id=check_in.pk,
+        employee_id=getattr(employee, "pk", None),
+    )
+    return check_in
 
 
 def compute_checkout_charges(
