@@ -558,6 +558,12 @@ vivo de componentes en `/ui-kit/` (menú Administración → Componentes).
 
 - `base.html` monta barra superior, navegación lateral (`apps/core/navigation.py`, filtrada por
   permisos), selector de oficina activa, migas de pan, avisos y hueco de modales.
+- **El menú lateral se pliega por secciones**: cada cabecera (Operativa, Flota, Facturación…) es un
+  botón que oculta o muestra sus opciones. Por defecto está todo desplegado y la decisión se guarda
+  en el navegador de cada persona (`localStorage`, clave `rentflow:menu-plegado`), así que sobrevive
+  a cerrar la pestaña. Lo que se guarda es el `code` de la sección, no su etiqueta, que se traduce.
+  El estado se aplica con un script en el propio menú para que nada dé un salto al cargar, y sin
+  JavaScript el menú se ve entero.
 - Componentes en `ui/`: tabla con búsqueda, filtros y paginación por HTMX, modal, confirmación
   destructiva, select con búsqueda en servidor, campos, fechas, badges de estado, estado vacío.
 - Las tablas usan `django-template-partials`: la misma URL devuelve la página o solo el fragmento

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 10:35+0200\n"
+"POT-Creation-Date: 2026-09-23 11:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -358,7 +358,7 @@ msgstr ""
 
 #: apps/accounts/templates/accounts/password_change.html:4
 #: apps/accounts/templates/accounts/password_change.html:8
-#: apps/core/templates/shell/_sidebar.html:72
+#: apps/core/templates/shell/_sidebar.html:104
 msgid "Cambiar contrasena"
 msgstr ""
 
@@ -478,7 +478,7 @@ msgstr ""
 
 #: apps/accounts/templates/accounts/user_list.html:4 apps/accounts/views.py:192
 #: apps/accounts/views.py:195 apps/accounts/views.py:222
-#: apps/core/navigation.py:219
+#: apps/core/navigation.py:229
 msgid "Usuarios"
 msgstr ""
 
@@ -506,7 +506,7 @@ msgstr ""
 msgid "Rol"
 msgstr ""
 
-#: apps/accounts/views.py:161 apps/core/navigation.py:207
+#: apps/accounts/views.py:161 apps/core/navigation.py:217
 #: apps/offices/apps.py:9 apps/offices/views.py:41 apps/offices/views.py:108
 msgid "Oficinas"
 msgstr ""
@@ -573,7 +573,7 @@ msgstr ""
 #: apps/accounts/views.py:194 apps/accounts/views.py:221
 #: apps/billing/views.py:203 apps/billing/views.py:319
 #: apps/billing/views.py:665 apps/compliance/views.py:90 apps/core/crud.py:123
-#: apps/core/crud.py:198 apps/core/navigation.py:60
+#: apps/core/crud.py:198 apps/core/navigation.py:64
 #: apps/core/templates/shell/_bottom_nav.html:20 apps/core/views.py:372
 #: apps/customers/views.py:84 apps/operations/views.py:361
 #: apps/pricing/views.py:590 apps/pricing/views.py:615 apps/reports/views.py:74
@@ -2168,7 +2168,7 @@ msgstr ""
 
 #: apps/billing/templates/billing/cash_register.html:4
 #: apps/billing/views.py:201 apps/billing/views.py:204
-#: apps/core/navigation.py:189
+#: apps/core/navigation.py:198
 msgid "Arqueo de caja"
 msgstr ""
 
@@ -2467,7 +2467,7 @@ msgstr ""
 msgid "No queda ninguna reserva finalizada sin su factura."
 msgstr ""
 
-#: apps/billing/views.py:241 apps/core/navigation.py:171
+#: apps/billing/views.py:241 apps/core/navigation.py:180
 msgid "Pendiente de facturar"
 msgstr ""
 
@@ -2490,7 +2490,7 @@ msgid "Ninguna factura coincide"
 msgstr ""
 
 #: apps/billing/views.py:272 apps/billing/views.py:320
-#: apps/billing/views.py:666 apps/core/navigation.py:177
+#: apps/billing/views.py:666 apps/core/navigation.py:186
 msgid "Facturas"
 msgstr ""
 
@@ -2512,7 +2512,7 @@ msgstr ""
 msgid "Ningún cobro coincide"
 msgstr ""
 
-#: apps/billing/views.py:481 apps/core/navigation.py:183
+#: apps/billing/views.py:481 apps/core/navigation.py:192
 #: apps/reservations/views.py:113
 msgid "Cobros"
 msgstr ""
@@ -3399,15 +3399,15 @@ msgstr "Votre contrat de location"
 msgid "Sin empresa"
 msgstr "Pour la société"
 
-#: apps/core/navigation.py:58
+#: apps/core/navigation.py:61
 msgid "General"
 msgstr ""
 
-#: apps/core/navigation.py:64
+#: apps/core/navigation.py:68
 msgid "Operativa"
 msgstr ""
 
-#: apps/core/navigation.py:67
+#: apps/core/navigation.py:72
 #: apps/core/templates/core/_dashboard_panels.html:208
 #: apps/core/templates/shell/_bottom_nav.html:32 apps/core/views.py:78
 #: apps/reservations/apps.py:9 apps/reservations/views.py:88
@@ -3415,38 +3415,38 @@ msgstr ""
 msgid "Reservas"
 msgstr ""
 
-#: apps/core/navigation.py:73
+#: apps/core/navigation.py:78
 #: apps/reservations/templates/reservations/planning.html:4
 #: apps/reservations/views.py:1010 apps/reservations/views.py:1013
 msgid "Planning"
 msgstr ""
 
-#: apps/core/navigation.py:79
+#: apps/core/navigation.py:84
 #: apps/core/templates/core/_dashboard_panels.html:216 apps/core/views.py:82
 #: apps/customers/apps.py:9 apps/customers/views.py:60
 #: apps/customers/views.py:85
 msgid "Clientes"
 msgstr ""
 
-#: apps/core/navigation.py:87 apps/core/templates/shell/_bottom_nav.html:60
+#: apps/core/navigation.py:92 apps/core/templates/shell/_bottom_nav.html:60
 #: apps/core/views.py:81 apps/core/views.py:480 apps/fleet/apps.py:9
 msgid "Flota"
 msgstr ""
 
-#: apps/core/navigation.py:90
+#: apps/core/navigation.py:96
 #: apps/core/templates/core/_dashboard_panels.html:200
 msgid "Vehículos"
 msgstr ""
 
-#: apps/core/navigation.py:96
+#: apps/core/navigation.py:102
 msgid "Categorías"
 msgstr ""
 
-#: apps/core/navigation.py:102
+#: apps/core/navigation.py:108
 msgid "Bloqueos"
 msgstr ""
 
-#: apps/core/navigation.py:110 apps/core/navigation.py:113
+#: apps/core/navigation.py:116 apps/core/navigation.py:120
 #: apps/core/views.py:80 apps/pricing/apps.py:9
 #: apps/pricing/templates/pricing/conflicts.html:8
 #: apps/pricing/templates/pricing/simulator.html:7 apps/pricing/views.py:155
@@ -3455,71 +3455,71 @@ msgstr ""
 msgid "Tarifas"
 msgstr ""
 
-#: apps/core/navigation.py:119 apps/pricing/views.py:162
+#: apps/core/navigation.py:126 apps/pricing/views.py:162
 msgid "Temporadas"
 msgstr ""
 
-#: apps/core/navigation.py:125 apps/pricing/forms.py:306
+#: apps/core/navigation.py:132 apps/pricing/forms.py:306
 #: apps/pricing/views.py:90 apps/reservations/forms.py:56
 #: apps/reservations/views.py:111
 msgid "Extras"
 msgstr ""
 
-#: apps/core/navigation.py:131 apps/pricing/views.py:417
+#: apps/core/navigation.py:138 apps/pricing/views.py:417
 msgid "Suplementos"
 msgstr ""
 
-#: apps/core/navigation.py:137 apps/pricing/views.py:492
+#: apps/core/navigation.py:144 apps/pricing/views.py:492
 msgid "Descuentos"
 msgstr ""
 
-#: apps/core/navigation.py:143 apps/pricing/templates/pricing/conflicts.html:7
+#: apps/core/navigation.py:150 apps/pricing/templates/pricing/conflicts.html:7
 #: apps/pricing/views.py:592
 msgid "Simulador"
 msgstr ""
 
-#: apps/core/navigation.py:149 apps/pricing/templates/pricing/simulator.html:8
+#: apps/core/navigation.py:156 apps/pricing/templates/pricing/simulator.html:8
 #: apps/pricing/views.py:617
 msgid "Conflictos"
 msgstr ""
 
-#: apps/core/navigation.py:157 apps/core/navigation.py:160
+#: apps/core/navigation.py:164 apps/core/navigation.py:168
 #: apps/reports/apps.py:9 apps/reports/templates/reports/reports.html:4
 #: apps/reports/views.py:72 apps/reports/views.py:75
 msgid "Informes"
 msgstr ""
 
-#: apps/core/navigation.py:168
+#: apps/core/navigation.py:176
 msgid "Facturación"
 msgstr ""
 
-#: apps/core/navigation.py:196
+#: apps/core/navigation.py:205
 msgid "Series"
 msgstr ""
 
-#: apps/core/navigation.py:204
+#: apps/core/navigation.py:213
 msgid "Administración"
 msgstr ""
 
-#: apps/core/navigation.py:213 apps/offices/views.py:115
+#: apps/core/navigation.py:223 apps/offices/views.py:115
 msgid "Grupos de oficinas"
 msgstr ""
 
-#: apps/core/navigation.py:225 apps/core/views.py:487
+#: apps/core/navigation.py:235 apps/core/views.py:487
 #, fuzzy
 #| msgid "Contacto"
 msgid "Contactos web"
 msgstr "Contact"
 
-#: apps/core/navigation.py:231
+#: apps/core/navigation.py:241
 msgid "Configuración"
 msgstr ""
 
-#: apps/core/navigation.py:237 apps/settings_app/views.py:144
+#: apps/core/navigation.py:247 apps/settings_app/views.py:144
 msgid "Políticas"
 msgstr ""
 
-#: apps/core/navigation.py:244 apps/core/templates/core/ui_kit.html:4
+#: apps/core/navigation.py:254 apps/core/templates/core/ui_kit.html:4
 #: apps/core/views.py:369 apps/core/views.py:373
 msgid "Componentes"
 msgstr ""
@@ -4427,11 +4427,11 @@ msgstr ""
 msgid "Cerrar navegacion"
 msgstr ""
 
-#: apps/core/templates/shell/_sidebar.html:75
+#: apps/core/templates/shell/_sidebar.html:107
 msgid "Administrador"
 msgstr ""
 
-#: apps/core/templates/shell/_sidebar.html:81
+#: apps/core/templates/shell/_sidebar.html:113
 msgid "Cerrar sesión"
 msgstr ""
 
