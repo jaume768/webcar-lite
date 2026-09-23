@@ -89,32 +89,24 @@ PASOS_LANDING = [
     ("tarjeta", _("Se cobra"), _("Tarjeta, efectivo o transferencia, con la fianza aparte.")),
 ]
 
-#: (ruta de la foto en static/, nombre, empresa, texto). Las empresas son de
-#: ejemplo: cuando haya clientes reales que quieran aparecer, se sustituyen aqui.
-TESTIMONIOS_LANDING = [
+#: (icono, titulo, texto) del programa Early Access. Todavia no hay clientes
+#: que puedan dar la cara por el producto, asi que la portada no ensena
+#: testimonios: ofrece plazas piloto. El icono es un bloque SVG de la plantilla.
+EARLY_ACCESS_LANDING = [
     (
-        "img/landing/testimonio-1.webp",
-        "Carlos Ramis",
-        "Ramis Rent a Car",
-        _(
-            "RentFlow nos ha ahorrado mucho tiempo en el mostrador. "
-            "Ahora todo es más rápido y organizado."
-        ),
+        "implantacion",
+        _("Implantación gratuita"),
+        _("Configuramos oficinas, flota, tarifas y usuarios contigo, sin coste."),
     ),
     (
-        "img/landing/testimonio-2.webp",
-        "Laura Ferrer",
-        "AutoRent Levante",
-        _("Muy fácil de usar y el soporte siempre responde. Se nota que conocen el sector."),
+        "migracion",
+        _("Migración de datos incluida"),
+        _("Pasamos tus clientes, vehículos y reservas abiertas desde tu sistema actual."),
     ),
     (
-        "img/landing/testimonio-3.webp",
-        "Miguel Ángel Torres",
-        "Costa Cars",
-        _(
-            "Controlamos toda la flota, reservas y cobros desde un solo sitio. "
-            "Imprescindible para nuestro día a día."
-        ),
+        "soporte",
+        _("Trato directo con el equipo"),
+        _("Hablas con quien desarrolla RentFlow y tus propuestas entran en el producto."),
     ),
 ]
 
@@ -186,11 +178,7 @@ def home(request):
             {
                 "modulos": MODULOS_LANDING,
                 "pasos": PASOS_LANDING,
-                # La foto se resuelve aqui por lo mismo que `fotos`.
-                "testimonios": [
-                    {"foto": static(foto), "nombre": nombre, "empresa": empresa, "texto": texto}
-                    for foto, nombre, empresa, texto in TESTIMONIOS_LANDING
-                ],
+                "early_access": EARLY_ACCESS_LANDING,
                 "faqs": FAQ_LANDING,
                 # Se resuelven en cada peticion y no al importar: en produccion
                 # `static()` consulta el manifiesto de collectstatic.

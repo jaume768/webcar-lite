@@ -6,6 +6,10 @@ flota y taller, tarifas, cobros y pagos online, facturación preparada para Veri
 en PDF, multas, partes a SES.Hospedajes, correos al cliente en su idioma y una API para que la
 web de la empresa reserve directamente.
 
+**Una instalación por cliente.** Cada empresa de alquiler tiene su propio despliegue, con su base
+de datos, su dominio y su configuración. No es multi-tenant: una instalación sirve a una sola
+empresa (con todas sus oficinas). Ver [Modelo de despliegue](#modelo-de-despliegue).
+
 Django 5.2 · PostgreSQL 16 · Redis + Celery · HTMX + Alpine + Tailwind · WeasyPrint · Docker.
 
 ---
@@ -431,6 +435,21 @@ Reglas que sigue todo el código (completas en [`CLAUDE.md`](CLAUDE.md)):
   disponibilidad** en una transacción con `select_for_update`.
 - Los **permisos se validan en backend** siempre; ocultar un botón no es validar.
 
+### Modelo de despliegue
+
+Para el MVP y la fase piloto, RentFlow se instala **una vez por cliente**:
+
+- Cada empresa tiene su propio stack (web, worker, beat, PostgreSQL, Redis), su `.env`, su dominio
+  y su base de datos. Los datos de una empresa no conviven nunca con los de otra.
+- Dentro de una instalación hay **una sola empresa** (`CompanySettings` es único) y varias
+  oficinas; el scope por oficina separa lo que ve cada usuario, no a empresas distintas.
+- Actualizar a un cliente es desplegar la nueva imagen y ejecutar `migrate` y `sync_roles` en su
+  instalación. Las versiones se pueden escalonar cliente a cliente.
+
+**Multi-tenant queda para más adelante**, cuando haya varios clientes en producción y compense
+operar una sola plataforma. Hasta entonces no se añade ningún campo de empresa/tenant a los
+modelos ni se comparten bases de datos entre clientes.
+
 ### Base de datos
 
 PostgreSQL 16, **también en tests**. Nada de SQLite: el dominio usa `tstzrange`, columnas
@@ -534,6 +553,9 @@ La imagen `runtime` (Dockerfile multi-etapa: assets con Node → dependencias �
 Gunicorn con `config.settings.prod`, sirve estáticos con Whitenoise y hace `collectstatic` en el
 build.
 
+Cada cliente es un despliegue independiente (ver [Modelo de despliegue](#modelo-de-despliegue)):
+esta lista se repasa en cada instalación nueva.
+
 Antes de desplegar:
 
 - [ ] `DJANGO_SECRET_KEY` propia, `DJANGO_ALLOWED_HOSTS` y `DJANGO_CSRF_TRUSTED_ORIGINS` explícitos.
@@ -561,4 +583,5 @@ Antes de desplegar:
 - **Tests en rojo** que ya estaban antes de la API: `contracts/tests/test_idioma.py` (el contrato
   de un cliente inglés sale en español) y `test_el_historial_junta_las_fuentes`.
 - **Fuera de alcance en v1**: portal público de reservas dentro del CRM (la web usa la API),
-  OTAs y brokers, app móvil, firma biométrica y multi-empresa.
+  OTAs y brokers, app móvil, firma biométrica y multi-empresa. Multi-tenant está previsto a largo
+  plazo; en v1 cada cliente tiene su propia instalación.

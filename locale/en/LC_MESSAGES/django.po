@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-21 16:23+0200\n"
+"POT-Creation-Date: 2026-09-22 16:22+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,15 +33,15 @@ msgstr ""
 msgid "Esta cuenta esta desactivada."
 msgstr ""
 
-#: apps/accounts/forms.py:62
+#: apps/accounts/forms.py:66
 msgid "Sin rol"
 msgstr ""
 
-#: apps/accounts/forms.py:70
+#: apps/accounts/forms.py:74
 msgid "Ya hay un usuario con ese correo."
 msgstr ""
 
-#: apps/accounts/forms.py:80
+#: apps/accounts/forms.py:84
 #, python-format
 msgid "No puedes asignar oficinas que no gestionas: %(oficinas)s"
 msgstr ""
@@ -54,8 +54,9 @@ msgid "codigo"
 msgstr ""
 
 #: apps/accounts/models.py:24 apps/accounts/models.py:82
-#: apps/billing/models.py:253 apps/customers/models.py:104
-#: apps/fleet/models.py:113 apps/offices/models.py:31 apps/offices/models.py:51
+#: apps/billing/models.py:253 apps/booking_api/models.py:18
+#: apps/customers/models.py:104 apps/fleet/models.py:113
+#: apps/offices/models.py:31 apps/offices/models.py:51
 #: apps/pricing/models.py:59 apps/pricing/models.py:138
 #: apps/pricing/models.py:199 apps/pricing/models.py:396
 #: apps/pricing/models.py:482 apps/reservations/models.py:545
@@ -308,7 +309,7 @@ msgstr ""
 #: apps/accounts/templates/accounts/login.html:85
 #: apps/accounts/templates/accounts/password_reset_complete.html:9
 #: apps/core/templates/core/landing.html:47
-#: apps/core/templates/core/landing.html:467
+#: apps/core/templates/core/landing.html:465
 #: apps/core/templates/shell/_topbar.html:84
 msgid "Entrar"
 msgstr ""
@@ -514,8 +515,8 @@ msgstr ""
 #: apps/core/filters.py:15 apps/core/templates/core/_dashboard_panels.html:391
 #: apps/core/templates/core/_dashboard_panels.html:480
 #: apps/core/templates/core/_ui_kit_modal.html:17
-#: apps/core/templates/core/landing.html:178 apps/core/views.py:294
-#: apps/core/views.py:310 apps/customers/views.py:54 apps/fleet/filters.py:144
+#: apps/core/templates/core/landing.html:178 apps/core/views.py:282
+#: apps/core/views.py:298 apps/customers/views.py:54 apps/fleet/filters.py:144
 #: apps/fleet/views.py:63 apps/fleet/views.py:262 apps/fleet/views.py:355
 #: apps/notifications/views.py:23 apps/notifications/views.py:53
 #: apps/offices/views.py:35 apps/offices/views.py:109
@@ -557,7 +558,7 @@ msgstr ""
 msgid "Ningun usuario coincide"
 msgstr ""
 
-#: apps/accounts/views.py:190 apps/core/views.py:316 apps/fleet/views.py:68
+#: apps/accounts/views.py:190 apps/core/views.py:304 apps/fleet/views.py:68
 #: apps/fleet/views.py:141 apps/offices/views.py:40
 #: apps/reservations/views.py:87
 msgid "Cambia la busqueda o quita algun filtro."
@@ -567,7 +568,7 @@ msgstr ""
 #: apps/billing/views.py:203 apps/billing/views.py:319
 #: apps/billing/views.py:665 apps/compliance/views.py:90 apps/core/crud.py:123
 #: apps/core/crud.py:198 apps/core/navigation.py:58
-#: apps/core/templates/shell/_bottom_nav.html:20 apps/core/views.py:336
+#: apps/core/templates/shell/_bottom_nav.html:20 apps/core/views.py:324
 #: apps/customers/views.py:84 apps/operations/views.py:324
 #: apps/pricing/views.py:590 apps/pricing/views.py:615
 #: apps/reservations/views.py:163 apps/reservations/views.py:370
@@ -750,13 +751,13 @@ msgstr ""
 
 #: apps/auditlog/models.py:81 apps/billing/models.py:113
 #: apps/billing/models.py:379 apps/billing/models.py:586
-#: apps/compliance/models.py:41 apps/contracts/models.py:32
-#: apps/notifications/models.py:42 apps/operations/models.py:70
-#: apps/operations/models.py:129 apps/operations/models.py:191
-#: apps/operations/models.py:335 apps/reservations/models.py:384
-#: apps/reservations/models.py:475 apps/reservations/models.py:531
-#: apps/reservations/models.py:577 apps/reservations/models.py:628
-#: apps/reservations/models.py:688
+#: apps/booking_api/models.py:54 apps/compliance/models.py:41
+#: apps/contracts/models.py:32 apps/notifications/models.py:42
+#: apps/operations/models.py:70 apps/operations/models.py:129
+#: apps/operations/models.py:191 apps/operations/models.py:335
+#: apps/reservations/models.py:384 apps/reservations/models.py:475
+#: apps/reservations/models.py:531 apps/reservations/models.py:577
+#: apps/reservations/models.py:628 apps/reservations/models.py:688
 msgid "reserva"
 msgstr ""
 
@@ -852,7 +853,7 @@ msgstr ""
 
 #: apps/availability/services.py:154 apps/pricing/forms.py:327
 #: apps/pricing/services/duration.py:50 apps/reservations/forms.py:97
-#: apps/reservations/forms.py:149 apps/reservations/services.py:429
+#: apps/reservations/forms.py:149 apps/reservations/services.py:433
 msgid "La devolucion tiene que ser posterior a la recogida."
 msgstr ""
 
@@ -1004,7 +1005,7 @@ msgstr ""
 #: apps/billing/templates/billing/invoice_detail.html:183
 #: apps/billing/views.py:234 apps/billing/views.py:475
 #: apps/core/templates/core/_ui_kit_modal.html:13
-#: apps/core/templates/core/home.html:42 apps/core/views.py:293
+#: apps/core/templates/core/home.html:42 apps/core/views.py:281
 #: apps/fleet/filters.py:62 apps/fleet/views.py:133
 #: apps/reservations/filters.py:24 apps/reservations/forms.py:270
 #: apps/reservations/templates/reservations/tabs/_checkout.html:22
@@ -2611,6 +2612,207 @@ msgstr ""
 msgid "Pagos online"
 msgstr ""
 
+#: apps/booking_api/apps.py:9
+msgid "API de reservas"
+msgstr ""
+
+#: apps/booking_api/forms.py:17
+msgid ""
+"Fecha y hora en formato ISO 8601, por ejemplo 2026-07-01T10:00:00+02:00."
+msgstr ""
+
+#: apps/booking_api/forms.py:41
+msgid "La devolución tiene que ser posterior a la recogida."
+msgstr ""
+
+#: apps/booking_api/forms.py:68
+msgid "Un anticipo necesita importe."
+msgstr ""
+
+#: apps/booking_api/models.py:21
+msgid "usuario tecnico"
+msgstr ""
+
+#: apps/booking_api/models.py:24
+msgid ""
+"Sus oficinas son las que puede vender la web; su rol, lo que puede hacer."
+msgstr ""
+
+#: apps/booking_api/models.py:26
+msgid "prefijo de la clave"
+msgstr ""
+
+#: apps/booking_api/models.py:27
+msgid "huella de la clave"
+msgstr ""
+
+#: apps/booking_api/models.py:28
+msgid "ultimo uso"
+msgstr ""
+
+#: apps/booking_api/models.py:31 apps/booking_api/models.py:48
+msgid "cliente de la API"
+msgstr ""
+
+#: apps/booking_api/models.py:32
+msgid "clientes de la API"
+msgstr ""
+
+#: apps/booking_api/models.py:58
+msgid "clave de idempotencia"
+msgstr ""
+
+#: apps/booking_api/models.py:59
+#, fuzzy
+#| msgid "Huella del registro"
+msgid "huella de la peticion"
+msgstr "Record fingerprint"
+
+#: apps/booking_api/models.py:60
+msgid "referencia en la web"
+msgstr ""
+
+#: apps/booking_api/models.py:63
+msgid "reserva por API"
+msgstr ""
+
+#: apps/booking_api/models.py:64
+msgid "reservas por API"
+msgstr ""
+
+#: apps/booking_api/services.py:73
+#, python-format
+msgid "Falta el rol %(rol)s: ejecuta sync_roles."
+msgstr ""
+
+#: apps/booking_api/services.py:77
+msgid "Una web tiene que vender al menos una oficina."
+msgstr ""
+
+#: apps/booking_api/services.py:94
+#, python-format
+msgid "Cliente de la API %(nombre)s creado"
+msgstr ""
+
+#: apps/booking_api/services.py:110
+#, python-format
+msgid "Clave de la API de %(nombre)s renovada"
+msgstr ""
+
+#: apps/booking_api/services.py:149
+#, fuzzy
+#| msgid "Oficina de recogida"
+msgid "Oficina desconocida."
+msgstr "Pick-up office"
+
+#: apps/booking_api/services.py:162
+#, python-format
+msgid "La recogida tiene que ser al menos %(n)s minutos a partir de ahora."
+msgstr ""
+
+#: apps/booking_api/services.py:213
+#, python-format
+msgid "Extras desconocidos: %(codigos)s."
+msgstr ""
+
+#: apps/booking_api/services.py:223
+#, python-format
+msgid "%(extra)s: como mucho %(n)s."
+msgstr ""
+
+#: apps/booking_api/services.py:260
+msgid "No podemos completar esta reserva online. Contacta con la oficina."
+msgstr ""
+
+#: apps/booking_api/services.py:281
+msgid "Esa clave de idempotencia ya se uso con otra peticion."
+msgstr ""
+
+#: apps/booking_api/services.py:361
+msgid "Este cliente de la API no puede crear reservas."
+msgstr ""
+
+#: apps/booking_api/services.py:366
+#, fuzzy
+#| msgid "Pasarela desconocida."
+msgid "Categoría desconocida."
+msgstr "Unknown payment gateway."
+
+#: apps/booking_api/services.py:372 apps/booking_api/services.py:485
+#, fuzzy
+#| msgid "Este enlace de pago ya no está disponible."
+msgid "Esa pasarela de pago no está configurada."
+msgstr "This payment link is no longer available."
+
+#: apps/booking_api/services.py:389
+#, python-format
+msgid "Entrada por la API: %(web)s"
+msgstr ""
+
+#: apps/booking_api/services.py:392
+#, python-format
+msgid "Reserva web (API: %(web)s)"
+msgstr ""
+
+#: apps/booking_api/services.py:396
+msgid "Ya no queda disponibilidad para esa categoría en esas fechas."
+msgstr ""
+
+#: apps/booking_api/services.py:402
+msgid "Esa categoría no tiene precio web para esas fechas."
+msgstr ""
+
+#: apps/booking_api/services.py:443
+#, fuzzy
+#| msgid "Tu reserva está confirmada"
+msgid "Reserva no encontrada."
+msgstr "Your booking is confirmed"
+
+#: apps/booking_api/services.py:457 apps/booking_api/services.py:470
+msgid "Esta reserva ya no se puede cancelar online."
+msgstr ""
+
+#: apps/booking_api/services.py:464
+#, python-format
+msgid "Cancelada por el cliente desde la web (%(web)s)"
+msgstr ""
+
+#: apps/booking_api/services.py:481
+msgid "Esta reserva no admite pagos online."
+msgstr ""
+
+#: apps/booking_api/services.py:491
+msgid "La fianza se gestiona en la oficina."
+msgstr ""
+
+#: apps/booking_api/views.py:74
+msgid "Clave de API ausente o no válida."
+msgstr ""
+
+#: apps/booking_api/views.py:76
+msgid "Demasiadas peticiones. Espera un minuto."
+msgstr ""
+
+#: apps/booking_api/views.py:82
+msgid "Hay datos que no son válidos."
+msgstr ""
+
+#: apps/booking_api/views.py:103
+msgid "El cuerpo tiene que ser JSON válido."
+msgstr ""
+
+#: apps/booking_api/views.py:105
+msgid "El cuerpo tiene que ser un objeto JSON."
+msgstr ""
+
+#: apps/booking_api/views.py:162
+msgid "Cabecera obligatoria, hasta 80 caracteres."
+msgstr ""
+
+#: apps/booking_api/views.py:172
+msgid "Tiene que ser una lista."
+msgstr ""
+
 #: apps/compliance/apps.py:9
 msgid "Cumplimiento normativo"
 msgstr ""
@@ -3188,7 +3390,7 @@ msgid "Políticas"
 msgstr ""
 
 #: apps/core/navigation.py:225 apps/core/templates/core/ui_kit.html:4
-#: apps/core/views.py:333 apps/core/views.py:337
+#: apps/core/views.py:321 apps/core/views.py:325
 msgid "Componentes"
 msgstr ""
 
@@ -3542,7 +3744,7 @@ msgstr ""
 msgid "Cerrar"
 msgstr ""
 
-#: apps/core/templates/core/home.html:4 apps/core/views.py:222
+#: apps/core/templates/core/home.html:4 apps/core/views.py:210
 #: apps/pricing/models.py:170
 msgid "Mostrador"
 msgstr ""
@@ -3607,7 +3809,7 @@ msgid "Cómo funciona"
 msgstr ""
 
 #: apps/core/templates/core/landing.html:40
-msgid "Opiniones"
+msgid "Early Access"
 msgstr ""
 
 #: apps/core/templates/core/landing.html:41
@@ -3637,12 +3839,12 @@ msgid ""
 msgstr ""
 
 #: apps/core/templates/core/landing.html:84
-#: apps/core/templates/core/landing.html:448
+#: apps/core/templates/core/landing.html:446
 msgid "Entrar en la demo"
 msgstr ""
 
 #: apps/core/templates/core/landing.html:96
-#: apps/core/templates/core/landing.html:502
+#: apps/core/templates/core/landing.html:500
 msgid "Acceso de empleado"
 msgstr ""
 
@@ -3733,133 +3935,129 @@ msgstr ""
 msgid "Cobros fáciles y seguros"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:284
-msgid "Lo que dicen nuestros clientes"
+#: apps/core/templates/core/landing.html:285
+msgid "Programa Early Access"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:286
-msgid "Empresas de alquiler que ya confían en RentFlow"
+#: apps/core/templates/core/landing.html:287
+msgid "Buscamos las primeras empresas piloto"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:289
+#: apps/core/templates/core/landing.html:290
 msgid ""
-"Decenas de empresas de alquiler ya gestionan su operativa diaria con "
-"RentFlow. Más control, menos trabajo y clientes más satisfechos."
+"Únete al programa Early Access. Implantación y migración gratuita a cambio "
+"de ayudarnos a perfeccionar RentFlow."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:293
-msgid "Ver más opiniones"
+#: apps/core/templates/core/landing.html:294
+msgid "Quiero ser empresa piloto"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:311
-msgid "5 de 5 estrellas"
-msgstr ""
-
-#: apps/core/templates/core/landing.html:336
+#: apps/core/templates/core/landing.html:334
 msgid "El panel de RentFlow en un teléfono móvil"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:341
+#: apps/core/templates/core/landing.html:339
 msgid "Tu negocio siempre contigo"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:343
+#: apps/core/templates/core/landing.html:341
 msgid "Accede desde cualquier lugar"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:346
+#: apps/core/templates/core/landing.html:344
 msgid ""
 "Trabaja desde el mostrador, la oficina o incluso tu móvil. RentFlow se "
 "adapta a ti, estés donde estés."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:355
+#: apps/core/templates/core/landing.html:353
 msgid "Interfaz optimizada para móviles"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:356
+#: apps/core/templates/core/landing.html:354
 msgid "Toda la información, en la palma de tu mano."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:364
+#: apps/core/templates/core/landing.html:362
 msgid "Acceso en la nube"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:365
+#: apps/core/templates/core/landing.html:363
 msgid "Seguro, rápido y siempre disponible."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:373
+#: apps/core/templates/core/landing.html:371
 msgid "Para todo tu equipo"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:374
+#: apps/core/templates/core/landing.html:372
 msgid "Gestiona permisos y roles fácilmente."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:380
+#: apps/core/templates/core/landing.html:378
 msgid "Gestión sin"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:381
+#: apps/core/templates/core/landing.html:379
 msgid "límites"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:393
+#: apps/core/templates/core/landing.html:391
 msgid "Preguntas frecuentes"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:395
+#: apps/core/templates/core/landing.html:393
 msgid "¿Tienes dudas?"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:398
+#: apps/core/templates/core/landing.html:396
 msgid ""
 "Aquí tienes respuestas a las preguntas más habituales. Si necesitas más "
 "información, estaremos encantados de ayudarte."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:402
+#: apps/core/templates/core/landing.html:400
 msgid "Ver todas las preguntas"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:436
+#: apps/core/templates/core/landing.html:434
 msgid "Tu negocio, un paso por delante"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:438
+#: apps/core/templates/core/landing.html:436
 msgid "Lleva tu empresa de alquiler al siguiente nivel"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:440
+#: apps/core/templates/core/landing.html:438
 msgid "Menos tareas, más tiempo para lo importante."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:457
+#: apps/core/templates/core/landing.html:455
 msgid "Datos de ejemplo"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:461
+#: apps/core/templates/core/landing.html:459
 msgid "Entras con un clic"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:477
+#: apps/core/templates/core/landing.html:475
 msgid "O desde el formulario:"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:484
+#: apps/core/templates/core/landing.html:482
 msgid "Mismo equipo."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:485
+#: apps/core/templates/core/landing.html:483
 msgid "Más posibilidades."
 msgstr ""
 
-#: apps/core/templates/core/landing.html:497
+#: apps/core/templates/core/landing.html:495
 msgid "Módulos"
 msgstr ""
 
-#: apps/core/templates/core/landing.html:501
+#: apps/core/templates/core/landing.html:499
 msgid "Alquiler de vehículos sin conductor"
 msgstr ""
 
@@ -4165,106 +4363,114 @@ msgstr ""
 msgid "Tarjeta, efectivo o transferencia, con la fianza aparte."
 msgstr ""
 
-#: apps/core/views.py:100
+#: apps/core/views.py:98
+msgid "Implantación gratuita"
+msgstr ""
+
+#: apps/core/views.py:99
+msgid "Configuramos oficinas, flota, tarifas y usuarios contigo, sin coste."
+msgstr ""
+
+#: apps/core/views.py:103
+msgid "Migración de datos incluida"
+msgstr ""
+
+#: apps/core/views.py:104
 msgid ""
-"RentFlow nos ha ahorrado mucho tiempo en el mostrador. Ahora todo es más "
-"rápido y organizado."
+"Pasamos tus clientes, vehículos y reservas abiertas desde tu sistema actual."
 msgstr ""
 
 #: apps/core/views.py:108
-msgid ""
-"Muy fácil de usar y el soporte siempre responde. Se nota que conocen el "
-"sector."
+msgid "Trato directo con el equipo"
 msgstr ""
 
-#: apps/core/views.py:115
+#: apps/core/views.py:109
 msgid ""
-"Controlamos toda la flota, reservas y cobros desde un solo sitio. "
-"Imprescindible para nuestro día a día."
+"Hablas con quien desarrolla RentFlow y tus propuestas entran en el producto."
 msgstr ""
 
-#: apps/core/views.py:124
+#: apps/core/views.py:116
 msgid "¿Es difícil de usar?"
 msgstr ""
 
-#: apps/core/views.py:126
+#: apps/core/views.py:118
 msgid ""
 "No. RentFlow está diseñado para ser intuitivo y fácil de usar. Además, te "
 "ofrecemos formación y soporte para que empieces sin complicaciones."
 msgstr ""
 
-#: apps/core/views.py:131
+#: apps/core/views.py:123
 msgid "¿Puedo importar mis reservas actuales?"
 msgstr ""
 
-#: apps/core/views.py:132
+#: apps/core/views.py:124
 msgid ""
 "Sí. Te ayudamos a pasar clientes, flota y reservas abiertas desde tu sistema "
 "anterior."
 msgstr ""
 
-#: apps/core/views.py:135
+#: apps/core/views.py:127
 msgid "¿Funciona en móviles y tablets?"
 msgstr ""
 
-#: apps/core/views.py:137
+#: apps/core/views.py:129
 msgid ""
 "Sí. La interfaz se adapta a cualquier pantalla, así que puedes trabajar "
 "fuera del mostrador."
 msgstr ""
 
-#: apps/core/views.py:142
+#: apps/core/views.py:134
 msgid "¿Qué tipo de soporte ofrecéis?"
 msgstr ""
 
-#: apps/core/views.py:144
+#: apps/core/views.py:136
 msgid ""
 "Soporte en español por teléfono y correo, con la temporada alta cubierta "
 "también en fin de semana."
 msgstr ""
 
-#: apps/core/views.py:149
+#: apps/core/views.py:141
 msgid "¿Cuánto cuesta?"
 msgstr ""
 
-#: apps/core/views.py:151
+#: apps/core/views.py:143
 msgid ""
 "Una cuota mensual por oficina, sin permanencia. Escríbenos y te pasamos el "
 "presupuesto."
 msgstr ""
 
-#: apps/core/views.py:238
+#: apps/core/views.py:226
 msgid "Buenos días"
 msgstr ""
 
-#: apps/core/views.py:240
+#: apps/core/views.py:228
 msgid "Buenas tardes"
 msgstr ""
 
-#: apps/core/views.py:241
+#: apps/core/views.py:229
 msgid "Buenas noches"
 msgstr ""
 
-#: apps/core/views.py:264
+#: apps/core/views.py:252
 msgid "Esa oficina no esta disponible para tu usuario."
 msgstr ""
 
-#: apps/core/views.py:269
+#: apps/core/views.py:257
 #, python-format
 msgid "Oficina activa: %s"
 msgstr ""
 
-#: apps/core/views.py:290 apps/fleet/views.py:130 apps/fleet/views.py:257
+#: apps/core/views.py:278 apps/fleet/views.py:130 apps/fleet/views.py:257
 #: apps/reservations/templates/reservations/tabs/_vehiculo.html:9
 msgid "Matricula"
 msgstr "Registration"
 
-#: apps/core/views.py:291
+#: apps/core/views.py:279
 #: apps/reservations/templates/reservations/tabs/_vehiculo.html:15
 msgid "Modelo"
 msgstr ""
 
-#: apps/core/views.py:292 apps/core/views.py:304 apps/fleet/filters.py:57
+#: apps/core/views.py:280 apps/core/views.py:292 apps/fleet/filters.py:57
 #: apps/fleet/forms.py:61 apps/fleet/views.py:59 apps/fleet/views.py:132
 #: apps/pricing/forms.py:285 apps/pricing/templates/pricing/conflicts.html:30
 #: apps/reservations/filters.py:19 apps/reservations/forms.py:31
@@ -4274,39 +4480,39 @@ msgstr ""
 msgid "Categoria"
 msgstr "Category"
 
-#: apps/core/views.py:295
+#: apps/core/views.py:283
 msgid "Tarifa/dia"
 msgstr ""
 
-#: apps/core/views.py:300
+#: apps/core/views.py:288
 msgid "Matricula, modelo u oficina..."
 msgstr ""
 
-#: apps/core/views.py:315 apps/fleet/views.py:140
+#: apps/core/views.py:303 apps/fleet/views.py:140
 msgid "Ningun vehiculo coincide"
 msgstr ""
 
-#: apps/core/views.py:334
+#: apps/core/views.py:322
 msgid "Referencia viva del sistema de interfaz."
 msgstr ""
 
-#: apps/core/views.py:375
+#: apps/core/views.py:363
 msgid "Vehiculo dado de baja (es una demostracion)."
 msgstr ""
 
-#: apps/core/views.py:382
+#: apps/core/views.py:370
 msgid "Demostracion de la pagina 403."
 msgstr ""
 
-#: apps/core/views.py:384
+#: apps/core/views.py:372
 msgid "Demostracion de la pagina 404."
 msgstr ""
 
-#: apps/core/views.py:410
+#: apps/core/views.py:398
 msgid "La demostracion no esta preparada todavia. Ejecuta: manage.py seed_demo"
 msgstr ""
 
-#: apps/core/views.py:422
+#: apps/core/views.py:410
 msgid ""
 "Estas en la demostracion con datos de mentira. Mira, prueba y rompe lo que "
 "quieras."
@@ -8296,8 +8502,8 @@ msgstr ""
 msgid "Nueva devolucion"
 msgstr ""
 
-#: apps/reservations/forms.py:230 apps/reservations/services.py:851
-#: apps/reservations/services.py:890
+#: apps/reservations/forms.py:230 apps/reservations/services.py:855
+#: apps/reservations/services.py:894
 #, python-format
 msgid "De %(extra)s no se pueden poner mas de %(tope)s."
 msgstr ""
@@ -8658,7 +8864,7 @@ msgstr ""
 msgid "Precio puesto a mano"
 msgstr ""
 
-#: apps/reservations/models.py:609 apps/reservations/services.py:1013
+#: apps/reservations/models.py:609 apps/reservations/services.py:1017
 msgid "Recalculado desde tarifa"
 msgstr ""
 
@@ -8739,115 +8945,115 @@ msgstr ""
 msgid "%(motivo)s: %(antes)s → %(despues)s EUR"
 msgstr ""
 
-#: apps/reservations/services.py:192
+#: apps/reservations/services.py:196
 msgid "Una reserva de mostrador necesita cliente."
 msgstr ""
 
-#: apps/reservations/services.py:195
+#: apps/reservations/services.py:199
 #, python-format
 msgid "%(cliente)s esta marcado y no se le puede alquilar."
 msgstr ""
 
-#: apps/reservations/services.py:239
+#: apps/reservations/services.py:243
 msgid "Alta rapida de mostrador"
 msgstr ""
 
-#: apps/reservations/services.py:245
+#: apps/reservations/services.py:249
 #, python-format
 msgid "Reserva %(numero)s creada (%(total)s €)"
 msgstr ""
 
-#: apps/reservations/services.py:449
+#: apps/reservations/services.py:453
 #, python-format
 msgid "%(matricula)s ya esta comprometido en la reserva %(numeros)s."
 msgstr ""
 
-#: apps/reservations/services.py:457
+#: apps/reservations/services.py:461
 #, python-format
 msgid "%(matricula)s tiene un bloqueo en ese periodo."
 msgstr ""
 
-#: apps/reservations/services.py:466
+#: apps/reservations/services.py:470
 #, python-format
 msgid ""
 "%(matricula)s no es de la categoria %(categoria)s: se soltara la asignacion."
 msgstr ""
 
-#: apps/reservations/services.py:586
+#: apps/reservations/services.py:590
 msgid "Recalculado tras el cambio"
 msgstr ""
 
-#: apps/reservations/services.py:592
+#: apps/reservations/services.py:596
 #, python-format
 msgid "Reserva %(numero)s modificada"
 msgstr ""
 
-#: apps/reservations/services.py:632
+#: apps/reservations/services.py:636
 #, python-format
 msgid "Coche soltado de %(numero)s"
 msgstr ""
 
-#: apps/reservations/services.py:658
+#: apps/reservations/services.py:662
 msgid "El numero de carnet es obligatorio."
 msgstr ""
 
-#: apps/reservations/services.py:662
+#: apps/reservations/services.py:666
 msgid "Falta la caducidad del carnet: sin ella no se puede autorizar."
 msgstr ""
 
-#: apps/reservations/services.py:669
+#: apps/reservations/services.py:673
 #, python-format
 msgid ""
 "El carnet caduca el %(caduca)s y el alquiler termina el %(fin)s: no se puede "
 "autorizar a %(nombre)s."
 msgstr ""
 
-#: apps/reservations/services.py:736
+#: apps/reservations/services.py:740
 #, python-format
 msgid ""
 "%(numero)s tiene un precio puesto a mano (%(total)s EUR). Si sigues, se "
 "recalcula con la tarifa y ese acuerdo se pierde."
 msgstr ""
 
-#: apps/reservations/services.py:763
+#: apps/reservations/services.py:767
 #, python-format
 msgid "Precio de %(numero)s: %(antes)s → %(despues)s €"
 msgstr ""
 
-#: apps/reservations/services.py:846
+#: apps/reservations/services.py:850
 #, python-format
 msgid "%(extra)s ya esta en la reserva. Cambia la cantidad en su linea."
 msgstr ""
 
-#: apps/reservations/services.py:865
+#: apps/reservations/services.py:869
 #, python-format
 msgid "Anadido %(extra)s x%(cantidad)s"
 msgstr ""
 
-#: apps/reservations/services.py:887
+#: apps/reservations/services.py:891
 msgid "La cantidad tiene que ser al menos 1."
 msgstr ""
 
-#: apps/reservations/services.py:907
+#: apps/reservations/services.py:911
 #, python-format
 msgid "%(extra)s pasa a x%(cantidad)s"
 msgstr ""
 
-#: apps/reservations/services.py:941
+#: apps/reservations/services.py:945
 #, python-format
 msgid "Quitado %(extra)s"
 msgstr ""
 
-#: apps/reservations/services.py:963
+#: apps/reservations/services.py:967
 #, python-format
 msgid "Tu usuario no puede modificar el precio de una reserva (%(permiso)s)."
 msgstr ""
 
-#: apps/reservations/services.py:969
+#: apps/reservations/services.py:973
 msgid "Un precio puesto a mano no se guarda sin explicar por que."
 msgstr ""
 
-#: apps/reservations/services.py:972
+#: apps/reservations/services.py:976
 msgid "El precio por dia no puede ser negativo."
 msgstr ""
 

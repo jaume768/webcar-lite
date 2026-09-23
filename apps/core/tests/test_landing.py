@@ -32,6 +32,18 @@ def test_la_portada_lleva_al_login(client):
     assert reverse("accounts:login") in contenido
 
 
+def test_la_portada_no_presume_de_clientes_que_no_hay(client):
+    """Sin clientes reales no hay testimonios: se ofrece el programa piloto."""
+    contenido = client.get(reverse("core:home")).content.decode()
+
+    for inventado in ("Carlos Ramis", "Ramis Rent a Car", "AutoRent Levante", "Costa Cars"):
+        assert inventado not in contenido
+    assert "ya confían en RentFlow" not in contenido
+    assert "Decenas de empresas" not in contenido
+    assert "Buscamos las primeras empresas piloto" in contenido
+    assert "Early Access" in contenido
+
+
 def test_con_sesion_la_misma_url_ensena_el_panel(client, agente_centro):
     """La portada es solo para visitantes: quien entra ve su trabajo."""
     client.force_login(agente_centro)
