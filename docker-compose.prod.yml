@@ -1,0 +1,100 @@
+# Produccion en un servidor donde OTRO proyecto ya tiene un Caddy en 80/443.
+# La web se une a la red Docker de ese Caddy y el hace de proxy y TLS
+# (bloque en deploy/rentflow.caddy).
+#
+#   cp deploy/env.prod.example .env   # y rellena secretos y dominio
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Los servicios llevan prefijo `rentflow-` a proposito: el nombre del servicio es
+# un alias DNS y la web comparte red con los `web` y `db` de otros proyectos.
+# Solo la web entra en la red del proxy; base de datos y Redis quedan en la red
+# interna del proyecto y no publican puertos en el host.
+
+x-app: &app
+  build:
+    context: .
+    target: runtime
+  image: rentflow-app:latest
+  env_file: .env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+  restart: unless-stopped
+  depends_on:
+    rentflow-db:
+      condition: service_healthy
+    rentflow-redis:
+      condition: service_healthy
+
+services:
+  rentflow-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?falta POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?falta POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  rentflow-redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  rentflow-web:
+    <<: *app
+    # Las migraciones van antes de gunicorn: una sola web, sin carreras.
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             exec gunicorn config.wsgi:application
+             --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-2} --timeout 60
+             --access-logfile - --error-logfile -"
+    volumes:
+      - media:/app/media
+      - private-media:/app/private-media
+    networks:
+      - default
+      - proxy
+    healthcheck:
+      # Host y esquema como los manda Caddy: sin ellos, ALLOWED_HOSTS da 400 y
+      # SECURE_SSL_REDIRECT contesta 301 sin llegar a comprobar nada.
+      test: ["CMD-SHELL", "curl -fsS -H \"Host: $${PUBLIC_HOST}\" -H 'X-Forwarded-Proto: https' http://localhost:8000/health/ >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  rentflow-worker:
+    <<: *app
+    command: ["celery", "-A", "config", "worker", "-l", "INFO", "--concurrency", "1", "--max-tasks-per-child", "100"]
+    volumes:
+      - media:/app/media
+      - private-media:/app/private-media
+
+  # Uno solo: dos beat duplicarian cada envio.
+  rentflow-beat:
+    <<: *app
+    command: ["celery", "-A", "config", "beat", "-l", "INFO", "--schedule", "/tmp/celerybeat-schedule"]
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:?falta PROXY_NETWORK en .env (red Docker del Caddy existente)}
+
+volumes:
+  pgdata:
+  redisdata:
+  media:
+  private-media:

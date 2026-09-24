@@ -615,6 +615,23 @@ Antes de desplegar:
 - [ ] `sync_roles` tras cada despliegue que cambie roles; un único `beat`.
 - [ ] Tarifas con canal Web si se usa la API de reservas, y una clave por web (`api_client create`).
 
+### Servidor con un Caddy ya instalado
+
+`docker-compose.prod.yml` sirve para un servidor donde otro proyecto ya ocupa 80/443 con Caddy
+(la demo pública, `rentflow.websjfs.com`). La web se une a la red de ese Caddy; base de datos y
+Redis no publican puertos.
+
+```bash
+git clone https://github.com/jaume768/webcar-lite.git /srv/rentflow && cd /srv/rentflow
+cp deploy/env.prod.example .env && chmod 600 .env    # secretos, dominio y PROXY_NETWORK
+docker compose -f docker-compose.prod.yml up -d --build
+cat deploy/rentflow.caddy >> <Caddyfile del Caddy existente>   # y caddy validate + reload
+docker compose -f docker-compose.prod.yml exec rentflow-web python manage.py seed_demo   # solo demo
+docker compose -f docker-compose.prod.yml exec rentflow-web python manage.py createsuperuser
+```
+
+Para actualizar: `git pull && docker compose -f docker-compose.prod.yml up -d --build`.
+
 ---
 
 ## Estado y pendientes conocidos

@@ -1,0 +1,21 @@
+# Bloque del sitio para el Caddy que ya ocupa 80/443 en el servidor.
+# Se anade al final del Caddyfile de ese Caddy (con >>, no con sed -i: rompe
+# el bind mount) y se recarga. Caddy pide y renueva el certificado solo; el DNS
+# de rentflow.websjfs.com tiene que apuntar ya a la IP del servidor.
+rentflow.websjfs.com {
+	encode zstd gzip
+
+	# WhiteNoise sirve los estaticos, asi que basta el proxy.
+	reverse_proxy rentflow-web:8000
+
+	# Documentos de clientes hasta 10 MB (MAX_UPLOAD_SIZE_MB) con margen.
+	request_body {
+		max_size 25MB
+	}
+
+	header {
+		-Server
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Content-Type-Options nosniff
+	}
+}

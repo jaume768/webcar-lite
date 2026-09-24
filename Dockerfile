@@ -68,7 +68,7 @@ COPY --from=assets --chown=app:app /app/static/css/app.css /app/static/css/app.c
 COPY --from=assets --chown=app:app /app/static/js /app/static/js
 COPY --from=assets --chown=app:app /app/static/fonts /app/static/fonts
 
-RUN mkdir -p /app/staticfiles /app/media
+RUN mkdir -p /app/staticfiles /app/media /app/private-media
 
 # El manifiesto de whitenoise se genera en el build: la imagen arranca ya servible
 # y un fallo de estaticos se ve aqui, no en el primer request de produccion.
@@ -80,7 +80,7 @@ RUN export DJANGO_SECRET_KEY=solo-para-collectstatic-en-build \
     REDIS_URL=redis://localhost:6379/0 \
     && python manage.py compilemessages --ignore=.venv \
     && python manage.py collectstatic --noinput \
-    && chown -R app:app /app/staticfiles /app/media
+    && chown -R app:app /app/staticfiles /app/media /app/private-media
 
 USER app
 
