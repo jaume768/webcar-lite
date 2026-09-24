@@ -56,11 +56,13 @@ services:
   rentflow-web:
     <<: *app
     # Las migraciones van antes de gunicorn: una sola web, sin carreras.
+    # Todas las lineas con la misma sangria: en un bloque `>` una linea mas
+    # sangrada conserva su salto y sh la ejecutaria como otro comando.
     command: >
       sh -c "python manage.py migrate --noinput &&
-             exec gunicorn config.wsgi:application
-             --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-2} --timeout 60
-             --access-logfile - --error-logfile -"
+      exec gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-2} --timeout 60
+      --access-logfile - --error-logfile -"
     volumes:
       - media:/app/media
       - private-media:/app/private-media
@@ -69,8 +71,10 @@ services:
       - proxy
     healthcheck:
       # Host y esquema como los manda Caddy: sin ellos, ALLOWED_HOSTS da 400 y
-      # SECURE_SSL_REDIRECT contesta 301 sin llegar a comprobar nada.
-      test: ["CMD-SHELL", "curl -fsS -H \"Host: $${PUBLIC_HOST}\" -H 'X-Forwarded-Proto: https' http://localhost:8000/health/ >/dev/null"]
+      # SECURE_SSL_REDIRECT contesta 301 sin llegar a comprobar nada. Por la IP
+      # del contenedor y no por localhost: un gunicorn atado a 127.0.0.1 tiene
+      # que salir unhealthy, porque Caddy no llegaria a el.
+      test: ["CMD-SHELL", "curl -fsS -H \"Host: $${PUBLIC_HOST}\" -H 'X-Forwarded-Proto: https' http://$${HOSTNAME}:8000/health/ >/dev/null"]
       interval: 30s
       timeout: 5s
       retries: 5
