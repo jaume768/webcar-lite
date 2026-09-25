@@ -4,10 +4,15 @@ from django.contrib import admin
 from django.urls import include, path
 
 from apps.accounts.views import registration_disabled
+from apps.core import pwa
 from apps.core.views import health
 
 urlpatterns = [
     path("health/", health, name="health"),
+    # App instalable: en la raiz para que el service worker controle toda la app.
+    path("manifest.webmanifest", pwa.manifest, name="manifest"),
+    path("sw.js", pwa.service_worker, name="service_worker"),
+    path("sin-conexion/", pwa.offline, name="offline"),
     # El admin de Django es herramienta de soporte tecnico, no el panel de
     # gestion del cliente: ruta poco evidente y solo para staff.
     path("admin-interno/", admin.site.urls),

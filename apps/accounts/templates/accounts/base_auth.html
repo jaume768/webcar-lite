@@ -13,6 +13,7 @@
   <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
   <link rel="preload" as="image" href="{% static 'img/landing/hero.webp' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% include "core/_pwa_head.html" %}
   <script src="{% static 'js/alpine.min.js' %}" defer></script>
 </head>
 <body class="h-full bg-canvas">

@@ -1,0 +1,12 @@
+{% load static %}{% comment %} App instalable: manifest, iconos y color de la barra
+   del sistema. Lo comparten el panel, el acceso y la portada. {% endcomment %}
+<link rel="manifest" href="{% url 'manifest' %}">
+<link rel="icon" href="{% static 'img/pwa/icon.svg' %}" type="image/svg+xml">
+<link rel="icon" href="{% static 'img/pwa/favicon-32.png' %}" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="{% static 'img/pwa/apple-touch-icon.png' %}">
+<meta name="theme-color" content="{{ theme_color|default:'#ffffff' }}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RentFlow">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script src="{% static 'js/pwa.js' %}" defer></script>

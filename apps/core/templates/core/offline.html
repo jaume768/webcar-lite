@@ -1,0 +1,25 @@
+{% load i18n static %}<!DOCTYPE html>
+{% comment %} La guarda el service worker y se ensena a cualquiera que abra la
+   app sin red. Por eso no hereda de base.html: nada de usuario, oficina,
+   menu ni token CSRF. {% endcomment %}
+<html lang="es" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% translate "Sin conexión" %} · RentFlow</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% include "core/_pwa_head.html" %}
+</head>
+<body class="flex h-full items-center justify-center bg-canvas px-4">
+  <main class="card w-full max-w-sm p-6 text-center">
+    <img src="{% static 'img/pwa/icon.svg' %}" alt="" class="mx-auto size-16">
+    <h1 class="mt-4 text-xl font-bold text-brand-950">{% translate "Sin conexión" %}</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      {% translate "No se puede contactar con RentFlow. Comprueba la conexión del móvil y vuelve a intentarlo." %}
+    </p>
+    <button type="button" class="btn-primary mt-5 w-full" onclick="location.reload()">
+      {% translate "Reintentar" %}
+    </button>
+  </main>
+</body>
+</html>

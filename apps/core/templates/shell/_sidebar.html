@@ -94,6 +94,7 @@
 
   {% if user.is_authenticated %}
     <div class="shrink-0 border-t border-white/10 p-3">
+      <div class="has-[>:not([hidden])]:mb-2">{% include "core/_pwa_install.html" with oscuro=True %}</div>
       <div class="flex items-center gap-3 rounded-xl px-2 py-2">
         <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold">
           {{ user.initials }}

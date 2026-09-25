@@ -9,12 +9,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#172054">
   <title>{% translate "RentFlow · El CRM para empresas de alquiler de coches" %}</title>
   <meta name="description" content="{% translate 'Reservas, check-ins, devoluciones, cobros y contratos en una sola pantalla. Diseñado para empresas de alquiler de vehículos sin conductor.' %}">
   <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
   <link rel="preload" as="image" href="{{ fotos.hero }}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% include "core/_pwa_head.html" with theme_color="#172054" %}
 </head>
 <body class="min-h-full overflow-x-hidden bg-surface text-slate-900">
 

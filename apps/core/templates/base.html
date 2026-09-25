@@ -6,6 +6,7 @@
   <title>{% block title %}RentFlow{% endblock %}</title>
   <link rel="preload" as="font" type="font/woff2" href="{% static 'fonts/inter-latin.woff2' %}" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% include "core/_pwa_head.html" %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/app.js' %}" defer></script>
   {# Los plugins de Alpine se registran antes que el propio Alpine. #}

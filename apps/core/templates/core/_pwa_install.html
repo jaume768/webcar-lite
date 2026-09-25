@@ -1,0 +1,21 @@
+{% load i18n static %}{% comment %} Boton "Instalar app". Nace oculto: lo ensena static/js/pwa.js
+   solo cuando el navegador ofrece instalar, y en iPhone la explicacion de
+   Safari. `oscuro` es para el menu lateral. {% endcomment %}
+<button type="button" data-pwa-install hidden
+        class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors
+               {% if oscuro %}bg-white/10 text-white hover:bg-white/15{% else %}border border-line bg-surface text-slate-900 shadow-sm hover:border-brand-300 hover:bg-brand-50/40{% endif %}">
+  <img src="{% static 'img/pwa/icon.svg' %}" alt="" class="size-8 shrink-0">
+  <span class="min-w-0 flex-1">
+    {% translate "Instalar la app" %}
+    <span class="block text-xs font-normal {% if oscuro %}text-white/60{% else %}text-slate-500{% endif %}">{% translate "Ábrela desde la pantalla de inicio" %}</span>
+  </span>
+  <svg class="size-5 shrink-0 {% if oscuro %}text-white/70{% else %}text-brand-600{% endif %}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+</button>
+<p data-pwa-ios hidden
+   class="flex items-start gap-3 rounded-xl px-3 py-2.5 text-xs {% if oscuro %}bg-white/10 text-white/80{% else %}border border-line bg-surface text-slate-600{% endif %}">
+  <img src="{% static 'img/pwa/icon.svg' %}" alt="" class="size-8 shrink-0">
+  <span>
+    <span class="block text-sm font-semibold {% if oscuro %}text-white{% else %}text-slate-900{% endif %}">{% translate "Instala la app" %}</span>
+    {% blocktranslate %}En Safari, toca <strong>Compartir</strong> y luego <strong>Añadir a pantalla de inicio</strong>.{% endblocktranslate %}
+  </span>
+</p>
