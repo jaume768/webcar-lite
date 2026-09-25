@@ -1,5 +1,7 @@
 """base.html y el shell: con usuario, sin usuario y con oficina activa."""
 
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -206,3 +208,29 @@ def test_el_menu_se_pliega_por_seccion(client, gestor_centro):
     assert 'data-menu-toggle="administracion"' in contenido
     # Por defecto, todo desplegado.
     assert 'aria-expanded="false"' not in contenido
+
+
+def grids_sin_columnas_en_movil(html: str) -> list[str]:
+    """Grids que solo fijan columnas a partir de un breakpoint.
+
+    Sin `grid-cols-*` base, en movil la columna es implicita (`auto`) y crece
+    hasta el ancho del texto que lleve dentro, aunque este truncado: la pagina
+    entera se desborda en horizontal.
+    """
+    clases = (c.split() for c in re.findall(r'class="([^"]*)"', html))
+    return [
+        " ".join(c)
+        for c in clases
+        if "grid" in c
+        and any(":grid-cols-" in x for x in c)
+        and not any(x.startswith("grid-cols-") for x in c)
+    ]
+
+
+def test_el_panel_no_se_desborda_en_movil(client, agente_centro):
+    """Regresion: la lista de matriculas de los avisos ensanchaba la pagina."""
+    client.force_login(agente_centro)
+
+    contenido = client.get(reverse("core:home")).content.decode()
+
+    assert grids_sin_columnas_en_movil(contenido) == []

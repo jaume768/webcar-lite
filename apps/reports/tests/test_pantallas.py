@@ -8,6 +8,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.core.tests.test_shell import grids_sin_columnas_en_movil
 from apps.reports import exports, services
 
 pytestmark = pytest.mark.django_db
@@ -101,6 +102,8 @@ def test_la_pantalla_ensena_los_dos_informes(client, analista, centro, ibiza, al
     assert "Ingresos por coche" in contenido
     assert "Ocupación por mes" in contenido
     assert "1111AAA" in contenido
+    # Regresion: la tabla de ingresos ensanchaba la pagina en movil.
+    assert grids_sin_columnas_en_movil(contenido) == []
 
 
 def test_un_rango_al_reves_se_endereza(client, analista):

@@ -43,7 +43,7 @@
   </p>
 
   {# ------------------------------------------------------------- resumen #}
-  <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <div class="card p-4">
       <p class="text-sm text-slate-500">{% translate "Ingresos del periodo" %}</p>
       <p class="mt-1 text-2xl font-bold tabular text-brand-950">{{ resumen.revenue|floatformat:2 }} €</p>
@@ -62,7 +62,7 @@
     </div>
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-2">
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
     {# --------------------------------------------------- ingresos por coche #}
     <section class="card">
